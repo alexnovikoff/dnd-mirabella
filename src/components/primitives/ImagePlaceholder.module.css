@@ -1,0 +1,30 @@
+/* Плейсхолдер изображения — штриховка --hatch + mono-подпись, чего там ждать.
+ * README «Assets»: все изображения в макете намеренно плейсхолдеры. */
+
+.box {
+  display: flex;
+  background: var(--hatch);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.bordered {
+  border: 1px solid var(--rule);
+}
+
+/* Плитки галереи в прототипе штрихуются крупнее — 8/16 вместо 7/14. */
+.coarse {
+  background: var(--hatch-lg);
+}
+
+/* Блок в карточке момента: подпись по центру, mono 11px. */
+.center {
+  align-items: center;
+  justify-content: center;
+}
+
+/* Плитка галереи: подпись прижата вниз, mono 9px. */
+.bottom {
+  align-items: flex-end;
+  padding: 10px;
+}

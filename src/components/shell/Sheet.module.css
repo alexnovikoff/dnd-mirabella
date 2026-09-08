@@ -1,0 +1,24 @@
+/* «Лист пергамента» — контейнер всех экранов.
+ * README: max-width 1180px, центрирован, фон --sheet-bg,
+ * рамка 1px solid #c3ab7f, тень --sheet-shadow. */
+
+.sheet {
+  max-width: var(--sheet-max);
+  margin: 0 auto;
+  position: relative;
+  background: var(--sheet-bg);
+  border: 1px solid var(--rule-sheet);
+  border-radius: var(--radius);
+  box-shadow: var(--sheet-shadow-inset), var(--sheet-shadow);
+  color: var(--ink);
+}
+
+/* <768px — лист занимает весь экран, «стола» вокруг не остаётся. */
+@media (max-width: 767px) {
+  .sheet {
+    border-left: 0;
+    border-right: 0;
+    box-shadow: none;
+    min-height: 100dvh;
+  }
+}

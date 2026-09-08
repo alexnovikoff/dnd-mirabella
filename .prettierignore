@@ -1,0 +1,6 @@
+# design handoff — third-party reference bundle, kept byte-faithful
+design_handoff_mirabella/
+
+node_modules/
+.next/
+pnpm-lock.yaml

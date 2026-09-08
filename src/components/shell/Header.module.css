@@ -1,0 +1,138 @@
+/* Глобальная шапка. Значения — README «Глобальная шапка» + прототип. */
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  row-gap: 10px;
+  padding: 16px 32px;
+  border-bottom: 1px solid var(--rule);
+  background: var(--bar-bg);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: none;
+}
+
+.seal {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: var(--seal-inset);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  color: var(--seal-ink);
+  font-family: var(--font-display);
+  font-size: 16px;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+}
+
+.nav {
+  display: flex;
+  gap: 22px;
+  flex-wrap: wrap;
+  row-gap: 6px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--ink-muted);
+}
+
+.tab {
+  color: inherit;
+  white-space: nowrap;
+  padding-bottom: 2px;
+  border-bottom: 2px solid transparent;
+}
+
+.tab:hover {
+  color: var(--ink);
+}
+
+.tabActive {
+  color: var(--ink);
+  border-bottom-color: var(--accent);
+}
+
+.tabActive:hover {
+  color: var(--ink);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+}
+
+.session {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-faint);
+  white-space: nowrap;
+  flex: none;
+}
+
+.action {
+  background: var(--accent);
+  color: var(--accent-on-warm);
+  border: 1px solid var(--accent);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  padding: 7px 12px;
+  white-space: nowrap;
+  flex: none;
+  transition:
+    background var(--hover-fast),
+    border-color var(--hover-fast);
+}
+
+.action:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+/* Полноценный мобильный паттерн (горизонтальные табы, «≡», нижняя
+ * закреплённая кнопка) — этап 10. Здесь только чтобы 390px не ломался. */
+@media (max-width: 767px) {
+  .header {
+    padding: 12px 16px;
+    gap: 12px;
+  }
+
+  .title {
+    font-size: 16px;
+  }
+
+  .nav {
+    order: 3;
+    width: 100%;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 16px;
+    scrollbar-width: none;
+  }
+
+  .nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .session {
+    display: none;
+  }
+}

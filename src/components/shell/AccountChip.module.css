@@ -1,0 +1,64 @@
+/* Чип аккаунта и разлогиненная кнопка «ВОЙТИ».
+ * README «Чип аккаунта (аутентификация)» — реализованы оба состояния. */
+
+.chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--rule);
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 5px 10px 5px 5px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  white-space: nowrap;
+  flex: none;
+  transition: background var(--hover-fast);
+}
+
+.chip:hover {
+  background: #fdf8ea;
+}
+
+.avatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-on-warm);
+  font-family: var(--font-display);
+  font-size: 13px;
+  letter-spacing: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+.caret {
+  color: var(--ink-faint);
+}
+
+.signIn {
+  border: 1px solid var(--accent);
+  background: transparent;
+  border-radius: var(--radius);
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  padding: 7px 12px;
+  white-space: nowrap;
+  flex: none;
+  transition:
+    background var(--hover-fast),
+    color var(--hover-fast);
+}
+
+.signIn:hover {
+  background: var(--accent);
+  color: var(--accent-on-warm);
+}

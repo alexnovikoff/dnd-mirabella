@@ -1,0 +1,47 @@
+/* Тело экрана внутри листа. README «Спейсинг»: паддинги листа 28–30px 32px,
+ * у экранов со своим заголовком — 28px 32px 34px. */
+
+.screen {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  padding: 28px 32px 34px;
+}
+
+.head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.headText {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 42px;
+  line-height: 1;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.note {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink-muted-2);
+}
+
+@media (max-width: 767px) {
+  .screen {
+    padding: 20px 16px 28px;
+  }
+
+  .title {
+    font-size: 32px;
+  }
+}

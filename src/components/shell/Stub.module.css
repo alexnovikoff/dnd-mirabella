@@ -1,0 +1,20 @@
+/* Заглушка неготового экрана. Стилистика дроп-зоны — README «Состояния»:
+ * «Пусто — плейсхолдеры в стиле дроп-зон с подсказкой действия».
+ * Удаляется по мере готовности экранов (этапы 3–8). */
+
+.stub {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 240px;
+  padding: 32px;
+  text-align: center;
+  border: 1px dashed var(--dash);
+  border-radius: var(--radius);
+}
+
+.stage {
+  color: var(--ink-faint);
+}

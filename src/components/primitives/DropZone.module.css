@@ -1,0 +1,51 @@
+/* Дроп-зона. Два размера из макета:
+ * 'cell' — последняя ячейка сетки «ГАЛЕРЕЯ · 38» в сайдбаре (1px, mono 9px);
+ * 'band' — полоса под группами на экране «Галерея» (2px, min-height 96px). */
+
+.zone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  border: 1px dashed var(--dash);
+  border-radius: var(--radius);
+  font-family: var(--font-mono);
+  color: var(--ink-label);
+  text-transform: uppercase;
+  transition:
+    border-color var(--hover-fast),
+    background var(--hover-fast);
+}
+
+.cell {
+  aspect-ratio: 1;
+  font-size: 9px;
+}
+
+.band {
+  flex-direction: column;
+  gap: 7px;
+  border-width: 2px;
+  min-height: 96px;
+  padding: 12px;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+
+.plus {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-size: 15px;
+}
+
+/* Подсветка при dragover — README «Галерея». */
+.active {
+  border-color: var(--accent);
+  background: var(--card-2);
+}

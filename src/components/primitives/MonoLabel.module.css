@@ -1,0 +1,61 @@
+/* Моноширинная подпись — README «мета-mono 9–11px с letter-spacing
+ * 0.06–0.16em и uppercase». Встречается на всех экранах. */
+
+.label {
+  font-family: var(--font-mono);
+  display: inline-block;
+  color: var(--ink-label); /* tone="label" — значение по умолчанию */
+}
+
+.block {
+  display: block;
+}
+
+.upper {
+  text-transform: uppercase;
+}
+
+.s9 {
+  font-size: 9px;
+}
+.s10 {
+  font-size: 10px;
+}
+.s11 {
+  font-size: 11px;
+}
+
+.t006 {
+  letter-spacing: 0.06em;
+}
+.t008 {
+  letter-spacing: 0.08em;
+}
+.t010 {
+  letter-spacing: 0.1em;
+}
+.t014 {
+  letter-spacing: 0.14em;
+}
+.t016 {
+  letter-spacing: 0.16em;
+}
+
+.faint {
+  color: var(--ink-faint);
+}
+.muted {
+  color: var(--ink-muted);
+}
+.accent {
+  color: var(--accent);
+}
+.disabled {
+  color: var(--ink-disabled);
+}
+.onAccent {
+  color: var(--accent-on);
+}
+.onAccentDim {
+  color: var(--accent-on-dim);
+}

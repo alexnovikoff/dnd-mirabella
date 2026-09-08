@@ -1,0 +1,128 @@
+/* tokens.css — единственный источник значений дизайна.
+ *
+ * Всё, что ниже раздела «Design Tokens», перенесено из
+ * design_handoff_mirabella/README.md буква в букву. Значения не меняем:
+ * акцент строго #9a5a2e, --radius: 0 (прямые углы — бумага, не скругления).
+ *
+ * Блок «Расширения» в конце — то, чего в списке токенов README нет,
+ * но что задано в HTML-прототипе. Каждое расширение помечено источником.
+ */
+
+:root {
+  /* ── Ink & text ─────────────────────────────────────────── */
+  --ink: #2b2118; /* заголовки */
+  --ink-body: #40342a; /* основной текст */
+  --ink-body-2: #45413c; /* текст в заметках */
+  --ink-muted: #5c4c3a;
+  --ink-muted-2: #6b5c48;
+  --ink-faint: #7a6a55; /* мета */
+  --ink-label: #8a7358; /* mono-подписи */
+  --ink-disabled: #8a7c68; /* тупик, зачёркнутое */
+  --ink-italic: #4a3c2c; /* лид-абзацы */
+
+  /* ── Accent (жжёная охра) ───────────────────────────────── */
+  --accent: #9a5a2e;
+  --accent-hover: #7f4522;
+  --accent-on: #fbf1de; /* текст на акценте */
+  --accent-on-dim: #e8bda6; /* мета на акценте */
+
+  /* ── Statuses ───────────────────────────────────────────── */
+  --status-open: #9a5a2e;
+  --status-done: #7d6a3f;
+  --status-dead: #b0a289;
+
+  /* ── Parchment ──────────────────────────────────────────── */
+  --desk: #ddd0b2; /* фон вокруг листа */
+  --sheet: #f0e6cd; /* лист */
+  --card: #fbf3df; /* карточка/поле */
+  --card-2: #f2e8d0; /* приглушённая карточка */
+  --tag: #e6d7b4;
+  --board: #e7d9b8;
+  --rule: #c9b489; /* внутренние линии */
+  --rule-soft: #d8c9a9;
+  --rule-sheet: #c3ab7f; /* внешняя рамка */
+  --dash: #b8a179; /* пунктир дроп-зон */
+
+  /* ── Composites ─────────────────────────────────────────── */
+  --sheet-bg:
+    radial-gradient(85% 60% at 12% 8%, rgba(255, 251, 238, 0.9), rgba(255, 251, 238, 0) 55%),
+    radial-gradient(70% 55% at 88% 22%, rgba(214, 190, 144, 0.45), rgba(214, 190, 144, 0) 60%),
+    radial-gradient(75% 50% at 30% 95%, rgba(176, 150, 101, 0.35), rgba(176, 150, 101, 0) 60%),
+    repeating-linear-gradient(92deg, rgba(140, 116, 74, 0.045) 0 2px, rgba(0, 0, 0, 0) 2px 5px),
+    repeating-linear-gradient(2deg, rgba(140, 116, 74, 0.035) 0 3px, rgba(0, 0, 0, 0) 3px 7px),
+    #f0e6cd;
+  --card-bg: linear-gradient(160deg, #fbf3df, #f4ead2 60%, #efe3c7);
+  --bar-bg: linear-gradient(180deg, rgba(226, 211, 176, 0.85), rgba(226, 211, 176, 0.5));
+  --aside-bg: linear-gradient(180deg, rgba(226, 211, 176, 0.7), rgba(214, 196, 158, 0.55));
+  --hatch: repeating-linear-gradient(
+    135deg,
+    #e2d4b0 0 7px,
+    #ede0c0 7px 14px
+  ); /* плейсхолдер изображения */
+
+  /* ── Shadows & borders ──────────────────────────────────── */
+  --card-shadow: 2px 3px 0 rgba(178, 152, 105, 0.35), 0 1px 0 rgba(255, 252, 242, 0.7) inset;
+  --node-shadow: 3px 4px 0 rgba(178, 152, 105, 0.4);
+  --sheet-shadow: 0 26px 50px -34px rgba(58, 42, 24, 0.65);
+  --radius: 0; /* прямые углы везде — бумага, не скругления */
+
+  /* ── Type ───────────────────────────────────────────────── */
+  /* --font-cormorant / --font-spectral / --font-plex-mono приходят
+   * с <html> из next/font (см. src/app/layout.tsx) — шрифты самохостятся,
+   * внешнего запроса к fonts.googleapis.com нет. Фолбэки — как в README. */
+  --font-display: var(--font-cormorant), Georgia, serif; /* 400/600 */
+  --font-body: var(--font-spectral), Georgia, serif; /* 300/400/600 + italic */
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace; /* 400/500 */
+
+  /* ══ Расширения (в списке токенов README нет) ═══════════════
+   * Источник — HTML-прототип «Слёзы Мирабеллы v2.dc.html». */
+
+  /* Фон «стола»: README описывает его словами («#ddd0b2 с тёплой
+   * засветкой сверху-слева»), точные стопы взяты из прототипа. */
+  --desk-bg:
+    radial-gradient(120% 80% at 15% 0%, rgba(255, 247, 228, 0.85), rgba(255, 247, 228, 0) 60%),
+    radial-gradient(90% 70% at 85% 100%, rgba(160, 132, 84, 0.28), rgba(160, 132, 84, 0) 65%),
+    #ddd0b2;
+
+  /* У листа в прототипе есть верхняя внутренняя засветка, которой нет
+   * в --sheet-shadow. Держим отдельным токеном, чтобы --sheet-shadow
+   * остался равен README. */
+  --sheet-shadow-inset: 0 2px 0 rgba(255, 252, 242, 0.6) inset;
+
+  /* Скелетоны загрузки — README «Состояния»: «в тон пергамента (#e2d4b0)». */
+  --skeleton: #e2d4b0;
+
+  /* Ховеры: README «мягкие: 120–160 ms ease-out», и для карточки —
+   * «сдвиг тени на 1px и лёгкое осветление фона». */
+  --hover-fast: 120ms ease-out;
+  --hover-slow: 160ms ease-out;
+  --card-bg-hover: linear-gradient(160deg, #fdf8ea, #f8efd9 60%, #f3e8ce);
+  --card-shadow-hover: 3px 4px 0 rgba(178, 152, 105, 0.35), 0 1px 0 rgba(255, 252, 242, 0.7) inset;
+
+  /* Габариты из README «Спейсинг». */
+  --sheet-max: 1180px;
+  --aside-w: 320px; /* сайдбар; на доске связей — 300px */
+
+  /* Три близких кремовых из описания шапки в README: у буквы на печати
+   * и у текста кнопки они чуть теплее, чем --accent-on (#fbf1de). */
+  --accent-on-warm: #fbf2e2; /* текст «+ ЗАПИСЬ», инициал в аватаре */
+  --seal-ink: #f7ecd9; /* буква «М» на печати */
+
+  /* Внутренние засветки из прототипа. */
+  --seal-inset: 0 1px 0 rgba(255, 240, 220, 0.35) inset;
+  --accent-inset: 0 1px 0 rgba(255, 226, 196, 0.2) inset;
+
+  /* ── Расхождения README ↔ прототип ──────────────────────────
+   * В прототипе преобладают чуть иные варианты двух токенов.
+   * Канон — README (он объявлен источником истины по значениям),
+   * вариант прототипа держим рядом под своим именем.
+   * Решение по ним за Алексом — см. отчёт этапа 1. */
+
+  /* README: --card-bg (3 стопа, 1 вхождение в прототипе).
+   * Прототип: 2 стопа, 9 вхождений. */
+  --card-bg-2: linear-gradient(160deg, #fbf3df, #f2e7ce);
+
+  /* README: --hatch — полоса 7/14 (3 вхождения).
+   * Прототип: плитки галереи крупнее, 8/16 (8 вхождений). */
+  --hatch-lg: repeating-linear-gradient(135deg, #e2d4b0 0 8px, #ede0c0 8px 16px);
+}

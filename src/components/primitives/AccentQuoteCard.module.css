@@ -1,0 +1,37 @@
+/* Акцентная карточка цитаты — единственная «цветная» поверхность в макете.
+ * README «Карточка цитаты (акцентная)» + «Цитата недели». */
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 24px 26px;
+  background: var(--accent);
+  color: var(--accent-on);
+  border-radius: var(--radius);
+  box-shadow: var(--accent-inset);
+}
+
+/* Цитата недели на экране «Цитаты»: крупнее и с надстрочником. */
+.feature {
+  padding: 26px 28px;
+}
+
+.quote {
+  font-family: var(--font-display);
+  font-size: 27px;
+  line-height: 1.25;
+  font-style: italic;
+}
+
+.feature .quote {
+  font-size: 38px;
+  line-height: 1.2;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}

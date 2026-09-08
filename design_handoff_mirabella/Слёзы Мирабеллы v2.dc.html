@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Spectral:ital,wght@0,300;0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #ded2b6; }
+  a { color: #9a5a2e; text-decoration: none; }
+  a:hover { color: #7f4522; }
+</style>
+</helmet>
+
+<div style="min-height: 100%; padding: 40px 32px 64px; background:
+    radial-gradient(120% 80% at 15% 0%, rgba(255,247,228,0.85), rgba(255,247,228,0) 60%),
+    radial-gradient(90% 70% at 85% 100%, rgba(160,132,84,0.28), rgba(160,132,84,0) 65%),
+    #ddd0b2; font-family: Spectral, serif;">
+
+  <div style="max-width: 1180px; margin: 0 auto; color: #2b2118; position: relative; background:
+      radial-gradient(85% 60% at 12% 8%, rgba(255,251,238,0.9), rgba(255,251,238,0) 55%),
+      radial-gradient(70% 55% at 88% 22%, rgba(214,190,144,0.45), rgba(214,190,144,0) 60%),
+      radial-gradient(75% 50% at 30% 95%, rgba(176,150,101,0.35), rgba(176,150,101,0) 60%),
+      repeating-linear-gradient(92deg, rgba(140,116,74,0.045) 0 2px, rgba(0,0,0,0) 2px 5px),
+      repeating-linear-gradient(2deg, rgba(140,116,74,0.035) 0 3px, rgba(0,0,0,0) 3px 7px),
+      #f0e6cd;
+      border: 1px solid #c3ab7f; box-shadow: 0 2px 0 rgba(255,252,242,0.6) inset, 0 26px 50px -34px rgba(58,42,24,0.65);">
+
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; row-gap: 10px; padding: 16px 32px; border-bottom: 1px solid #c9b489; background: linear-gradient(180deg, rgba(226,211,176,0.85), rgba(226,211,176,0.5));">
+        <div style="display: flex; align-items: center; gap: 12px; flex: none;">
+        <div style="width: 30px; height: 30px; border-radius: 50%; background: #9a5a2e; box-shadow: 0 1px 0 rgba(255,240,220,0.35) inset; display: flex; align-items: center; justify-content: center; color: #f7ecd9; font-family: 'Cormorant Garamond', serif; font-size: 16px;">М</div>
+        <div style="font-family: 'Cormorant Garamond', serif; font-size: 20px; letter-spacing: 0.02em;">{{ campaignTitle }}</div>
+      </div>
+      <div style="display: flex; gap: 22px; font-size: 14px; color: #5c4c3a; flex-wrap: wrap; row-gap: 6px;">
+        <span style="border-bottom: 2px solid #9a5a2e; padding-bottom: 2px; color: #2b2118; white-space: nowrap;">Хроника</span>
+        <span style="white-space: nowrap;">Партия</span><span style="white-space: nowrap;">Галерея</span><span style="white-space: nowrap;">Цитаты</span><span style="white-space: nowrap;">База знаний</span><span style="white-space: nowrap;">Доска связей</span>
+      </div>
+      <div style="display: flex; gap: 10px; align-items: center; flex: none;">
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #7a6a55; white-space: nowrap; flex: none;">Сессия 14 · 6 сент</span>
+        <span style="background: #9a5a2e; color: #fbf2e2; font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.06em; padding: 7px 12px; white-space: nowrap; flex: none;">+ ЗАПИСЬ</span>
+        <span style="display: flex; align-items: center; gap: 8px; border: 1px solid #c9b489; background: #fbf3df; font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.06em; color: #5c4c3a; padding: 5px 10px 5px 5px; white-space: nowrap; flex: none;"><span style="width: 22px; height: 22px; border-radius: 50%; background: #9a5a2e; color: #fbf2e2; font-family: 'Cormorant Garamond', serif; font-size: 13px; display: flex; align-items: center; justify-content: center; flex: none;">М</span>МЕТЕЛЬ ▾</span>
+      </div>
+    </div>
+
+    <div style="padding: 30px 32px 22px; border-bottom: 1px solid #c9b489; display: flex; gap: 36px; align-items: flex-end;">
+      <div style="flex: 1; display: flex; flex-direction: column; gap: 10px;">
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: #8a7358;">Дневник партии · год 1483, месяц пепла</div>
+        <div style="font-family: 'Cormorant Garamond', serif; font-size: 54px; line-height: 0.98; font-weight: 600;">Слёзы<br>Мирабеллы</div>
+        <div style="font-size: 15px; line-height: 1.65; max-width: 480px; font-style: italic; color: #4a3c2c; text-wrap: pretty;">Семь артефактов, исполняющих желания. Шесть ещё не найдены, а первую мы, кажется, уже потратили не туда.</div>
+      </div>
+      <div style="display: flex; gap: 10px;">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 7px; width: 84px;">
+          <div style="width: 62px; height: 62px; border-radius: 50%; border: 1px solid #b8a179; background: repeating-linear-gradient(135deg, #ddceab 0 5px, #e8dabb 5px 10px);"></div>
+          <div style="font-family: 'Cormorant Garamond', serif; font-size: 17px;">Аэлис</div>
+          <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; text-align: center; color: #7a6a55; line-height: 1.3;">ДЖЕНАЗИ<br>ПЛУТ · МОНАХ</div>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 7px; width: 84px;">
+          <div style="width: 62px; height: 62px; border-radius: 50%; border: 1px solid #b8a179; background: repeating-linear-gradient(135deg, #ddceab 0 5px, #e8dabb 5px 10px);"></div>
+          <div style="font-family: 'Cormorant Garamond', serif; font-size: 17px;">Джаду</div>
+          <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; text-align: center; color: #7a6a55; line-height: 1.3;">ТАБАКСИ<br>ВОЛШЕБНИК</div>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 7px; width: 84px;">
+          <div style="width: 62px; height: 62px; border-radius: 50%; border: 1px solid #b8a179; background: repeating-linear-gradient(135deg, #ddceab 0 5px, #e8dabb 5px 10px);"></div>
+          <div style="font-family: 'Cormorant Garamond', serif; font-size: 17px;">Метель</div>
+          <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; text-align: center; color: #7a6a55; line-height: 1.3;">ТИФЛИНГ<br>ПЛУТ</div>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 7px; width: 84px;">
+          <div style="width: 62px; height: 62px; border-radius: 50%; border: 1px solid #b8a179; background: repeating-linear-gradient(135deg, #ddceab 0 5px, #e8dabb 5px 10px);"></div>
+          <div style="font-family: 'Cormorant Garamond', serif; font-size: 17px;">Оген</div>
+          <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; text-align: center; color: #7a6a55; line-height: 1.3;">ДЖЕНАЗИ<br>ПЛУТ · ЧАРОДЕЙ</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: minmax(0, 1fr) 320px;">
+      <div style="padding: 28px 32px; display: flex; flex-direction: column; gap: 22px; border-right: 1px solid #c9b489;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <div style="font-family: 'Cormorant Garamond', serif; font-size: 26px;">Яркие моменты</div>
+          <div style="display: flex; gap: 8px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.08em; color: #7a6a55;">
+            <span style="border: 1px solid #9a5a2e; color: #9a5a2e; padding: 4px 8px;">ВСЁ</span>
+            <span style="border: 1px solid #c9b489; padding: 4px 8px;">ЦИТАТЫ</span>
+            <span style="border: 1px solid #c9b489; padding: 4px 8px;">ПРОВАЛЫ</span>
+            <span style="border: 1px solid #c9b489; padding: 4px 8px;">ЛУТ</span>
+          </div>
+        </div>
+
+        <div style="background: linear-gradient(160deg, #fbf3df, #f4ead2 60%, #efe3c7); border: 1px solid #c9b489; padding: 20px 22px; display: flex; flex-direction: column; gap: 12px; box-shadow: 2px 3px 0 rgba(178,152,105,0.35), 0 1px 0 rgba(255,252,242,0.7) inset;">
+          <div style="display: flex; align-items: center; gap: 10px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.1em; color: #8a7358;">
+            <span>СЕССИЯ 14</span><span style="color: #c9b489;">·</span><span>БАЗАР ХАЛЬ-РАШИ</span><span style="color: #c9b489;">·</span><span style="color: #9a5a2e;">КРИТ 20</span>
+          </div>
+          <div style="font-family: 'Cormorant Garamond', serif; font-size: 30px; line-height: 1.1; font-weight: 600;">Метель продала визирю его собственный перстень</div>
+          <div style="font-size: 15px; line-height: 1.7; color: #40342a; text-wrap: pretty;">Пока <span style="border-bottom: 1px dotted #9a5a2e; color: #9a5a2e;">Джаду</span> отвлекал стражу горящим ковром, <span style="border-bottom: 1px dotted #9a5a2e; color: #9a5a2e;">Метель</span> успела трижды перепродать печать <span style="border-bottom: 1px dotted #9a5a2e; color: #9a5a2e;">визиря Ирсафа</span> — и в третий раз самому визирю. Так мы узнали, что печать открывает не дверь, а <span style="border-bottom: 1px dotted #9a5a2e; color: #9a5a2e;">колодец Соляных путей</span>.</div>
+          <div style="height: 150px; background: repeating-linear-gradient(135deg, #e2d4b0 0 7px, #ede0c0 7px 14px); border: 1px solid #c9b489; display: flex; align-items: center; justify-content: center;">
+            <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.1em; color: #8a7358;">СКРИНШОТ ИЛИ АРТ СЦЕНЫ</span>
+          </div>
+          <div style="display: flex; gap: 6px; flex-wrap: wrap; font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.06em; color: #5c4c3a;">
+            <span style="background: #e6d7b4; padding: 4px 8px;">#метель</span><span style="background: #e6d7b4; padding: 4px 8px;">#ирсаф</span><span style="background: #e6d7b4; padding: 4px 8px;">#печать</span><span style="background: #e6d7b4; padding: 4px 8px;">#соляные-пути</span>
+          </div>
+        </div>
+
+        <div style="background: #9a5a2e; color: #fbf1de; padding: 24px 26px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 1px 0 rgba(255,226,196,0.2) inset;">
+          <div style="font-family: 'Cormorant Garamond', serif; font-size: 27px; line-height: 1.25; font-style: italic;">«Я не крал. Я взял на хранение. У себя.»</div>
+          <div style="display: flex; align-items: center; justify-content: space-between; font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.1em; color: #f0c8b3;">
+            <span>— ОГЕН, СЕССИЯ 13</span><span>ЦИТАТА НЕДЕЛИ · 7 ГОЛОСОВ</span>
+          </div>
+        </div>
+
+        <div style="background: linear-gradient(160deg, #fbf3df, #f2e7ce); border: 1px solid #c9b489; padding: 18px 22px; display: flex; gap: 18px; align-items: flex-start; box-shadow: 2px 3px 0 rgba(178,152,105,0.35);">
+          <div style="width: 108px; height: 84px; flex: none; background: repeating-linear-gradient(135deg, #e2d4b0 0 7px, #ede0c0 7px 14px); border: 1px solid #c9b489;"></div>
+          <div style="display: flex; flex-direction: column; gap: 7px;">
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.1em; color: #8a7358;">СЕССИЯ 13 · ГРОБНИЦА У СУХОГО РУСЛА</div>
+            <div style="font-family: 'Cormorant Garamond', serif; font-size: 23px; line-height: 1.15;">Первая слеза досталась не нам</div>
+            <div style="font-size: 14px; line-height: 1.6; color: #40342a;">Караван <span style="border-bottom: 1px dotted #9a5a2e; color: #9a5a2e;">Дома Сарраф</span> ушёл на север за час до нас. <span style="border-bottom: 1px dotted #9a5a2e; color: #9a5a2e;">Аэлис</span> оставила метку на последней повозке.</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="padding: 28px 24px; display: flex; flex-direction: column; gap: 26px; background: linear-gradient(180deg, rgba(226,211,176,0.7), rgba(214,196,158,0.55));">
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.14em; color: #8a7358;">СЕССИИ</div>
+          <div style="display: flex; flex-direction: column; gap: 8px; font-size: 14px;">
+            <div style="display: flex; justify-content: space-between; gap: 10px; padding-bottom: 8px; border-bottom: 1px solid #cbb68d;"><span>14 · Базар Халь-Раши</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #7a6a55;">06.09</span></div>
+            <div style="display: flex; justify-content: space-between; gap: 10px; padding-bottom: 8px; border-bottom: 1px solid #cbb68d;"><span>13 · Сухое русло</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #7a6a55;">23.08</span></div>
+            <div style="display: flex; justify-content: space-between; gap: 10px; padding-bottom: 8px; border-bottom: 1px solid #cbb68d;"><span>12 · Соляной караван</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #7a6a55;">09.08</span></div>
+            <div style="display: flex; justify-content: space-between; gap: 10px;"><span style="color: #7a6a55;">11 · Ворота Ксаира</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #7a6a55;">26.07</span></div>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.14em; color: #8a7358;">ЗАМЕТКИ</div>
+          <div style="display: flex; flex-direction: column; gap: 9px;">
+            <div style="background: #fbf3df; border-left: 3px solid #9a5a2e; padding: 10px 12px; display: flex; flex-direction: column; gap: 4px;">
+              <div style="font-size: 14px; line-height: 1.4;">Кто выкупил вторую слезу на аукционе?</div>
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #9a5a2e;">ОТКРЫТА · 3 СВЯЗИ</div>
+            </div>
+            <div style="background: #fbf3df; border-left: 3px solid #9a5a2e; padding: 10px 12px; display: flex; flex-direction: column; gap: 4px;">
+              <div style="font-size: 14px; line-height: 1.4;">Печать Ирсафа и колодец — один механизм?</div>
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #9a5a2e;">ОТКРЫТА · 2 СВЯЗИ</div>
+            </div>
+            <div style="background: #f2e8d0; border-left: 3px solid #7d6a3f; padding: 10px 12px; display: flex; flex-direction: column; gap: 4px;">
+              <div style="font-size: 14px; line-height: 1.4; color: #6b5c48;">Где ночует Дом Сарраф</div>
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #7d6a3f;">РАСКРЫТА</div>
+            </div>
+            <div style="background: #f2e8d0; border-left: 3px solid #b0a289; padding: 10px 12px; display: flex; flex-direction: column; gap: 4px;">
+              <div style="font-size: 14px; line-height: 1.4; color: #8a7c68; text-decoration: line-through;">Слепой картограф из Ксаира</div>
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #8a7c68;">ТУПИК</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.14em; color: #8a7358;">ГАЛЕРЕЯ · 38</div>
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;">
+            <div style="aspect-ratio: 1; background: repeating-linear-gradient(135deg, #e2d4b0 0 6px, #ede0c0 6px 12px); border: 1px solid #c9b489;"></div>
+            <div style="aspect-ratio: 1; background: repeating-linear-gradient(135deg, #e2d4b0 0 6px, #ede0c0 6px 12px); border: 1px solid #c9b489;"></div>
+            <div style="aspect-ratio: 1; background: repeating-linear-gradient(135deg, #e2d4b0 0 6px, #ede0c0 6px 12px); border: 1px solid #c9b489;"></div>
+            <div style="aspect-ratio: 1; background: repeating-linear-gradient(135deg, #e2d4b0 0 6px, #ede0c0 6px 12px); border: 1px solid #c9b489;"></div>
+            <div style="aspect-ratio: 1; background: repeating-linear-gradient(135deg, #e2d4b0 0 6px, #ede0c0 6px 12px); border: 1px solid #c9b489;"></div>
+            <div style="aspect-ratio: 1; border: 1px dashed #b8a179; display: flex; align-items: center; justify-content: center; font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #8a7358; text-align: center; line-height: 1.2;">DROP<br>IMG</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="padding: 28px 32px 34px; border-top: 1px solid #c9b489; display: flex; flex-direction: column; gap: 14px;">
+      <div style="display: flex; align-items: baseline; justify-content: space-between;">
+        <div style="font-family: 'Cormorant Garamond', serif; font-size: 26px;">Доска связей</div>
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.1em; color: #8a7358;">ПЕРЕТАЩИТЕ КАРТОЧКУ, ЧТОБЫ СВЯЗАТЬ</div>
+      </div>
+      <div style="position: relative; height: 250px; border: 1px solid #c9b489; overflow: hidden; background:
+          radial-gradient(60% 60% at 20% 20%, rgba(255,250,236,0.7), rgba(255,250,236,0) 60%),
+          repeating-linear-gradient(92deg, rgba(140,116,74,0.05) 0 2px, rgba(0,0,0,0) 2px 5px),
+          #e7d9b8;">
+        {{ boardLines }}
+        <div style="position: absolute; left: 4%; top: 16%; background: #fbf3df; border: 1px solid #9a5a2e; padding: 9px 12px; font-size: 13px; box-shadow: 2px 3px 0 rgba(178,152,105,0.4);">Вторая слеза<div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #9a5a2e; letter-spacing: 0.08em;">АРТЕФАКТ</div></div>
+        <div style="position: absolute; left: 34%; top: 6%; background: #fbf3df; border: 1px solid #c9b489; padding: 9px 12px; font-size: 13px; box-shadow: 2px 3px 0 rgba(178,152,105,0.4);">Визирь Ирсаф<div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #7a6a55; letter-spacing: 0.08em;">NPC</div></div>
+        <div style="position: absolute; left: 30%; top: 62%; background: #fbf3df; border: 1px solid #c9b489; padding: 9px 12px; font-size: 13px; box-shadow: 2px 3px 0 rgba(178,152,105,0.4);">Колодец Соляных путей<div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #7a6a55; letter-spacing: 0.08em;">ЛОКАЦИЯ</div></div>
+        <div style="position: absolute; left: 64%; top: 30%; background: #9a5a2e; color: #fbf1de; border: 1px solid #9a5a2e; padding: 9px 12px; font-size: 13px; box-shadow: 2px 3px 0 rgba(178,152,105,0.4);">Дом Сарраф<div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #f0c8b3; letter-spacing: 0.08em;">ФРАКЦИЯ</div></div>
+        <div style="position: absolute; left: 80%; top: 70%; background: #fbf3df; border: 1px solid #c9b489; padding: 9px 12px; font-size: 13px; box-shadow: 2px 3px 0 rgba(178,152,105,0.4);">Аукцион в Ксаире<div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #7a6a55; letter-spacing: 0.08em;">СОБЫТИЕ</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<div data-screen-label="Цитаты" style="padding: 0 32px 64px; background: #ddd0b2; font-family: Spectral, serif; color: #2b2118;">
+  <div style="max-width: 1180px; margin: 0 auto; display: flex; flex-direction: column; gap: 10px;">
+    <div style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #6f6152;">Экран 02 · Цитаты</div>
+    <div style="background: radial-gradient(85% 60% at 12% 8%, rgba(255,251,238,0.9), rgba(255,251,238,0) 55%), radial-gradient(70% 55% at 88% 22%, rgba(214,190,144,0.45), rgba(214,190,144,0) 60%), repeating-linear-gradient(92deg, rgba(140,116,74,0.045) 0 2px, rgba(0,0,0,0) 2px 5px), #f0e6cd; border: 1px solid #c3ab7f; box-shadow: 0 26px 50px -34px rgba(58,42,24,0.65);">
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; row-gap: 10px; padding: 16px 32px; border-bottom: 1px solid #c9b489; background: linear-gradient(180deg, rgba(226,211,176,0.85), rgba(226,211,176,0.5));">
+        <div style="display: flex; align-items: center; gap: 12px; flex: none;">
+          <div style="width: 30px; height: 30px; border-radius: 50%; background: #9a5a2e; display: flex; align-items: center; justify-content: center; color: #f7ecd9; font-family: 'Cormorant Garamond', serif; font-size: 16px;">М</div>
+          <div style="font-family: 'Cormorant Garamond', serif; font-size: 20px;">{{ campaignTitle }}</div>
+        </div>
+        <div style="display: flex; gap: 22px; font-size: 14px; color: #5c4c3a; flex-wrap: wrap; row-gap: 6px;">
+          <span style="white-space: nowrap;">Хроника</span>
+          <span style="white-space: nowrap;">Партия</span><span style="white-space: nowrap;">Галерея</span>
+          <span style="border-bottom: 2px solid #9a5a2e; padding-bottom: 2px; color: #2b2118; white-space: nowrap;">Цитаты</span>
+          <span style="white-space: nowrap;">База знаний</span><span style="white-space: nowrap;">Доска связей</span>
+        </div>
+        <div style="display: flex; gap: 10px; align-items: center; flex: none;">
+          <span style="background: #9a5a2e; color: #fbf2e2; font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.06em; padding: 7px 12px; white-space: nowrap; flex: none;">+ ЦИТАТА</span>
+          <span style="display: flex; align-items: center; gap: 8px; border: 1px solid #c9b489; background: #fbf3df; font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.06em; color: #5c4c3a; padding: 5px 10px 5px 5px; white-space: nowrap; flex: none;"><span style="width: 22px; height: 22px; border-radius: 50%; background: #9a5a2e; color: #fbf2e2; font-family: 'Cormorant Garamond', serif; font-size: 13px; display: flex; align-items: center; justify-content: center; flex: none;">М</span>МЕТЕЛЬ ▾</span>
+        </div>
+      </div>
+
+      <div style="padding: 28px 32px 34px; display: flex; flex-direction: column; gap: 22px;">
+        <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; flex-wrap: wrap;">
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <div style="font-family: 'Cormorant Garamond', serif; font-size: 42px; line-height: 1;">Цитатник</div>
+            <div style="font-size: 14px; color: #6b5c48;">124 цитаты за 14 сессий. Голосование за цитату недели открыто до вторника.</div>
+          </div>
+          <div style="display: flex; gap: 7px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.08em;">
+            <span style="border: 1px solid #9a5a2e; color: #9a5a2e; padding: 5px 9px;">ВСЕ</span>
+            <span style="border: 1px solid #c9b489; color: #6b5c48; padding: 5px 9px;">АЭЛИС</span>
+            <span style="border: 1px solid #c9b489; color: #6b5c48; padding: 5px 9px;">ДЖАДУ</span>
+            <span style="border: 1px solid #c9b489; color: #6b5c48; padding: 5px 9px;">МЕТЕЛЬ</span>
+            <span style="border: 1px solid #c9b489; color: #6b5c48; padding: 5px 9px;">ОГЕН</span>
+            <span style="border: 1px solid #c9b489; color: #6b5c48; padding: 5px 9px;">МАСТЕР</span>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px;">
+          <div style="grid-column: span 2; background: #9a5a2e; color: #fbf1de; padding: 26px 28px; display: flex; flex-direction: column; gap: 14px;">
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.14em; color: #e8bda6;">ЦИТАТА НЕДЕЛИ · СЕССИЯ 13</div>
+            <div style="font-family: 'Cormorant Garamond', serif; font-size: 38px; line-height: 1.2; font-style: italic;">«Я не крал. Я взял на хранение. У себя.»</div>
+            <div style="display: flex; align-items: center; justify-content: space-between; font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.1em; color: #e8bda6;"><span>— ОГЕН</span><span>♦ 7 ГОЛОСОВ</span></div>
+          </div>
+          <div style="background: linear-gradient(160deg, #fbf3df, #f2e7ce); border: 1px solid #c9b489; padding: 18px 20px; display: flex; flex-direction: column; gap: 10px; box-shadow: 2px 3px 0 rgba(178,152,105,0.35);">
+            <div style="font-family: 'Cormorant Garamond', serif; font-size: 24px; line-height: 1.3; font-style: italic;">«Мастер, а можно я подожгу ковёр?» — «Можно.» — «Плохо.»</div>
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #7a6a55; margin-top: auto;">ДЖАДУ · С14 · ♦ 5</div>
+          </div>
+          <div style="background: linear-gradient(160deg, #fbf3df, #f2e7ce); border: 1px solid #c9b489; padding: 18px 20px; display: flex; flex-direction: column; gap: 10px; box-shadow: 2px 3px 0 rgba(178,152,105,0.35);">
+            <div style="font-family: 'Cormorant Garamond', serif; font-size: 24px; line-height: 1.3; font-style: italic;">«Если желание исполняется, значит его кто-то оплатил.»</div>
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #7a6a55; margin-top: auto;">АЭЛИС · С12 · ♦ 4</div>
+          </div>
+          <div style="background: linear-gradient(160deg, #fbf3df, #f2e7ce); border: 1px solid #c9b489; padding: 18px 20px; display: flex; flex-direction: column; gap: 10px; box-shadow: 2px 3px 0 rgba(178,152,105,0.35);">
+            <div style="font-family: 'Cormorant Garamond', serif; font-size: 24px; line-height: 1.3; font-style: italic;">«Три золотых — и я забуду твоё лицо. Пять — и своё.»</div>
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #7a6a55; margin-top: auto;">МЕТЕЛЬ · С14 · ♦ 6</div>
+          </div>
+          <div style="background: linear-gradient(160deg, #fbf3df, #f2e7ce); border: 1px solid #c9b489; padding: 18px 20px; display: flex; flex-direction: column; gap: 10px; box-shadow: 2px 3px 0 rgba(178,152,105,0.35);">
+            <div style="font-family: 'Cormorant Garamond', serif; font-size: 24px; line-height: 1.3; font-style: italic;">«Пустыня не забирает. Она просто держит дольше тебя.»</div>
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #7a6a55; margin-top: auto;">МАСТЕР · С11 · ♦ 9</div>
+          </div>
+          <div style="border: 1px dashed #b8a179; padding: 18px 20px; display: flex; align-items: center; justify-content: center; text-align: center; font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: #8a7358; line-height: 1.5;">ВСТАВИТЬ ЦИТАТУ<br>ИЗ ЧАТА ИЛИ ГОЛОСА</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div data-screen-label="Галерея" style="padding: 0 32px 64px; background: #ddd0b2; font-family: Spectral, serif; color: #2b2118;">
+  <div style="max-width: 1180px; margin: 0 auto; display: flex; flex-direction: column; gap: 10px;">
+    <div style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #6f6152;">Экран 03 · Галерея</div>
+    <div style="background: radial-gradient(85% 60% at 12% 8%, rgba(255,251,238,0.9), rgba(255,251,238,0) 55%), repeating-linear-gradient(92deg, rgba(140,116,74,0.045) 0 2px, rgba(0,0,0,0) 2px 5px), #f0e6cd; border: 1px solid #c3ab7f; box-shadow: 0 26px 50px -34px rgba(58,42,24,0.65); padding: 28px 32px 34px; display: flex; flex-direction: column; gap: 20px;">
+      <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; flex-wrap: wrap;">
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <div style="font-family: 'Cormorant Garamond', serif; font-size: 42px; line-height: 1;">Галерея</div>
+          <div style="font-size: 14px; color: #6b5c48;">38 изображений. Перетащите файлы прямо на страницу — они попадут в текущую сессию.</div>
+        </div>
+        <div style="display: flex; gap: 7px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.08em;">
+          <span style="border: 1px solid #9a5a2e; color: #9a5a2e; padding: 5px 9px;">ВСЁ</span>
+          <span style="border: 1px solid #c9b489; color: #6b5c48; padding: 5px 9px;">АРТЫ</span>
+          <span style="border: 1px solid #c9b489; color: #6b5c48; padding: 5px 9px;">КАРТЫ</span>
+          <span style="border: 1px solid #c9b489; color: #6b5c48; padding: 5px 9px;">СКРИНЫ</span>
+          <span style="display: flex; align-items: center; gap: 6px; background: #9a5a2e; color: #fbf2e2; padding: 5px 9px;"><span style="width: 7px; height: 7px; background: #fbf2e2;"></span>ГРУППИРОВАТЬ ПО СЕССИЯМ</span>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 12px; padding-bottom: 2px;">
+        <div style="font-family: 'Cormorant Garamond', serif; font-size: 24px;">Сессия 14 — Базар Халь-Раши</div>
+        <div style="flex: 1; height: 1px; background: #c9b489;"></div>
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.1em; color: #8a7358;">4 ИЗОБРАЖЕНИЯ · 06.09</div>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px;">
+        <div style="grid-column: span 2; grid-row: span 2; border: 1px solid #c9b489; background: repeating-linear-gradient(135deg, #e2d4b0 0 8px, #ede0c0 8px 16px); min-height: 320px; display: flex; flex-direction: column; justify-content: flex-end; padding: 14px;">
+          <div style="background: rgba(43,33,24,0.78); color: #f3e9d4; padding: 9px 12px; display: flex; flex-direction: column; gap: 3px;">
+            <span style="font-size: 14px;">Базар Халь-Раши, вечер перед кражей</span>
+            <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #cbbb9c;">АРТ · С14 · ЗАГРУЗИЛА МЕТЕЛЬ</span>
+          </div>
+        </div>
+        <div style="border: 1px solid #c9b489; background: repeating-linear-gradient(135deg, #e2d4b0 0 8px, #ede0c0 8px 16px); min-height: 152px; display: flex; align-items: flex-end; padding: 10px;"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #7a6a55;">КАРТА КОЛОДЦА · С14</span></div>
+        <div style="border: 1px solid #c9b489; background: repeating-linear-gradient(135deg, #e2d4b0 0 8px, #ede0c0 8px 16px); min-height: 152px; display: flex; align-items: flex-end; padding: 10px;"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #7a6a55;">ПЕЧАТЬ ИРСАФА</span></div>
+        <div style="border: 1px solid #c9b489; background: repeating-linear-gradient(135deg, #e2d4b0 0 8px, #ede0c0 8px 16px); min-height: 152px; display: flex; align-items: flex-end; padding: 10px;"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #7a6a55;">ПОРТРЕТ ВИЗИРЯ</span></div>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 12px; padding-top: 6px;">
+        <div style="font-family: 'Cormorant Garamond', serif; font-size: 24px;">Сессия 13 — Гробница у сухого русла</div>
+        <div style="flex: 1; height: 1px; background: #c9b489;"></div>
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.1em; color: #8a7358;">3 ИЗОБРАЖЕНИЯ · 23.08</div>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px;">
+        <div style="border: 1px solid #c9b489; background: repeating-linear-gradient(135deg, #e2d4b0 0 8px, #ede0c0 8px 16px); min-height: 152px; display: flex; align-items: flex-end; padding: 10px;"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #7a6a55;">ПОРТРЕТ ОГЕНА</span></div>
+        <div style="grid-column: span 2; border: 1px solid #c9b489; background: repeating-linear-gradient(135deg, #e2d4b0 0 8px, #ede0c0 8px 16px); min-height: 152px; display: flex; align-items: flex-end; padding: 10px;"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #7a6a55;">СОЛЯНЫЕ ПУТИ · ПАНОРАМА</span></div>
+        <div style="border: 1px solid #c9b489; background: repeating-linear-gradient(135deg, #e2d4b0 0 8px, #ede0c0 8px 16px); min-height: 152px; display: flex; align-items: flex-end; padding: 10px;"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #7a6a55;">ГРОБНИЦА · С13</span></div>
+      </div>
+
+      <div style="border: 2px dashed #b8a179; min-height: 96px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; text-align: center; font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.08em; color: #8a7358; margin-top: 6px;">
+        <div style="width: 26px; height: 26px; border: 1px solid #9a5a2e; color: #9a5a2e; display: flex; align-items: center; justify-content: center; font-size: 15px;">+</div>
+        БРОСЬТЕ ФАЙЛЫ СЮДА · ГРУППА «СЕССИЯ 14»
+      </div>
+    </div>
+  </div>
+</div>
+
+<div data-screen-label="Доска связей" style="padding: 0 32px 64px; background: #ddd0b2; font-family: Spectral, serif; color: #2b2118;">
+  <div style="max-width: 1180px; margin: 0 auto; display: flex; flex-direction: column; gap: 10px;">
+    <div style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #6f6152;">Экран 04 · Доска связей</div>
+    <div style="background: #f0e6cd; border: 1px solid #c3ab7f; box-shadow: 0 26px 50px -34px rgba(58,42,24,0.65); display: grid; grid-template-columns: minmax(0, 1fr) 300px;">
+      <div style="display: flex; flex-direction: column;">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 24px; border-bottom: 1px solid #c9b489; background: linear-gradient(180deg, rgba(226,211,176,0.85), rgba(226,211,176,0.5));">
+          <div style="font-family: 'Cormorant Garamond', serif; font-size: 24px;">Доска связей</div>
+          <div style="display: flex; gap: 14px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.08em; color: #6b5c48;">
+            <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 9px; height: 9px; background: #9a5a2e;"></span>ОТКРЫТА</span>
+            <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 9px; height: 9px; background: #7d6a3f;"></span>РАСКРЫТА</span>
+            <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 9px; height: 9px; background: #b0a289;"></span>ТУПИК</span>
+            <span style="border: 1px solid #c9b489; padding: 4px 8px;">+ УЗЕЛ</span>
+          </div>
+        </div>
+        <div style="overflow-x: auto; overflow-y: hidden;">
+        <div style="position: relative; height: 560px; min-width: 900px; overflow: hidden; background: radial-gradient(60% 60% at 25% 20%, rgba(255,250,236,0.75), rgba(255,250,236,0) 60%), repeating-linear-gradient(92deg, rgba(140,116,74,0.05) 0 2px, rgba(0,0,0,0) 2px 5px), #e7d9b8;">
+          {{ bigBoardLines }}
+          <div style="position: absolute; left: 3%; top: 8%; width: 150px; background: #9a5a2e; color: #fbf1de; padding: 10px 12px; box-shadow: 3px 4px 0 rgba(120,96,58,0.35);">Вторая слеза<div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #e8bda6;">АРТЕФАКТ · ЦЕЛЬ</div></div>
+          <div style="position: absolute; left: 30%; top: 4%; width: 140px; background: #fbf3df; border: 1px solid #9a5a2e; padding: 10px 12px; box-shadow: 3px 4px 0 rgba(178,152,105,0.4);">Аукцион в Ксаире<div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #9a5a2e;">СОБЫТИЕ · ОТКРЫТА</div></div>
+          <div style="position: absolute; left: 58%; top: 10%; width: 140px; background: #fbf3df; border: 1px solid #c9b489; padding: 10px 12px; box-shadow: 3px 4px 0 rgba(178,152,105,0.4);">Визирь Ирсаф<div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #7a6a55;">NPC · СОЮЗНИК?</div></div>
+          <div style="position: absolute; right: 3%; top: 34%; width: 130px; background: #fbf3df; border: 1px solid #c9b489; padding: 10px 12px; box-shadow: 3px 4px 0 rgba(178,152,105,0.4);">Печать восьми лучей<div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #7a6a55;">ПРЕДМЕТ</div></div>
+          <div style="position: absolute; left: 46%; top: 38%; width: 150px; background: #7d6a3f; color: #f7edd7; padding: 10px 12px; box-shadow: 3px 4px 0 rgba(120,96,58,0.35);">Дом Сарраф<div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #ded0ab;">ФРАКЦИЯ · РАСКРЫТА</div></div>
+          <div style="position: absolute; left: 12%; top: 40%; width: 150px; background: #fbf3df; border: 1px solid #c9b489; padding: 10px 12px; box-shadow: 3px 4px 0 rgba(178,152,105,0.4);">Колодец Соляных путей<div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #7a6a55;">ЛОКАЦИЯ</div></div>
+          <div style="position: absolute; left: 6%; top: 74%; width: 140px; background: #f2e8d0; border: 1px dashed #b0a289; padding: 10px 12px; color: #8a7c68;"><span style="text-decoration: line-through;">Слепой картограф</span><div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.08em;">ТУПИК · С11</div></div>
+          <div style="position: absolute; left: 36%; top: 72%; width: 150px; background: #fbf3df; border: 1px solid #c9b489; padding: 10px 12px; box-shadow: 3px 4px 0 rgba(178,152,105,0.4);">Мать Мирабеллы<div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #7a6a55;">ЛЕГЕНДА · СЛУХ</div></div>
+          <div style="position: absolute; left: 68%; top: 68%; width: 150px; background: #fbf3df; border: 1px solid #9a5a2e; padding: 10px 12px; box-shadow: 3px 4px 0 rgba(178,152,105,0.4);">Караван на север<div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #9a5a2e;">СЛЕД · ОТКРЫТА</div></div>
+        </div>
+        </div>
+      </div>
+      <div style="border-left: 1px solid #c9b489; background: linear-gradient(180deg, rgba(226,211,176,0.7), rgba(214,196,158,0.55)); padding: 22px 20px; display: flex; flex-direction: column; gap: 20px;">
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.14em; color: #8a7358;">ВЫБРАННЫЙ УЗЕЛ</div>
+          <div style="font-family: 'Cormorant Garamond', serif; font-size: 26px; line-height: 1.1;">Вторая слеза</div>
+          <div style="font-size: 14px; line-height: 1.65; color: #40342a;">Продана на закрытом аукционе в Ксаире восемь лет назад. Покупатель в записях помечен только печатью с восемью лучами.</div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.14em; color: #8a7358;">СВЯЗИ · 4</div>
+          <div style="display: flex; flex-direction: column; gap: 6px; font-size: 13px;">
+            <div style="background: #fbf3df; border: 1px solid #c9b489; padding: 8px 10px;">→ Аукцион в Ксаире <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #7a6a55;">ПРОДАНА НА</span></div>
+            <div style="background: #fbf3df; border: 1px solid #c9b489; padding: 8px 10px;">→ Печать восьми лучей <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #7a6a55;">ПОКУПАТЕЛЬ</span></div>
+            <div style="background: #fbf3df; border: 1px solid #c9b489; padding: 8px 10px;">→ Дом Сарраф <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #7a6a55;">ПОДОЗРЕНИЕ</span></div>
+            <div style="background: #fbf3df; border: 1px solid #c9b489; padding: 8px 10px;">→ Караван на север <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #7a6a55;">СЛЕД С13</span></div>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.14em; color: #8a7358;">УПОМИНАНИЯ</div>
+          <div style="font-size: 13px; line-height: 1.6; color: #5c4c3a;">Моменты: С12 «Соляной караван», С14 «Перстень визиря». Заметки: 3. Изображения: 2.</div>
+        </div>
+        <span style="margin-top: auto; background: #9a5a2e; color: #fbf2e2; font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.06em; padding: 9px 12px; text-align: center;">СВЯЗАТЬ С УЗЛОМ…</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div data-screen-label="Персонаж" style="padding: 0 32px 64px; background: #ddd0b2; font-family: Spectral, serif; color: #2b2118;">
+  <div style="max-width: 1180px; margin: 0 auto; display: flex; flex-direction: column; gap: 10px;">
+    <div style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #6f6152;">Экран 05 · Страница персонажа</div>
+    <div style="background: radial-gradient(85% 60% at 12% 8%, rgba(255,251,238,0.9), rgba(255,251,238,0) 55%), repeating-linear-gradient(92deg, rgba(140,116,74,0.045) 0 2px, rgba(0,0,0,0) 2px 5px), #f0e6cd; border: 1px solid #c3ab7f; box-shadow: 0 26px 50px -34px rgba(58,42,24,0.65);">
+      <div style="display: flex; gap: 28px; padding: 30px 32px; border-bottom: 1px solid #c9b489;">
+        <div style="width: 190px; height: 240px; flex: none; border: 1px solid #c9b489; background: repeating-linear-gradient(135deg, #e2d4b0 0 8px, #ede0c0 8px 16px); display: flex; align-items: flex-end; justify-content: center; padding: 10px;"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #7a6a55;">ПОРТРЕТ 190×240</span></div>
+        <div style="display: flex; flex-direction: column; gap: 12px; flex: 1;">
+          <div style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.16em; color: #8a7358;">ТИФЛИНГ · ПЛУТ 6 · ИГРАЕТ С СЕССИИ 1</div>
+          <div style="font-family: 'Cormorant Garamond', serif; font-size: 52px; line-height: 0.95; font-weight: 600;">Метель</div>
+          <div style="font-size: 15px; line-height: 1.7; max-width: 620px; font-style: italic; color: #4a3c2c; text-wrap: pretty;">Выросла на складах Ксаира, считает торг разновидностью боя. Ищет вторую слезу, чтобы отменить сделку, которую заключила её сестра.</div>
+          <div style="display: flex; gap: 22px; margin-top: auto; padding-top: 12px; border-top: 1px solid #d8c9a9;">
+            <div><div style="font-family: 'Cormorant Garamond', serif; font-size: 30px;">27</div><div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #7a6a55;">МОМЕНТОВ</div></div>
+            <div><div style="font-family: 'Cormorant Garamond', serif; font-size: 30px;">31</div><div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #7a6a55;">ЦИТАТ</div></div>
+            <div><div style="font-family: 'Cormorant Garamond', serif; font-size: 30px;">6</div><div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #7a6a55;">СВЯЗЕЙ</div></div>
+            <div><div style="font-family: 'Cormorant Garamond', serif; font-size: 30px; color: #9a5a2e;">4</div><div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #7a6a55;">КРИТА</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: minmax(0, 1fr) 320px;">
+        <div style="padding: 26px 32px; display: flex; flex-direction: column; gap: 20px; border-right: 1px solid #c9b489;">
+          <div style="font-family: 'Cormorant Garamond', serif; font-size: 26px;">Её моменты</div>
+          <div style="background: linear-gradient(160deg, #fbf3df, #f2e7ce); border: 1px solid #c9b489; padding: 18px 20px; display: flex; flex-direction: column; gap: 8px; box-shadow: 2px 3px 0 rgba(178,152,105,0.35);">
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.1em; color: #8a7358;">СЕССИЯ 14 · КРИТ 20</div>
+            <div style="font-family: 'Cormorant Garamond', serif; font-size: 24px; line-height: 1.15;">Продала визирю его собственный перстень</div>
+            <div style="font-size: 14px; line-height: 1.6; color: #40342a;">Третья перепродажа печати за вечер — и первая, за которую заплатил сам владелец.</div>
+          </div>
+          <div style="background: linear-gradient(160deg, #fbf3df, #f2e7ce); border: 1px solid #c9b489; padding: 18px 20px; display: flex; flex-direction: column; gap: 8px; box-shadow: 2px 3px 0 rgba(178,152,105,0.35);">
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.1em; color: #8a7358;">СЕССИЯ 12 · ПРОВАЛ 1</div>
+            <div style="font-family: 'Cormorant Garamond', serif; font-size: 24px; line-height: 1.15;">Спрятала контрабанду в собственный капюшон</div>
+            <div style="font-size: 14px; line-height: 1.6; color: #40342a;">Соль текла всю дорогу до ворот. Стража решила, что она плачет.</div>
+          </div>
+          <div style="background: #9a5a2e; color: #fbf1de; padding: 20px 22px; display: flex; flex-direction: column; gap: 10px;">
+            <div style="font-family: 'Cormorant Garamond', serif; font-size: 26px; line-height: 1.25; font-style: italic;">«Три золотых — и я забуду твоё лицо. Пять — и своё.»</div>
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.1em; color: #e8bda6;">СЕССИЯ 14 · ♦ 6 ГОЛОСОВ</div>
+          </div>
+        </div>
+        <div style="padding: 26px 22px; display: flex; flex-direction: column; gap: 22px; background: linear-gradient(180deg, rgba(226,211,176,0.7), rgba(214,196,158,0.55));">
+          <div style="display: flex; flex-direction: column; gap: 9px;">
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.14em; color: #8a7358;">СВЯЗИ</div>
+            <div style="display: flex; flex-direction: column; gap: 6px; font-size: 13px;">
+              <div style="background: #fbf3df; border: 1px solid #c9b489; padding: 8px 10px;">Визирь Ирсаф <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #7a6a55;">ДОЛГ</span></div>
+              <div style="background: #fbf3df; border: 1px solid #c9b489; padding: 8px 10px;">Дом Сарраф <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #7a6a55;">ВРАЖДА</span></div>
+              <div style="background: #fbf3df; border: 1px solid #c9b489; padding: 8px 10px;">Сестра (имя неизв.) <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #9a5a2e;">ТАЙНА</span></div>
+              <div style="background: #fbf3df; border: 1px solid #c9b489; padding: 8px 10px;">Оген <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #7a6a55;">НАПАРНИК</span></div>
+            </div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 9px;">
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.14em; color: #8a7358;">ЛИЧНАЯ ЗАМЕТКА</div>
+            <div style="background: #fbf3df; border: 1px solid #c9b489; padding: 12px; font-size: 13px; line-height: 1.65; color: #45413c;">Не отдавать слезу Ирсафу, даже если он предложит выкупить долг. Проверить, что на печати восемь лучей, а не семь.<div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #8a7358; margin-top: 8px;">ВИДНО ТОЛЬКО ИГРОКУ</div></div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 9px;">
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.14em; color: #8a7358;">ГАЛЕРЕЯ · 9</div>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;">
+              <div style="aspect-ratio: 1; background: repeating-linear-gradient(135deg, #e2d4b0 0 6px, #ede0c0 6px 12px); border: 1px solid #c9b489;"></div>
+              <div style="aspect-ratio: 1; background: repeating-linear-gradient(135deg, #e2d4b0 0 6px, #ede0c0 6px 12px); border: 1px solid #c9b489;"></div>
+              <div style="aspect-ratio: 1; background: repeating-linear-gradient(135deg, #e2d4b0 0 6px, #ede0c0 6px 12px); border: 1px solid #c9b489;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div data-screen-label="Мобильная версия" style="padding: 0 32px 72px; background: #ddd0b2; font-family: Spectral, serif; color: #2b2118;">
+  <div style="max-width: 1180px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px;">
+    <div style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #6f6152;">Экран 06 · Мобильная версия · 390 px</div>
+    <div style="display: flex; flex-wrap: wrap; gap: 24px;">
+
+      <div style="width: 390px; border: 1px solid #c3ab7f; background: #f0e6cd; box-shadow: 0 20px 40px -30px rgba(58,42,24,0.6); display: flex; flex-direction: column;">
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid #c9b489; background: rgba(226,211,176,0.7);">
+          <div style="display: flex; align-items: center; gap: 8px;"><div style="width: 22px; height: 22px; border-radius: 50%; background: #9a5a2e; color: #f7ecd9; display: flex; align-items: center; justify-content: center; font-family: 'Cormorant Garamond', serif; font-size: 12px;">М</div><span style="font-family: 'Cormorant Garamond', serif; font-size: 16px;">Слёзы Мирабеллы</span></div>
+          <div style="display: flex; align-items: center; gap: 9px; flex: none;">
+            <span style="display: flex; align-items: center; gap: 6px; border: 1px solid #c9b489; background: #fbf3df; font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.06em; color: #5c4c3a; padding: 4px 8px 4px 4px; white-space: nowrap; flex: none;"><span style="width: 18px; height: 18px; border-radius: 50%; background: #9a5a2e; color: #fbf2e2; font-family: 'Cormorant Garamond', serif; font-size: 11px; display: flex; align-items: center; justify-content: center; flex: none;">М</span>МЕТЕЛЬ</span>
+            <span style="font-family: 'IBM Plex Mono', monospace; font-size: 15px; color: #6b5c48;">≡</span>
+          </div>
+        </div>
+        <div style="padding: 16px; display: flex; flex-direction: column; gap: 14px;">
+          <div style="display: flex; gap: 6px; overflow: hidden; font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.06em;">
+            <span style="background: #9a5a2e; color: #fbf2e2; padding: 6px 10px;">ХРОНИКА</span>
+            <span style="border: 1px solid #c9b489; color: #6b5c48; padding: 6px 10px;">ЦИТАТЫ</span>
+            <span style="border: 1px solid #c9b489; color: #6b5c48; padding: 6px 10px;">БАЗА ЗНАНИЙ</span>
+            <span style="border: 1px solid #c9b489; color: #6b5c48; padding: 6px 10px;">ФОТО</span>
+          </div>
+          <div style="background: linear-gradient(160deg, #fbf3df, #f2e7ce); border: 1px solid #c9b489; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px;">
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #8a7358;">СЕССИЯ 14 · КРИТ 20</div>
+            <div style="font-family: 'Cormorant Garamond', serif; font-size: 24px; line-height: 1.1;">Метель продала визирю его перстень</div>
+            <div style="height: 120px; background: repeating-linear-gradient(135deg, #e2d4b0 0 7px, #ede0c0 7px 14px); border: 1px solid #c9b489;"></div>
+            <div style="font-size: 14px; line-height: 1.6; color: #40342a;">Так мы узнали, что печать открывает <span style="color: #9a5a2e; border-bottom: 1px dotted #9a5a2e;">колодец Соляных путей</span>.</div>
+          </div>
+          <div style="background: #9a5a2e; color: #fbf1de; padding: 16px; display: flex; flex-direction: column; gap: 8px;">
+            <div style="font-family: 'Cormorant Garamond', serif; font-size: 22px; line-height: 1.25; font-style: italic;">«Я не крал. Я взял на хранение. У себя.»</div>
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #e8bda6;">ОГЕН · С13 · ♦ 7</div>
+          </div>
+          <div style="background: linear-gradient(160deg, #fbf3df, #f2e7ce); border: 1px solid #c9b489; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px;">
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #8a7358;">СЕССИЯ 13</div>
+            <div style="font-family: 'Cormorant Garamond', serif; font-size: 20px; line-height: 1.15;">Первая слеза досталась не нам</div>
+          </div>
+        </div>
+        <div style="margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 16px; border-top: 1px solid #c9b489; background: rgba(226,211,176,0.7);">
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #6b5c48;">Сессия 14 · 6 сент</span>
+          <span style="background: #9a5a2e; color: #fbf2e2; font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.06em; padding: 11px 16px;">+ БЫСТРАЯ ЗАПИСЬ</span>
+        </div>
+      </div>
+
+      <div style="width: 390px; border: 1px solid #c3ab7f; background: #f0e6cd; box-shadow: 0 20px 40px -30px rgba(58,42,24,0.6); display: flex; flex-direction: column;">
+        <div style="display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid #c9b489; background: rgba(226,211,176,0.7);">
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #6b5c48;">←</span>
+          <span style="font-family: 'Cormorant Garamond', serif; font-size: 17px;">База знаний</span>
+          <span style="margin-left: auto; font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #6b5c48;">16 ЗАМЕТОК</span>
+        </div>
+        <div style="padding: 16px; display: flex; flex-direction: column; gap: 10px;">
+          <div style="display: flex; gap: 6px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.06em;">
+            <span style="background: #9a5a2e; color: #fbf2e2; padding: 7px 11px;">ЗАМЕТКИ</span>
+            <span style="border: 1px solid #c9b489; color: #6b5c48; padding: 7px 11px;">NPC</span>
+            <span style="border: 1px solid #c9b489; color: #6b5c48; padding: 7px 11px;">ЛОКАЦИИ</span>
+          </div>
+          <div style="background: #fbf3df; border: 1px solid #c9b489; border-left: 3px solid #9a5a2e; padding: 13px 14px; display: flex; flex-direction: column; gap: 6px;">
+            <div style="font-size: 15px; line-height: 1.4;">Кто выкупил вторую слезу на аукционе?</div>
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #9a5a2e;">ОТКРЫТА · 3 СВЯЗИ</div>
+            <div style="display: flex; flex-wrap: wrap; gap: 5px; font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #5c4c3a;">
+              <span style="background: #e6d7b4; padding: 4px 7px;">Аукцион в Ксаире</span>
+              <span style="background: #e6d7b4; padding: 4px 7px;">Печать</span>
+              <span style="background: #e6d7b4; padding: 4px 7px;">Дом Сарраф</span>
+            </div>
+          </div>
+          <div style="background: #fbf3df; border: 1px solid #c9b489; border-left: 3px solid #9a5a2e; padding: 13px 14px; display: flex; flex-direction: column; gap: 6px;">
+            <div style="font-size: 15px; line-height: 1.4;">Печать Ирсафа и колодец — один механизм?</div>
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #9a5a2e;">ОТКРЫТА · 2 СВЯЗИ</div>
+          </div>
+          <div style="background: #f2e8d0; border: 1px solid #d8c9a9; border-left: 3px solid #7d6a3f; padding: 13px 14px; display: flex; flex-direction: column; gap: 6px;">
+            <div style="font-size: 15px; line-height: 1.4; color: #6b5c48;">Где ночует Дом Сарраф</div>
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #7d6a3f;">РАСКРЫТА · С13</div>
+          </div>
+          <div style="background: #f2e8d0; border: 1px dashed #b0a289; padding: 13px 14px; display: flex; flex-direction: column; gap: 6px;">
+            <div style="font-size: 15px; line-height: 1.4; color: #8a7c68; text-decoration: line-through;">Слепой картограф из Ксаира</div>
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #8a7c68;">ТУПИК</div>
+          </div>
+          <div style="background: #fbf3df; border: 1px solid #c9b489; padding: 13px 14px; display: flex; flex-direction: column; gap: 6px;">
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: #8a7358;">ЗАМЕТКА · ДЖАДУ · С14</div>
+            <div style="font-size: 14px; line-height: 1.6; color: #45413c;">На печати восемь лучей, а слёз семь. Спросить <span style="color: #9a5a2e; border-bottom: 1px dotted #9a5a2e;">[[Ирсафа]]</span> про мать Мирабеллы.</div>
+          </div>
+          <div style="border: 1px dashed #b8a179; padding: 13px 14px; text-align: center; font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.08em; color: #8a7358;">+ ЗАМЕТКА</div>
+        </div>
+      </div>
+
+      <div style="width: 390px; border: 1px solid #c3ab7f; background: #f0e6cd; box-shadow: 0 20px 40px -30px rgba(58,42,24,0.6); display: flex; flex-direction: column;">
+        <div style="display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid #c9b489; background: rgba(226,211,176,0.7);">
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #6b5c48;">×</span>
+          <span style="font-family: 'Cormorant Garamond', serif; font-size: 17px;">Быстрая запись</span>
+          <span style="margin-left: auto; font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #6b5c48;">С14 · 21:40</span>
+        </div>
+        <div style="padding: 16px; display: flex; flex-direction: column; gap: 14px;">
+          <div style="display: flex; gap: 6px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.06em;">
+            <span style="background: #9a5a2e; color: #fbf2e2; padding: 8px 11px;">МОМЕНТ</span>
+            <span style="border: 1px solid #c9b489; color: #6b5c48; padding: 8px 11px;">ЦИТАТА</span>
+            <span style="border: 1px solid #c9b489; color: #6b5c48; padding: 8px 11px;">ФОТО</span>
+            <span style="border: 1px solid #c9b489; color: #6b5c48; padding: 8px 11px;">ЗАМЕТКА</span>
+          </div>
+          <div style="background: #fbf3df; border: 1px solid #c9b489; padding: 12px 14px; font-family: 'Cormorant Garamond', serif; font-size: 22px; color: #9c8a6e;">Заголовок момента…</div>
+          <div style="background: #fbf3df; border: 1px solid #c9b489; padding: 12px 14px; min-height: 110px; font-size: 14px; line-height: 1.6; color: #45413c;">Печать открывает не дверь, а <span style="color: #9a5a2e; border-bottom: 1px dotted #9a5a2e;">[[колодец</span><span style="background: #e6d7b4; color: #2b2118;">|</span></div>
+          <div style="border: 1px solid #c9b489; background: #f6eeda; display: flex; flex-direction: column;">
+            <div style="padding: 9px 12px; font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: #8a7358; border-bottom: 1px solid #e0d0aa;">ПОДСТАВИТЬ СУЩНОСТЬ</div>
+            <div style="padding: 10px 12px; font-size: 14px; border-bottom: 1px solid #e8dcbd; background: #fbf3df;">Колодец Соляных путей <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #7a6a55;">ЛОКАЦИЯ</span></div>
+            <div style="padding: 10px 12px; font-size: 14px; color: #5c4c3a;">Колодец у гробницы <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #7a6a55;">ЛОКАЦИЯ</span></div>
+            <div style="padding: 10px 12px; font-size: 14px; color: #9a5a2e;">+ создать «колодец»</div>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <span style="flex: 1; text-align: center; border: 1px solid #c9b489; color: #5c4c3a; font-family: 'IBM Plex Mono', monospace; font-size: 11px; padding: 13px;">ЧЕРНОВИК</span>
+            <span style="flex: 1; text-align: center; background: #9a5a2e; color: #fbf2e2; font-family: 'IBM Plex Mono', monospace; font-size: 11px; padding: 13px;">В ХРОНИКУ</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;campaignTitle&quot;: {&quot;editor&quot;: &quot;text&quot;, &quot;default&quot;: &quot;Слёзы Мирабеллы&quot;, &quot;tsType&quot;: &quot;string&quot;}}">
+class Component extends DCLogic {
+  svgLines(segs) {
+    return React.createElement('svg', {
+      viewBox: '0 0 100 100', preserveAspectRatio: 'none',
+      style: { position: 'absolute', inset: 0, width: '100%', height: '100%' }
+    }, segs.map((s, i) => React.createElement('line', {
+      key: i, x1: s[0], y1: s[1], x2: s[2], y2: s[3],
+      stroke: '#a6825a', strokeWidth: 0.3, strokeDasharray: '3 2', vectorEffect: 'non-scaling-stroke'
+    })));
+  }
+  renderVals() {
+    const segs = [[9,26,40,14],[40,14,36,70],[36,70,68,40],[40,14,68,40],[68,40,84,76],[36,70,84,76]];
+    return {
+      campaignTitle: this.props.campaignTitle ?? 'Слёзы Мирабеллы',
+      boardLines: React.createElement('svg', {
+        viewBox: '0 0 100 100', preserveAspectRatio: 'none',
+        style: { position: 'absolute', inset: 0, width: '100%', height: '100%' }
+      }, segs.map((s, i) => React.createElement('line', {
+        key: i, x1: s[0], y1: s[1], x2: s[2], y2: s[3],
+        stroke: '#9a5a2e', strokeWidth: 0.35, strokeDasharray: '3 2', vectorEffect: 'non-scaling-stroke'
+      }))),
+      bigBoardLines: this.svgLines([
+        [11,14,35,9],[35,9,63,15],[63,15,86,40],[86,40,52,44],[35,9,52,44],
+        [52,44,20,46],[20,46,11,80],[20,46,43,78],[52,44,75,74],[75,74,43,78],[11,14,20,46]
+      ])
+    };
+  }
+}
+</script>
+</body>
+</html>
