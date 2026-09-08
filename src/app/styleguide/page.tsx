@@ -225,9 +225,7 @@ export default function StyleguidePage() {
 
       <section className={styles.section}>
         <h2 className={styles.heading}>ImagePlaceholder и DropZone</h2>
-        <div className={styles.row}>
-          <ImagePlaceholder caption="Скриншот или арт сцены" height={150} className={styles.col} />
-        </div>
+        <ImagePlaceholder caption="Скриншот или арт сцены" height={150} />
         <div className={styles.grid3}>
           <ImagePlaceholder
             caption="Соляные пути · панорама"
