@@ -39,3 +39,6 @@ yarn-error.log*
 
 # zip-копия хендоффа — сама папка design_handoff_mirabella/ в репозитории есть
 *.zip
+
+# локальная база PGlite
+.pglite/

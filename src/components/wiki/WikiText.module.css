@@ -1,0 +1,18 @@
+/* Рендер [[wiki-ссылки]] — README «Wiki-ссылки»: цвет акцента,
+ * точечное подчёркивание, ховер #7f4522. */
+
+.link {
+  color: var(--accent);
+  border-bottom: 1px dotted;
+  transition: color var(--hover-fast);
+}
+
+.link:hover {
+  color: var(--accent-hover);
+}
+
+/* Ссылка на ещё не заведённую сущность: текстом, без обещания перехода. */
+.unresolved {
+  color: inherit;
+  border-bottom: 1px dotted var(--rule);
+}

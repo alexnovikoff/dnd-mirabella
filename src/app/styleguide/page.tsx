@@ -230,28 +230,18 @@ export default function StyleguidePage() {
           <ImagePlaceholder
             caption="Соляные пути · панорама"
             align="bottom"
-            hatch="coarse"
+            hatchStep={8}
             minHeight={152}
           />
-          <ImagePlaceholder
-            caption="Гробница · С13"
-            align="bottom"
-            hatch="coarse"
-            minHeight={152}
-          />
-          <ImagePlaceholder
-            caption="Портрет визиря"
-            align="bottom"
-            hatch="coarse"
-            minHeight={152}
-          />
+          <ImagePlaceholder caption="Гробница · С13" align="bottom" hatchStep={8} minHeight={152} />
+          <ImagePlaceholder caption="Портрет визиря" align="bottom" hatchStep={8} minHeight={152} />
         </div>
         <div className={styles.grid6}>
-          <ImagePlaceholder hatch="coarse" />
-          <ImagePlaceholder hatch="coarse" />
-          <ImagePlaceholder hatch="coarse" />
-          <ImagePlaceholder hatch="coarse" />
-          <ImagePlaceholder hatch="coarse" />
+          <ImagePlaceholder hatchStep={6} />
+          <ImagePlaceholder hatchStep={6} />
+          <ImagePlaceholder hatchStep={6} />
+          <ImagePlaceholder hatchStep={6} />
+          <ImagePlaceholder hatchStep={6} />
           <DropZone variant="cell" label="Drop img" />
         </div>
         <DropZone label="Бросьте файлы сюда · группа «Сессия 14»" />

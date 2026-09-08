@@ -3,21 +3,29 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { AccountChip } from './AccountChip';
-import { ACTIVE_SESSION, CAMPAIGN, STUB_USER } from '@/lib/campaign';
+import { STUB_USER } from '@/lib/campaign';
 import { NAV, actionFor, isActive } from '@/lib/nav';
 import styles from './Header.module.css';
 
-export function Header() {
+export function Header({
+  campaignTitle,
+  seal,
+  sessionLabel,
+}: {
+  campaignTitle: string;
+  seal: string;
+  sessionLabel: string;
+}) {
   const pathname = usePathname();
 
   return (
     <header className={styles.header}>
       <div className={styles.brand}>
         <span className={styles.seal} aria-hidden="true">
-          {CAMPAIGN.seal}
+          {seal}
         </span>
         <Link href="/" className={styles.title}>
-          {CAMPAIGN.title}
+          {campaignTitle}
         </Link>
       </div>
 
@@ -38,7 +46,7 @@ export function Header() {
       </nav>
 
       <div className={styles.actions}>
-        <span className={styles.session}>{ACTIVE_SESSION.label}</span>
+        {sessionLabel ? <span className={styles.session}>{sessionLabel}</span> : null}
         {/* Модалка быстрой записи — этап 4. */}
         <button type="button" className={styles.action}>
           {actionFor(pathname)}

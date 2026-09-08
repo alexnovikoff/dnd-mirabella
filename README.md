@@ -1,0 +1,70 @@
+# Слёзы Мирабеллы
+
+Сайт кампании D&D: хроника ярких моментов, цитатник, галерея, база знаний и доска
+связей. Ключевая механика — `[[wiki-ссылки]]`: любая запись ссылается на любую
+сущность, и эти ссылки одновременно образуют граф.
+
+Спецификация и визуальный референс лежат в `design_handoff_mirabella/`,
+план работ — в [docs/plan.md](docs/plan.md).
+
+## Стек
+
+Next.js 15 (App Router) · TypeScript · CSS Modules · Drizzle · Postgres.
+
+Локально Postgres поднимается встроенным [PGlite](https://pglite.dev) — тот же
+диалект и те же миграции, что уйдут в Neon, но без установки сервера. Данные
+лежат в `.pglite/` (в `.gitignore`).
+
+## Запуск
+
+Нужен Node ≥ 20.9 и pnpm.
+
+```bash
+pnpm install
+pnpm db:setup   # миграции + сид кампании; обязательно до первого запуска
+pnpm dev        # http://localhost:3000
+```
+
+`pnpm db:setup` выполняется отдельным процессом намеренно: PGlite сбрасывает свою
+wasm-память на диск, и миграция, запущенная внутри рендера, роняет первый запрос.
+Приложение базу только открывает — так же, как будет подключаться к Neon.
+
+## Команды
+
+```bash
+pnpm dev          # дев-сервер
+pnpm build        # продакшен-сборка (нужна готовая .pglite)
+pnpm lint         # eslint
+pnpm typecheck    # tsc --noEmit
+pnpm format       # prettier --write
+pnpm db:generate  # сгенерировать миграцию по схеме
+pnpm db:setup     # применить миграции и засеять
+pnpm db:reset     # снести .pglite и засеять заново
+```
+
+## Где что лежит
+
+```
+src/
+  app/            маршруты: / /party /gallery /quotes /kb /board
+                  /characters/[slug] /entities/[slug], служебный /styleguide
+  components/
+    shell/        оболочка: лист, шапка, чип аккаунта, заголовок экрана
+    primitives/   ParchmentCard, AccentQuoteCard, MonoLabel, StatusPill,
+                  ImagePlaceholder, DropZone
+    chronicle/    экран «Хроника»
+    wiki/         рендер [[ссылок]]
+  lib/
+    db/           схема, сид, подготовка базы, подключение
+    queries/      выборки под экраны
+    wiki/         разбор [[ссылок]]
+  styles/         tokens.css (все значения дизайна), globals.css
+drizzle/          миграции
+```
+
+## Дизайн
+
+Все значения — в `src/styles/tokens.css`, перенесены из раздела Design Tokens
+хендоффа без изменений. Акцент строго `#9a5a2e`, углы прямые (`--radius: 0`).
+Служебный экран `/styleguide` показывает примитивы и токены рядом — по нему
+удобно сверяться с прототипом.

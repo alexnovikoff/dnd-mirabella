@@ -1,0 +1,97 @@
+/* Hero «Хроники». README: padding 30px 32px 22px, снизу граница,
+ * заголовок Cormorant 54px/0.98, справа четыре аватара по 84px. */
+
+.hero {
+  display: flex;
+  align-items: flex-end;
+  gap: 36px;
+  padding: 30px 32px 22px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 54px;
+  line-height: 0.98;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.tagline {
+  max-width: 480px;
+  font-size: 15px;
+  line-height: 1.65;
+  font-style: italic;
+  color: var(--ink-italic);
+}
+
+.party {
+  display: flex;
+  gap: 10px;
+}
+
+.member {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  width: 84px;
+  color: inherit;
+}
+
+.avatar {
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  border: 1px solid var(--dash);
+  background: var(--hatch-avatar);
+  transition: box-shadow var(--hover-slow);
+}
+
+.member:hover .avatar {
+  box-shadow: var(--node-shadow-sm);
+}
+
+.name {
+  font-family: var(--font-display);
+  font-size: 17px;
+  color: var(--ink);
+}
+
+.role {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  line-height: 1.3;
+  text-align: center;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+@media (max-width: 1023px) {
+  .hero {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 24px;
+  }
+
+  .party {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 767px) {
+  .hero {
+    padding: 22px 16px 18px;
+  }
+
+  .title {
+    font-size: 38px;
+  }
+}

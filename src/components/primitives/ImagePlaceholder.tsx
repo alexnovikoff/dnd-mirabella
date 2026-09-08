@@ -6,8 +6,8 @@ export type ImagePlaceholderProps = {
   caption?: string;
   /** 'center' — блок в карточке момента, 'bottom' — плитка галереи. */
   align?: 'center' | 'bottom';
-  /** 'coarse' — крупная штриховка плиток галереи (8/16). */
-  hatch?: 'fine' | 'coarse';
+  /** Шаг штриховки в px. README — 7; прототип использует 5, 6 и 8. */
+  hatchStep?: number;
   height?: number | string;
   minHeight?: number | string;
   bordered?: boolean;
@@ -17,7 +17,7 @@ export type ImagePlaceholderProps = {
 export function ImagePlaceholder({
   caption,
   align = 'center',
-  hatch = 'fine',
+  hatchStep,
   height,
   minHeight,
   bordered = true,
@@ -26,7 +26,6 @@ export function ImagePlaceholder({
   const classes = [
     styles.box,
     bordered ? styles.bordered : undefined,
-    hatch === 'coarse' ? styles.coarse : undefined,
     align === 'bottom' ? styles.bottom : styles.center,
     className,
   ]
@@ -34,7 +33,17 @@ export function ImagePlaceholder({
     .join(' ');
 
   return (
-    <div className={classes} style={{ height, minHeight }} role="presentation">
+    <div
+      className={classes}
+      style={
+        {
+          height,
+          minHeight,
+          ...(hatchStep ? { '--hatch-step': `${hatchStep}px` } : {}),
+        } as React.CSSProperties
+      }
+      role="presentation"
+    >
       {caption ? (
         align === 'bottom' ? (
           <MonoLabel size={9} tracking="0.06em" tone="faint">

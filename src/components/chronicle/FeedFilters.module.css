@@ -1,0 +1,35 @@
+/* Фильтры ленты. README: mono 10px, letter-spacing 0.08em, padding 4px 8px;
+ * активный — рамка и текст акцентом, остальные — рамка #c9b489. */
+
+.filters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.filter {
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: transparent;
+  padding: 4px 8px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--ink-faint);
+  transition:
+    color var(--hover-fast),
+    border-color var(--hover-fast);
+}
+
+.filter:hover {
+  color: var(--ink-muted);
+}
+
+.active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.active:hover {
+  color: var(--accent);
+}

@@ -2,7 +2,8 @@ import type { Metadata, Viewport } from 'next';
 import { Cormorant_Garamond, Spectral, IBM_Plex_Mono } from 'next/font/google';
 import { Sheet } from '@/components/shell/Sheet';
 import { Header } from '@/components/shell/Header';
-import { CAMPAIGN } from '@/lib/campaign';
+import { getActiveSession, getCampaign } from '@/lib/queries/chronicle';
+import { shortRuDate } from '@/lib/dates';
 import '@/styles/globals.css';
 
 /* Шрифты самохостятся Next'ом: внешнего запроса к fonts.googleapis.com нет,
@@ -31,21 +32,28 @@ const plexMono = IBM_Plex_Mono({
   display: 'swap',
 });
 
-export const metadata: Metadata = {
-  title: CAMPAIGN.title,
-  description: 'Хроника кампании: яркие моменты, цитаты, галерея, база знаний и доска связей.',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const campaign = await getCampaign();
+  return {
+    title: campaign?.title ?? 'Кампания',
+    description: 'Хроника кампании: яркие моменты, цитаты, галерея, база знаний и доска связей.',
+  };
+}
 
 export const viewport: Viewport = {
   themeColor: '#ddd0b2',
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const [campaign, session] = await Promise.all([getCampaign(), getActiveSession()]);
+  const title = campaign?.title ?? 'Кампания';
+  const sessionLabel = session ? `Сессия ${session.number} · ${shortRuDate(session.date)}` : '';
+
   return (
     <html lang="ru" className={`${cormorant.variable} ${spectral.variable} ${plexMono.variable}`}>
       <body>
         <Sheet>
-          <Header />
+          <Header campaignTitle={title} seal={campaign?.seal ?? '?'} sessionLabel={sessionLabel} />
           {children}
         </Sheet>
       </body>

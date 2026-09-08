@@ -12,11 +12,6 @@
   border: 1px solid var(--rule);
 }
 
-/* Плитки галереи в прототипе штрихуются крупнее — 8/16 вместо 7/14. */
-.coarse {
-  background: var(--hatch-lg);
-}
-
 /* Блок в карточке момента: подпись по центру, mono 11px. */
 .center {
   align-items: center;
