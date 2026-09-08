@@ -26,7 +26,9 @@ import {
 
 export const roleEnum = pgEnum('role', ['player', 'dm']);
 
-/** Типы узлов графа. 'character' — игровой персонаж, остальные из README. */
+/** Типы узлов графа. 'character' — игровой персонаж, остальные из README.
+ *  'unknown' — черновая сущность, созданная прямо из редактора опцией
+ *  «+ создать»: тип проставят позже. */
 export const nodeKindEnum = pgEnum('node_kind', [
   'character',
   'npc',
@@ -35,6 +37,7 @@ export const nodeKindEnum = pgEnum('node_kind', [
   'artifact',
   'event',
   'rumor',
+  'unknown',
 ]);
 
 export const nodeStatusEnum = pgEnum('node_status', ['open', 'resolved', 'dead_end']);

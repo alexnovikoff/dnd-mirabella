@@ -16,8 +16,9 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "db:generate": "drizzle-kit generate",
-    "db:reset": "rm -rf .pglite && pnpm db:setup",
-    "db:setup": "tsx src/lib/db/setup.ts"
+    "db:reset": "rm -rf .pglite 2>/dev/null; rm -rf .pglite && pnpm db:setup",
+    "db:setup": "tsx src/lib/db/setup.ts",
+    "test": "vitest run"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.8",
@@ -36,6 +37,7 @@
     "eslint-config-next": "^15.5.0",
     "prettier": "^3.3.3",
     "tsx": "^4.23.13",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "vitest": "^5.0.0"
   }
 }

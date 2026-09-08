@@ -9,4 +9,5 @@ export const NODE_KIND_LABEL: Record<NodeKind, string> = {
   artifact: 'АРТЕФАКТ',
   event: 'СОБЫТИЕ',
   rumor: 'СЛУХ',
+  unknown: 'НЕИЗВЕСТНО',
 };

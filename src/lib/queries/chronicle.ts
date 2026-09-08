@@ -160,7 +160,11 @@ export async function getActiveSession() {
   return session ?? null;
 }
 
-/** Карточки «ЗАМЕТКИ»: узлы со статусом плюс счётчик входящих связей. */
+/** Карточки «ЗАМЕТКИ»: узлы со статусом плюс счётчик входящих связей.
+ *
+ * Считаем джойном, а не коррелированным подзапросом: в подзапросе Drizzle
+ * рендерит ссылку на внешнюю колонку неквалифицированно, и `nodes.id`
+ * резолвится в `links.id` — счётчик молча выходит нулевым. */
 export function getStatusNodes(limit = 4) {
   return runDb((db) =>
     db
@@ -170,10 +174,12 @@ export function getStatusNodes(limit = 4) {
         slug: t.nodes.slug,
         kind: t.nodes.kind,
         status: t.nodes.status,
-        links: sql<number>`(select count(*)::int from ${t.links} where ${t.links.toNodeId} = ${t.nodes.id})`,
+        links: sql<number>`count(${t.links.id})::int`,
       })
       .from(t.nodes)
+      .leftJoin(t.links, eq(t.links.toNodeId, t.nodes.id))
       .where(and(eq(t.nodes.campaignId, CAMPAIGN_ID), isNotNull(t.nodes.status)))
+      .groupBy(t.nodes.id)
       .orderBy(t.nodes.status, desc(t.nodes.name))
       .limit(limit),
   );

@@ -1,0 +1,182 @@
+/* Быстрая запись. Значения — мобильный экран «Быстрая запись» в прототипе:
+ * шит 390px, шапка 12px 16px, тело 16px с gap 14px. */
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 48px 16px;
+  overflow-y: auto;
+  background: var(--scrim);
+}
+
+.sheet {
+  width: 390px;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--sheet);
+  border: 1px solid var(--rule-sheet);
+  border-radius: var(--radius);
+  box-shadow: var(--modal-shadow);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--rule);
+  background: rgba(226, 211, 176, 0.7);
+}
+
+.close {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--ink-muted-2);
+  line-height: 1;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 17px;
+  color: var(--ink);
+}
+
+.session {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ink-muted-2);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+}
+
+.types {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.type {
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: transparent;
+  padding: 8px 11px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--ink-muted-2);
+  transition:
+    background var(--hover-fast),
+    color var(--hover-fast);
+}
+
+.typeActive {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-on-warm);
+}
+
+.titleField {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  font-family: var(--font-display);
+  font-size: 22px;
+  color: var(--ink);
+}
+
+.titleField::placeholder {
+  color: var(--placeholder);
+}
+
+.select {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--ink-body-2);
+}
+
+.caption {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--ink-body-2);
+}
+
+.caption::placeholder {
+  color: var(--placeholder);
+}
+
+.buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.button {
+  flex: 1;
+  text-align: center;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: transparent;
+  padding: 13px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--ink-muted);
+  transition:
+    background var(--hover-fast),
+    color var(--hover-fast);
+}
+
+.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-on-warm);
+}
+
+.primary:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.button:disabled {
+  opacity: 0.55;
+}
+
+.error {
+  color: var(--accent);
+}
+
+@media (max-width: 767px) {
+  .scrim {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .sheet {
+    width: 100%;
+    border-left: 0;
+    border-right: 0;
+    border-bottom: 0;
+  }
+}

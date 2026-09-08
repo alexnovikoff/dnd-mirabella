@@ -1,0 +1,1 @@
+ALTER TYPE "public"."node_kind" ADD VALUE 'unknown';

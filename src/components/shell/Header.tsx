@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { AccountChip } from './AccountChip';
+import { useQuickEntry } from '@/components/editor/QuickEntryProvider';
 import { STUB_USER } from '@/lib/campaign';
 import { NAV, actionFor, isActive } from '@/lib/nav';
 import styles from './Header.module.css';
@@ -17,6 +18,7 @@ export function Header({
   sessionLabel: string;
 }) {
   const pathname = usePathname();
+  const quickEntry = useQuickEntry();
 
   return (
     <header className={styles.header}>
@@ -47,8 +49,7 @@ export function Header({
 
       <div className={styles.actions}>
         {sessionLabel ? <span className={styles.session}>{sessionLabel}</span> : null}
-        {/* Модалка быстрой записи — этап 4. */}
-        <button type="button" className={styles.action}>
+        <button type="button" className={styles.action} onClick={quickEntry.open}>
           {actionFor(pathname)}
         </button>
         <AccountChip user={STUB_USER} />

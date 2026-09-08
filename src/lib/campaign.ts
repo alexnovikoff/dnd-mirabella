@@ -13,6 +13,10 @@ export type StubUser = {
   role: Role;
 };
 
+/** Кто числится автором новых записей до появления настоящего входа.
+ *  Соответствует пользователю из сида; заменит сессия Auth.js. */
+export const STUB_USER_ID = 'u-metel';
+
 /** null — разлогиненное состояние: в шапке кнопка «ВОЙТИ». */
 export const STUB_USER: StubUser | null = {
   name: 'Метель',

@@ -2,7 +2,9 @@ import type { Metadata, Viewport } from 'next';
 import { Cormorant_Garamond, Spectral, IBM_Plex_Mono } from 'next/font/google';
 import { Sheet } from '@/components/shell/Sheet';
 import { Header } from '@/components/shell/Header';
+import { QuickEntryProvider } from '@/components/editor/QuickEntryProvider';
 import { getActiveSession, getCampaign } from '@/lib/queries/chronicle';
+import { getPickerNodes } from '@/lib/queries/nodes';
 import { shortRuDate } from '@/lib/dates';
 import '@/styles/globals.css';
 
@@ -45,17 +47,29 @@ export const viewport: Viewport = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const [campaign, session] = await Promise.all([getCampaign(), getActiveSession()]);
+  const [campaign, session, nodes] = await Promise.all([
+    getCampaign(),
+    getActiveSession(),
+    getPickerNodes(),
+  ]);
   const title = campaign?.title ?? 'Кампания';
   const sessionLabel = session ? `Сессия ${session.number} · ${shortRuDate(session.date)}` : '';
+  const sessionShort = session ? `С${session.number}` : '';
+  const characters = nodes.filter((node) => node.kind === 'character');
 
   return (
     <html lang="ru" className={`${cormorant.variable} ${spectral.variable} ${plexMono.variable}`}>
       <body>
-        <Sheet>
-          <Header campaignTitle={title} seal={campaign?.seal ?? '?'} sessionLabel={sessionLabel} />
-          {children}
-        </Sheet>
+        <QuickEntryProvider nodes={nodes} characters={characters} sessionShort={sessionShort}>
+          <Sheet>
+            <Header
+              campaignTitle={title}
+              seal={campaign?.seal ?? '?'}
+              sessionLabel={sessionLabel}
+            />
+            {children}
+          </Sheet>
+        </QuickEntryProvider>
       </body>
     </html>
   );
