@@ -112,6 +112,7 @@ export default async function CharacterPage({ params }: { params: Promise<{ slug
                   title: moment.title,
                   body: moment.body,
                   subjectId: moment.subjectId,
+                  sessionId: moment.sessionId,
                   visibility: moment.visibility,
                 }}
               />
@@ -133,6 +134,7 @@ export default async function CharacterPage({ params }: { params: Promise<{ slug
                   title: quote.title,
                   body: quote.body,
                   subjectId: quote.subjectId,
+                  sessionId: quote.sessionId,
                   visibility: quote.visibility,
                 }}
               />

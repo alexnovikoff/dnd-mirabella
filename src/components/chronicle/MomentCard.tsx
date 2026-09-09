@@ -71,6 +71,7 @@ export function toEditable(entry: FeedEntry) {
     title: entry.title,
     body: entry.body,
     subjectId: entry.subjectId,
+    sessionId: entry.sessionId,
     visibility: entry.visibility,
   };
 }

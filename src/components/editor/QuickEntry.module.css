@@ -108,6 +108,14 @@
   color: var(--placeholder);
 }
 
+/* Поле с подписью — выбор сессии: без подписи выпадающий список путался бы
+ * с выбором автора цитаты, который стоит рядом. */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
 .select {
   background: var(--card);
   border: 1px solid var(--rule);

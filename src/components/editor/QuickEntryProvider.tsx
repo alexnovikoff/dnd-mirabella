@@ -5,6 +5,7 @@ import { QuickEntry, type EditableEntry } from './QuickEntry';
 import { QuickEntryBar } from './QuickEntryBar';
 import type { EntryKind } from '@/lib/db/schema';
 import type { PickerNode } from '@/lib/queries/nodes';
+import type { SessionOption } from '@/lib/queries/sessions';
 
 type QuickEntryContext = {
   /** Тип задаёт кнопка экрана: «Новая цитата» открывает шит сразу цитатой. */
@@ -27,6 +28,7 @@ export function useQuickEntry(): QuickEntryContext {
 export function QuickEntryProvider({
   nodes,
   characters,
+  sessions,
   sessionShort,
   canWrite,
   isDm,
@@ -34,6 +36,8 @@ export function QuickEntryProvider({
 }: {
   nodes: PickerNode[];
   characters: PickerNode[];
+  /** Сессии для выбора в шите, последняя сверху. */
+  sessions: SessionOption[];
   sessionShort: string;
   /** Разлогиненный посетитель читает, но не пишет. */
   canWrite: boolean;
@@ -101,6 +105,7 @@ export function QuickEntryProvider({
           defaultKind={kind}
           nodes={nodes}
           characters={characters}
+          sessions={sessions}
           isDm={isDm}
           onClose={close}
         />

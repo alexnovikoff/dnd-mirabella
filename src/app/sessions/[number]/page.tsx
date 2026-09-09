@@ -107,6 +107,7 @@ export default async function SessionPage({ params }: { params: Promise<{ number
               title: entry.title,
               body: entry.body,
               subjectId: entry.subjectId,
+              sessionId: entry.sessionId,
               visibility: entry.visibility,
             }}
           />
@@ -124,6 +125,7 @@ export default async function SessionPage({ params }: { params: Promise<{ number
               title: entry.title,
               body: entry.body,
               subjectId: entry.subjectId,
+              sessionId: entry.sessionId,
               visibility: entry.visibility,
             }}
           />
@@ -152,6 +154,7 @@ export default async function SessionPage({ params }: { params: Promise<{ number
               title: entry.title,
               body: entry.body,
               subjectId: entry.subjectId,
+              sessionId: entry.sessionId,
               visibility: entry.visibility,
             }}
           />

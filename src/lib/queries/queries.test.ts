@@ -10,6 +10,7 @@ import { getFeed, getRecentSessions, getStatusNodes } from './chronicle';
 import { getGallery } from './gallery';
 import { getFreeNotes, getRumors } from './kb';
 import { getQuotes, getRandomQuote } from './quotes';
+import { findSessionId, getSessionOptions, resolveSessionId } from './sessions';
 
 const player: Viewer = {
   id: FIXTURE.users.player,
@@ -279,5 +280,35 @@ describe('достижения персонажа', () => {
 describe('getRecentSessions', () => {
   it('последние сверху', async () => {
     expect((await getRecentSessions(5)).map((session) => session.number)).toEqual([2, 1]);
+  });
+});
+
+describe('getSessionOptions и resolveSessionId', () => {
+  it('выпадающий список идёт от последней сессии — она стоит по умолчанию', async () => {
+    expect((await getSessionOptions()).map((session) => session.number)).toEqual([2, 1]);
+  });
+
+  it('берёт сессию, выбранную в шите', async () => {
+    expect(await runDb((db) => resolveSessionId(db, 's-1'))).toBe('s-1');
+  });
+
+  it('без выбора и на неизвестный id ставит активную', async () => {
+    expect(await runDb((db) => resolveSessionId(db))).toBe('s-2');
+    expect(await runDb((db) => resolveSessionId(db, 'нет-такой'))).toBe('s-2');
+  });
+
+  it('сессию чужой кампании не берёт', async () => {
+    await runDb(async (db) => {
+      await db.insert(t.campaigns).values({ id: 'c-2', title: 'Чужая' });
+      await db.insert(t.sessions).values({ id: 's-чужая', campaignId: 'c-2', number: 9 });
+    });
+    expect(await runDb((db) => resolveSessionId(db, 's-чужая'))).toBe('s-2');
+    /* На правке пустой ответ означает «сессию не менять», поэтому важно,
+     * что чужой id даёт именно null, а не подстановку активной. */
+    expect(await runDb((db) => findSessionId(db, 's-чужая'))).toBeNull();
+  });
+
+  it('без выбора сессии правка её не меняет', async () => {
+    expect(await runDb((db) => findSessionId(db, null))).toBeNull();
   });
 });

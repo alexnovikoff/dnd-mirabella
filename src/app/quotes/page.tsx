@@ -59,6 +59,7 @@ export default async function QuotesPage({
                   title: null,
                   body: quote.body,
                   subjectId: quote.subjectId,
+                  sessionId: quote.sessionId,
                   visibility: quote.visibility,
                 }}
                 canEdit={canEdit(quote.authorId)}
