@@ -16,7 +16,15 @@ export type BoardNode = {
   y: number;
 };
 
-export type BoardEdge = { id: string; from: string; to: string; label: string | null };
+export type BoardEdge = {
+  id: string;
+  from: string;
+  to: string;
+  label: string | null;
+  /** 'manual' — связь поставлена руками; 'mention' — узлы названы в одной
+   *  записи, ребро выведено из текста и рисуется тоньше. */
+  kind: 'manual' | 'mention';
+};
 
 export function getBoard() {
   return runDb(async (db) => {
@@ -47,11 +55,57 @@ export function getBoard() {
       .from(t.links)
       .where(and(eq(t.links.campaignId, CAMPAIGN_ID), eq(t.links.kind, 'manual')));
 
-    const edges: BoardEdge[] = rows
+    const manual: BoardEdge[] = rows
       .filter((row) => row.from !== null && positioned.has(row.from) && positioned.has(row.to))
-      .map((row) => ({ id: row.id, from: row.from as string, to: row.to, label: row.label }));
+      .map((row) => ({
+        id: row.id,
+        from: row.from as string,
+        to: row.to,
+        label: row.label,
+        kind: 'manual' as const,
+      }));
 
-    return { nodes, edges };
+    /* Ребро-упоминание: два узла, названные в одной записи. README —
+     * «ссылки ставятся из текста и одновременно образуют граф»; без этого
+     * половина связей кампании на доску не попадала. */
+    const mentionRows = await db
+      .select({ entryId: t.links.fromEntryId, nodeId: t.links.toNodeId })
+      .from(t.links)
+      .where(and(eq(t.links.campaignId, CAMPAIGN_ID), eq(t.links.kind, 'mention')));
+
+    const byEntry = new Map<string, string[]>();
+    for (const row of mentionRows) {
+      if (!row.entryId || !positioned.has(row.nodeId)) continue;
+      const list = byEntry.get(row.entryId) ?? [];
+      list.push(row.nodeId);
+      byEntry.set(row.entryId, list);
+    }
+
+    /* Ключ пары не зависит от направления: ручная связь A→B гасит
+     * выведенную B→A, иначе линии лягут друг на друга. */
+    const pairKey = (a: string, b: string) => [a, b].sort().join('::');
+    const drawn = new Set(manual.map((edge) => pairKey(edge.from, edge.to)));
+
+    const mention: BoardEdge[] = [];
+    for (const nodeIds of byEntry.values()) {
+      const unique = [...new Set(nodeIds)];
+      for (let i = 0; i < unique.length; i += 1) {
+        for (let j = i + 1; j < unique.length; j += 1) {
+          const key = pairKey(unique[i], unique[j]);
+          if (drawn.has(key)) continue;
+          drawn.add(key);
+          mention.push({
+            id: `mention:${key}`,
+            from: unique[i],
+            to: unique[j],
+            label: null,
+            kind: 'mention',
+          });
+        }
+      }
+    }
+
+    return { nodes, edges: [...manual, ...mention] };
   });
 }
 

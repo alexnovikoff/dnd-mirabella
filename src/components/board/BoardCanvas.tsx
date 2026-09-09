@@ -65,6 +65,9 @@ export function BoardCanvas({
           if (!from || !to) return null;
           const a = positionOf(from);
           const b = positionOf(to);
+          /* Выведенное ребро тоньше и светлее ручного: оно не утверждение
+           * автора, а следствие того, что узлы названы в одной записи. */
+          const derived = edge.kind === 'mention';
           return (
             <line
               key={edge.id}
@@ -73,10 +76,13 @@ export function BoardCanvas({
               x2={b.x}
               y2={b.y}
               stroke="#a6825a"
-              strokeWidth={0.3}
-              strokeDasharray="3 2"
+              strokeOpacity={derived ? 0.45 : 1}
+              strokeWidth={derived ? 0.2 : 0.3}
+              strokeDasharray={derived ? '1.5 2.5' : '3 2'}
               vectorEffect="non-scaling-stroke"
-            />
+            >
+              <title>{derived ? 'Упомянуты в одной записи' : (edge.label ?? 'Связь')}</title>
+            </line>
           );
         })}
       </svg>

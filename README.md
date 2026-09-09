@@ -55,8 +55,9 @@ pnpm db:reset     # снести .pglite и засеять заново
 
 ```
 src/
-  app/            маршруты: / /party /gallery /quotes /kb /board
-                  /characters/[slug] /entities/[slug], служебный /styleguide
+  app/            маршруты: / /party /gallery /quotes /kb /board /login
+                  /characters/[slug] /entities/[slug] /sessions/[number],
+                  служебный /styleguide
   components/
     shell/        оболочка: лист, шапка, чип аккаунта, заголовок экрана
     primitives/   ParchmentCard, AccentQuoteCard, MonoLabel, StatusPill,

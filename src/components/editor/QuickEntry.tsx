@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { DropZone, MonoLabel } from '@/components/primitives';
+import { createPhotoEntry } from '@/lib/actions/images';
 import { WikiTextarea } from './WikiTextarea';
 import { ConfirmDialog } from './ConfirmDialog';
 import {
@@ -19,7 +20,7 @@ import styles from './QuickEntry.module.css';
 const TYPES: { id: EntryKind; label: string; lands: string }[] = [
   { id: 'moment', label: 'МОМЕНТ', lands: 'Попадёт в ленту «Хроники»' },
   { id: 'quote', label: 'ЦИТАТА', lands: 'Попадёт в ленту и в цитатник' },
-  { id: 'image', label: 'ФОТО', lands: 'Попадёт в галерею; файлы бросают на «Галерею»' },
+  { id: 'image', label: 'ФОТО', lands: 'Попадёт в галерею текущей сессии' },
   { id: 'note', label: 'ЗАМЕТКА', lands: 'Попадёт в базу знаний' },
 ];
 
@@ -63,6 +64,9 @@ export function QuickEntry({
   const [subjectId, setSubjectId] = useState(editing?.subjectId ?? characters[0]?.id ?? '');
   const [dmOnly, setDmOnly] = useState(editing?.visibility === 'dm_only');
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
+  const [dragging, setDragging] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
   const isDraft = editing?.visibility === 'draft';
   const [error, setError] = useState<string | null>(null);
   /* Имена из [[скобок]], которым не нашлось сущности. Пока они висят,
@@ -98,6 +102,23 @@ export function QuickEntry({
         publish,
         dmOnly,
       };
+
+      /* Фото приходит вместе с файлом, поэтому уходит формой, а не объектом. */
+      if (kind === 'image' && !editing) {
+        const form = new FormData();
+        form.append('caption', caption);
+        form.append('publish', publish ? '1' : '0');
+        if (file) form.append('file', file);
+
+        const photo = await createPhotoEntry(form);
+        if (!photo.ok) {
+          setError(photo.error);
+          return;
+        }
+        router.refresh();
+        onClose();
+        return;
+      }
 
       const result = editing
         ? await updateEntry(editing.id, payload)
@@ -228,6 +249,7 @@ export function QuickEntry({
                   onClick={() => {
                     setKind(option.id);
                     setError(null);
+                    setFile(null);
                   }}
                 >
                   {option.label}
@@ -265,8 +287,42 @@ export function QuickEntry({
 
             {kind === 'image' ? (
               <>
-                {/* Приём файлов появится на этапе 6 — пока подпись к будущему кадру. */}
-                <DropZone label="Загрузка файлов — этап 6" />
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="image/*"
+                  hidden
+                  onChange={(e) => setFile(e.currentTarget.files?.[0] ?? null)}
+                />
+                {/* Файл можно выбрать или бросить прямо сюда; без файла
+                    останется подпись к кадру, который принесут позже. */}
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => fileRef.current?.click()}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      fileRef.current?.click();
+                    }
+                  }}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setDragging(true);
+                  }}
+                  onDragLeave={() => setDragging(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setDragging(false);
+                    const dropped = e.dataTransfer.files?.[0];
+                    if (dropped) setFile(dropped);
+                  }}
+                >
+                  <DropZone
+                    active={dragging}
+                    label={file ? file.name : 'Выберите файл или бросьте его сюда'}
+                  />
+                </div>
                 <input
                   className={styles.caption}
                   value={caption}

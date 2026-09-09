@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { NewSessionButton } from '@/components/session/NewSessionButton';
 import {
   DropZone,
   ImagePlaceholder,
@@ -34,15 +35,19 @@ export function Sidebar({
   return (
     <aside className={styles.aside}>
       <section className={styles.block}>
-        <MonoLabel size={10} tracking="0.14em" block>
-          Сессии
-        </MonoLabel>
+        <div className={styles.blockHead}>
+          <MonoLabel size={10} tracking="0.14em" block>
+            Сессии
+          </MonoLabel>
+          <NewSessionButton />
+        </div>
         <div>
           {sessions.map((session) => {
             const past = session.number !== activeSessionNumber;
             return (
-              <div
+              <Link
                 key={session.id}
+                href={`/sessions/${session.number}`}
                 className={past ? `${styles.sessionRow} ${styles.sessionPast}` : styles.sessionRow}
               >
                 <span>
@@ -52,7 +57,7 @@ export function Sidebar({
                 <MonoLabel size={11} tracking="0.06em" tone="faint" uppercase={false}>
                   {numericDate(session.date)}
                 </MonoLabel>
-              </div>
+              </Link>
             );
           })}
         </div>

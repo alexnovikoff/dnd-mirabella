@@ -36,6 +36,10 @@ export function BoardToolbar() {
               {item.label}
             </span>
           ))}
+          <span className={styles.legendItem} title="Узлы названы в одной записи">
+            <span className={styles.derivedLine} />
+            ИЗ ТЕКСТА
+          </span>
           {canWrite ? (
             <button
               type="button"

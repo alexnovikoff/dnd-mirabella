@@ -61,4 +61,12 @@ export function runDb<T>(fn: (db: Db) => Promise<T>): Promise<T> {
   return result;
 }
 
+/** Подменить соединение на тестовое. Единственный шов, ради которого слой
+ *  запросов вообще можно проверить: сами запросы ходят через runDb и о базе
+ *  ничего не знают. В приложении не вызывается. */
+export function setDbForTesting(db: Db | null): void {
+  globalForDb.__mirabellaDb = db ? Promise.resolve(db) : undefined;
+  globalForDb.__mirabellaQueue = undefined;
+}
+
 export type { Db };
