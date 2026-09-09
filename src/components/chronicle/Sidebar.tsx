@@ -36,9 +36,12 @@ export function Sidebar({
     <aside className={styles.aside}>
       <section className={styles.block}>
         <div className={styles.blockHead}>
-          <MonoLabel size={10} tracking="0.14em" block>
-            Сессии
-          </MonoLabel>
+          {/* Заголовок ведёт на полный список: в сайдбаре помещаются пять. */}
+          <Link href="/sessions" className={styles.blockTitle}>
+            <MonoLabel size={10} tracking="0.14em" block>
+              Сессии
+            </MonoLabel>
+          </Link>
           <NewSessionButton />
         </div>
         <div>
@@ -50,7 +53,7 @@ export function Sidebar({
                 href={`/sessions/${session.number}`}
                 className={past ? `${styles.sessionRow} ${styles.sessionPast}` : styles.sessionRow}
               >
-                <span>
+                <span className={styles.sessionTitle}>
                   {session.number}
                   {session.title ? ` · ${session.title}` : ''}
                 </span>

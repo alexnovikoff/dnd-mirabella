@@ -15,6 +15,8 @@ import {
 } from '@/lib/actions/entries';
 import type { EntryKind, Visibility } from '@/lib/db/schema';
 import type { PickerNode } from '@/lib/queries/nodes';
+import type { SessionOption } from '@/lib/queries/sessions';
+import { shortRuDate } from '@/lib/dates';
 import styles from './QuickEntry.module.css';
 
 const TYPES: { id: EntryKind; label: string; lands: string }[] = [
@@ -24,6 +26,13 @@ const TYPES: { id: EntryKind; label: string; lands: string }[] = [
   { id: 'note', label: 'ЗАМЕТКА', lands: 'Попадёт в базу знаний' },
 ];
 
+/** «Сессия 26 · Ночь в порту · 6 сент» — строка выпадающего списка сессий. */
+function sessionLabel(session: SessionOption): string {
+  return [`Сессия ${session.number}`, session.title, shortRuDate(session.date)]
+    .filter(Boolean)
+    .join(' · ');
+}
+
 /** Запись, открытая на правку. Данные берём из карточки — лишний запрос
  *  ради полей, которые уже отрисованы, не нужен. */
 export type EditableEntry = {
@@ -32,6 +41,8 @@ export type EditableEntry = {
   title: string | null;
   body: string | null;
   subjectId: string | null;
+  /** Сессия записи: с ней открывается селект. null — запись вне сессий. */
+  sessionId: string | null;
   visibility: Visibility;
   caption?: string | null;
 };
@@ -39,6 +50,7 @@ export type EditableEntry = {
 export function QuickEntry({
   nodes,
   characters,
+  sessions,
   isDm,
   entry,
   defaultKind = 'moment',
@@ -46,6 +58,8 @@ export function QuickEntry({
 }: {
   nodes: PickerNode[];
   characters: PickerNode[];
+  /** Сессии для выбора, последняя сверху: она же стоит по умолчанию. */
+  sessions: SessionOption[];
   /** Мастеру доступна пометка «скрыть от игроков». */
   isDm: boolean;
   /** Задана — шит открыт на правку, а не на создание. */
@@ -62,6 +76,11 @@ export function QuickEntry({
   const [body, setBody] = useState(editing?.body ?? '');
   const [caption, setCaption] = useState(editing?.caption ?? '');
   const [subjectId, setSubjectId] = useState(editing?.subjectId ?? characters[0]?.id ?? '');
+  /* При правке — сессия самой записи; при создании список отсортирован
+   * по убыванию номера, поэтому первая в нём и есть активная. */
+  const [sessionId, setSessionId] = useState(
+    editing ? (editing.sessionId ?? '') : (sessions[0]?.id ?? ''),
+  );
   const [dmOnly, setDmOnly] = useState(editing?.visibility === 'dm_only');
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [file, setFile] = useState<File | null>(null);
@@ -99,6 +118,7 @@ export function QuickEntry({
         body,
         caption: kind === 'image' ? caption : undefined,
         subjectId: kind === 'quote' ? subjectId || undefined : undefined,
+        sessionId: sessionId || undefined,
         publish,
         dmOnly,
       };
@@ -108,6 +128,7 @@ export function QuickEntry({
         const form = new FormData();
         form.append('caption', caption);
         form.append('publish', publish ? '1' : '0');
+        form.append('sessionId', sessionId);
         if (file) form.append('file', file);
 
         const photo = await createPhotoEntry(form);
@@ -260,6 +281,34 @@ export function QuickEntry({
             <MonoLabel size={9} tracking="0.08em" tone="faint" block>
               {type.lands}
             </MonoLabel>
+
+            {/* Сессия записи. По умолчанию активная, но вечером после игры
+                запись нередко заводят задним числом — к прошлой; и уже
+                сохранённую запись из шита правки можно перенести в другую. */}
+            {sessions.length > 0 ? (
+              <div className={styles.field}>
+                <MonoLabel size={9} tracking="0.08em" tone="faint" block>
+                  Сессия
+                </MonoLabel>
+                <select
+                  className={styles.select}
+                  value={sessionId}
+                  onChange={(e) => setSessionId(e.currentTarget.value)}
+                  aria-label="Сессия записи"
+                >
+                  {/* Запись, у которой сессии нет вовсе, не должна получать
+                      её молча — оставляем это отдельным выбором. */}
+                  {editing && editing.sessionId === null ? (
+                    <option value="">Без сессии</option>
+                  ) : null}
+                  {sessions.map((session) => (
+                    <option key={session.id} value={session.id}>
+                      {sessionLabel(session)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : null}
 
             {kind === 'moment' ? (
               <input

@@ -2,7 +2,7 @@
 
 import { randomUUID } from 'node:crypto';
 import { revalidatePath } from 'next/cache';
-import { desc, eq } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { runDb } from '@/lib/db/client';
 import * as t from '@/lib/db/schema';
 import { CAMPAIGN_ID } from '@/lib/db/seed';
@@ -10,6 +10,7 @@ import { requireViewer } from './guard';
 import { slugify } from '@/lib/slug';
 import { syncEntryLinks } from '@/lib/wiki/sync-links';
 import type { PickerNode } from '@/lib/queries/nodes';
+import { findSessionId, resolveSessionId } from '@/lib/queries/sessions';
 
 export type NewEntry = {
   kind: t.EntryKind;
@@ -19,6 +20,8 @@ export type NewEntry = {
   subjectId?: string;
   /** Для фото — подпись к кадру. */
   caption?: string;
+  /** Сессия, выбранная в шите. Не задана — запись уйдёт в активную. */
+  sessionId?: string;
   /** false — черновик: виден только автору (README «Быстрая запись»). */
   publish: boolean;
   /** Мастер может скрыть запись от игроков (README «Роли»). */
@@ -40,20 +43,15 @@ export async function createEntry(input: NewEntry): Promise<CreateEntryResult> {
   }
 
   const result = await runDb(async (db) => {
-    /* Запись всегда привязывается к активной сессии — README «Быстрая запись». */
-    const [session] = await db
-      .select({ id: t.sessions.id })
-      .from(t.sessions)
-      .where(eq(t.sessions.campaignId, CAMPAIGN_ID))
-      .orderBy(desc(t.sessions.number))
-      .limit(1);
+    /* Запись цепляется к сессии, выбранной в шите; по умолчанию — активная. */
+    const sessionId = await resolveSessionId(db, input.sessionId);
 
     const entryId = randomUUID();
 
     await db.insert(t.entries).values({
       id: entryId,
       campaignId: CAMPAIGN_ID,
-      sessionId: session?.id ?? null,
+      sessionId,
       kind: input.kind,
       title,
       body: input.kind === 'image' ? null : body,
@@ -70,7 +68,7 @@ export async function createEntry(input: NewEntry): Promise<CreateEntryResult> {
       await db.insert(t.images).values({
         id: randomUUID(),
         campaignId: CAMPAIGN_ID,
-        sessionId: session?.id ?? null,
+        sessionId,
         entryId,
         url: null, // из шита приходит только подпись; файл грузят на «Галерее»
         caption: input.caption?.trim() ?? null,
@@ -128,6 +126,8 @@ export type EntryPatch = {
   body: string;
   caption?: string;
   subjectId?: string;
+  /** Сессия, выбранная в шите. Не задана — запись остаётся там, где была. */
+  sessionId?: string;
   publish: boolean;
   dmOnly?: boolean;
 };
@@ -170,12 +170,17 @@ export async function updateEntry(entryId: string, input: EntryPatch): Promise<C
   }
 
   const result = await runDb(async (db) => {
+    /* Сессию трогаем, только если её выбрали: пустое значение означает
+     * «оставить как было», а не «унести запись в активную». */
+    const sessionId = await findSessionId(db, input.sessionId ?? null);
+
     await db
       .update(t.entries)
       .set({
         title,
         body: entry.kind === 'image' ? null : body,
         subjectId: input.subjectId ?? null,
+        ...(sessionId ? { sessionId } : {}),
         /* Личная заметка остаётся личной: кнопка «сохранить» не должна
          * втихую опубликовать то, что человек писал для себя. */
         visibility:
@@ -196,6 +201,12 @@ export async function updateEntry(entryId: string, input: EntryPatch): Promise<C
         .where(eq(t.images.entryId, entryId));
     }
 
+    /* Кадры едут за записью: иначе фото осталось бы в галерее прошлой игры,
+     * а сама запись уехала бы в другую. */
+    if (sessionId) {
+      await db.update(t.images).set({ sessionId }).where(eq(t.images.entryId, entryId));
+    }
+
     /* Ради этого правка и нужна: рёбра приводятся в соответствие новому
      * тексту, и ссылка, убранная из записи, уносит за собой ребро графа. */
     const sync = await syncEntryLinks(
@@ -211,6 +222,8 @@ export async function updateEntry(entryId: string, input: EntryPatch): Promise<C
   revalidatePath('/board');
   revalidatePath('/kb');
   revalidatePath('/quotes');
+  revalidatePath('/sessions');
+  revalidatePath('/gallery');
   return { ok: true, entryId, unresolved: result };
 }
 

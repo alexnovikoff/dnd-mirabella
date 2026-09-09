@@ -3,8 +3,9 @@ import { Cormorant_Garamond, Spectral, IBM_Plex_Mono } from 'next/font/google';
 import { Sheet } from '@/components/shell/Sheet';
 import { Header } from '@/components/shell/Header';
 import { QuickEntryProvider } from '@/components/editor/QuickEntryProvider';
-import { getActiveSession, getCampaign } from '@/lib/queries/chronicle';
+import { getCampaign } from '@/lib/queries/chronicle';
 import { getPickerNodes } from '@/lib/queries/nodes';
+import { getSessionOptions } from '@/lib/queries/sessions';
 import { getViewer } from '@/lib/viewer';
 import { shortRuDate } from '@/lib/dates';
 import '@/styles/globals.css';
@@ -48,14 +49,19 @@ export const viewport: Viewport = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const [campaign, session, nodes, viewer] = await Promise.all([
+  const [campaign, sessions, nodes, viewer] = await Promise.all([
     getCampaign(),
-    getActiveSession(),
+    getSessionOptions(),
     getPickerNodes(),
     getViewer(),
   ]);
+  /* Список идёт от последней сессии — она же активная, её и показывает шапка. */
+  const session = sessions[0] ?? null;
   const title = campaign?.title ?? 'Кампания';
-  const sessionLabel = session ? `Сессия ${session.number} · ${shortRuDate(session.date)}` : '';
+  /* Даты у сессии может не быть — тогда в шапке остаётся один номер. */
+  const sessionLabel = session
+    ? [`Сессия ${session.number}`, shortRuDate(session.date)].filter(Boolean).join(' · ')
+    : '';
   const sessionShort = session ? `С${session.number}` : '';
   const characters = nodes.filter((node) => node.kind === 'character');
 
@@ -65,6 +71,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <QuickEntryProvider
           nodes={nodes}
           characters={characters}
+          sessions={sessions}
           sessionShort={sessionShort}
           canWrite={viewer !== null}
           isDm={viewer?.role === 'dm'}

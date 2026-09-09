@@ -1,13 +1,70 @@
 /* Запросы экрана сессии: что произошло за игру и чем она обросла. */
 
 import { and, asc, desc, eq, sql } from 'drizzle-orm';
-import { runDb } from '@/lib/db/client';
+import { runDb, type Db } from '@/lib/db/client';
 import * as t from '@/lib/db/schema';
 import { CAMPAIGN_ID } from '@/lib/db/seed';
 import type { Viewer } from '@/lib/auth-shared';
 import { visibleEntries } from '@/lib/visibility';
 
-export function getSessions() {
+/** Сессия в выпадающем списке шита быстрой записи. */
+export type SessionOption = {
+  id: string;
+  number: number;
+  title: string | null;
+  date: string | null;
+};
+
+/** Сессии для выбора при записи: последняя сверху — она же подставляется
+ *  по умолчанию. Их десятки, а не тысячи, поэтому список отдаётся целиком. */
+export function getSessionOptions(): Promise<SessionOption[]> {
+  return runDb((db) =>
+    db
+      .select({
+        id: t.sessions.id,
+        number: t.sessions.number,
+        title: t.sessions.title,
+        date: t.sessions.date,
+      })
+      .from(t.sessions)
+      .where(eq(t.sessions.campaignId, CAMPAIGN_ID))
+      .orderBy(desc(t.sessions.number)),
+  );
+}
+
+/** id сессии, выбранной в шите, — если она вообще из этой кампании.
+ *  Чужой или устаревший id из формы не должен уводить запись в другую
+ *  кампанию, поэтому проверяем, а не доверяем. */
+export async function findSessionId(db: Db, requested: string | null): Promise<string | null> {
+  if (!requested) return null;
+
+  const [chosen] = await db
+    .select({ id: t.sessions.id })
+    .from(t.sessions)
+    .where(and(eq(t.sessions.id, requested), eq(t.sessions.campaignId, CAMPAIGN_ID)))
+    .limit(1);
+  return chosen?.id ?? null;
+}
+
+/** Активная сессия — последняя по номеру. */
+export async function activeSessionId(db: Db): Promise<string | null> {
+  const [active] = await db
+    .select({ id: t.sessions.id })
+    .from(t.sessions)
+    .where(eq(t.sessions.campaignId, CAMPAIGN_ID))
+    .orderBy(desc(t.sessions.number))
+    .limit(1);
+  return active?.id ?? null;
+}
+
+/** Сессия новой записи: выбранная в шите, иначе активная. */
+export async function resolveSessionId(db: Db, requested?: string | null): Promise<string | null> {
+  return (await findSessionId(db, requested ?? null)) ?? activeSessionId(db);
+}
+
+/** Полный список сессий: последняя сверху. Счётчик записей считается по тем,
+ *  что зритель вправе увидеть, — иначе список выдавал бы чужие черновики. */
+export function getSessions(viewer: Viewer | null = null) {
   return runDb(async (db) => {
     const rows = await db
       .select({
@@ -21,10 +78,11 @@ export function getSessions() {
       .where(eq(t.sessions.campaignId, CAMPAIGN_ID))
       .orderBy(desc(t.sessions.number));
 
+    const visible = visibleEntries(viewer);
     const counts = await db
       .select({ sessionId: t.entries.sessionId, n: sql<number>`count(*)::int` })
       .from(t.entries)
-      .where(eq(t.entries.campaignId, CAMPAIGN_ID))
+      .where(and(eq(t.entries.campaignId, CAMPAIGN_ID), ...(visible ? [visible] : [])))
       .groupBy(t.entries.sessionId);
     const byId = new Map(counts.map((row) => [row.sessionId, row.n]));
 
@@ -48,6 +106,7 @@ export function getSession(number: number, viewer: Viewer | null) {
         kind: t.entries.kind,
         title: t.entries.title,
         body: t.entries.body,
+        sessionId: t.entries.sessionId,
         roll: t.entries.roll,
         isCrit: t.entries.isCrit,
         isFail: t.entries.isFail,

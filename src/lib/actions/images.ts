@@ -2,12 +2,12 @@
 
 import { randomUUID } from 'node:crypto';
 import { revalidatePath } from 'next/cache';
-import { desc, eq } from 'drizzle-orm';
 import { runDb } from '@/lib/db/client';
 import * as t from '@/lib/db/schema';
 import { CAMPAIGN_ID } from '@/lib/db/seed';
 import { requireViewer } from './guard';
 import { isSupportedImage, saveUpload } from '@/lib/storage';
+import { resolveSessionId } from '@/lib/queries/sessions';
 
 export type UploadResult = { ok: true; saved: number } | { ok: false; error: string };
 
@@ -34,18 +34,14 @@ export async function createPhotoEntry(
   const url = hasFile ? await saveUpload(file) : null;
 
   const entryId = await runDb(async (db) => {
-    const [session] = await db
-      .select({ id: t.sessions.id })
-      .from(t.sessions)
-      .where(eq(t.sessions.campaignId, CAMPAIGN_ID))
-      .orderBy(desc(t.sessions.number))
-      .limit(1);
+    /* Кадр уходит в сессию, выбранную в шите; по умолчанию — в активную. */
+    const sessionId = await resolveSessionId(db, String(form.get('sessionId') ?? '') || null);
 
     const id = randomUUID();
     await db.insert(t.entries).values({
       id,
       campaignId: CAMPAIGN_ID,
-      sessionId: session?.id ?? null,
+      sessionId,
       kind: 'image',
       title: caption,
       body: null,
@@ -56,7 +52,7 @@ export async function createPhotoEntry(
     await db.insert(t.images).values({
       id: randomUUID(),
       campaignId: CAMPAIGN_ID,
-      sessionId: session?.id ?? null,
+      sessionId,
       entryId: id,
       url,
       caption,
@@ -89,18 +85,13 @@ export async function uploadImages(form: FormData): Promise<UploadResult> {
   }
 
   await runDb(async (db) => {
-    const [session] = await db
-      .select({ id: t.sessions.id })
-      .from(t.sessions)
-      .where(eq(t.sessions.campaignId, CAMPAIGN_ID))
-      .orderBy(desc(t.sessions.number))
-      .limit(1);
+    const sessionId = await resolveSessionId(db);
 
     await db.insert(t.images).values(
       urls.map((item) => ({
         id: randomUUID(),
         campaignId: CAMPAIGN_ID,
-        sessionId: session?.id ?? null,
+        sessionId,
         entryId: null,
         url: item.url,
         caption: item.caption,

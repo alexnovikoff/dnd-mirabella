@@ -14,6 +14,7 @@ export type CharacterEntry = {
   roll: number | null;
   isCrit: boolean;
   isFail: boolean;
+  sessionId: string | null;
   sessionNumber: number | null;
   votes: number;
   visibility: t.Visibility;
@@ -55,6 +56,7 @@ export function getCharacter(slug: string, viewer: Viewer | null) {
         isFail: t.entries.isFail,
         visibility: t.entries.visibility,
         authorId: t.entries.authorId,
+        sessionId: t.entries.sessionId,
         sessionNumber: t.sessions.number,
       })
       .from(t.entries)
@@ -81,6 +83,7 @@ export function getCharacter(slug: string, viewer: Viewer | null) {
       roll: entry.roll,
       isCrit: entry.isCrit,
       isFail: entry.isFail,
+      sessionId: entry.sessionId,
       sessionNumber: entry.sessionNumber,
       votes: votes.get(entry.id) ?? 0,
       visibility: entry.visibility,

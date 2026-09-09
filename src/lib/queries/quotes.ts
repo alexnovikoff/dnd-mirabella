@@ -18,6 +18,8 @@ export type QuoteCard = {
   /** Персонаж-говорящий: шит правки открывается с ним в селекте. */
   subjectId: string | null;
   visibility: Visibility;
+  /** Сессия записи: шит правки открывается с ней в селекте. */
+  sessionId: string | null;
   sessionNumber: number | null;
   votes: number;
   myVote: boolean;
@@ -49,6 +51,7 @@ export function getQuotes(authorSlug: string | null, viewer: Viewer | null) {
       .select({
         id: t.entries.id,
         body: t.entries.body,
+        sessionId: t.entries.sessionId,
         sessionNumber: t.sessions.number,
         authorId: t.entries.authorId,
         subjectId: t.entries.subjectId,
@@ -88,6 +91,7 @@ export function getQuotes(authorSlug: string | null, viewer: Viewer | null) {
       authorId: row.authorId,
       subjectId: row.subjectId,
       visibility: row.visibility,
+      sessionId: row.sessionId,
       sessionNumber: row.sessionNumber,
       votes: counts.get(row.id) ?? 0,
       myVote: mine.has(row.id),
@@ -113,6 +117,7 @@ export function getRandomQuote(viewer: Viewer | null): Promise<QuoteCard | null>
       .select({
         id: t.entries.id,
         body: t.entries.body,
+        sessionId: t.entries.sessionId,
         sessionNumber: t.sessions.number,
         authorId: t.entries.authorId,
         subjectId: t.entries.subjectId,
@@ -149,6 +154,7 @@ export function getRandomQuote(viewer: Viewer | null): Promise<QuoteCard | null>
       authorId: row.authorId,
       subjectId: row.subjectId,
       visibility: row.visibility,
+      sessionId: row.sessionId,
       sessionNumber: row.sessionNumber,
       votes: votes.length,
       myVote: viewer ? votes.some((vote) => vote.userId === viewer.id) : false,

@@ -98,6 +98,7 @@ export function getFeed(filter: FeedFilter = 'all', viewer: Viewer | null = null
         authorId: t.entries.authorId,
         subjectId: t.entries.subjectId,
         createdAt: t.entries.createdAt,
+        sessionId: t.entries.sessionId,
         sessionNumber: t.sessions.number,
         sessionTitle: t.sessions.title,
         authorName: t.users.name,
