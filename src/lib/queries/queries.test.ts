@@ -7,7 +7,7 @@ import * as t from '@/lib/db/schema';
 import { getBoard } from './board';
 import { getFeed, getRecentSessions, getStatusNodes } from './chronicle';
 import { getFreeNotes, getRumors } from './kb';
-import { getQuotes } from './quotes';
+import { getQuotes, getRandomQuote } from './quotes';
 
 const player: Viewer = {
   id: FIXTURE.users.player,
@@ -128,40 +128,46 @@ describe('getFreeNotes', () => {
 });
 
 describe('getQuotes', () => {
-  it('наверх попадает одна из цитат, и в сетке её уже нет', async () => {
+  it('в цитатнике все цитаты равноценны — ни одна не вынесена наверх', async () => {
     const data = await getQuotes(null, null);
     expect(data.total).toBe(2);
-    expect(data.featured).not.toBeNull();
-    expect(data.quotes).toHaveLength(1);
-    expect(data.quotes.map((quote) => quote.id)).not.toContain(data.featured?.id);
-  });
-
-  it('со временем показывает наверху разные цитаты', async () => {
-    const seen = new Set<string>();
-    for (let i = 0; i < 40; i += 1) {
-      seen.add((await getQuotes(null, null)).featured?.id ?? '');
-    }
-    expect(seen.size).toBe(2);
-  });
-
-  it('при фильтре по автору случайная берётся из его же цитат', async () => {
-    const data = await getQuotes('geroy', null);
-    expect(data.featured?.authorSlug).toBe('geroy');
+    expect(data.quotes).toHaveLength(2);
   });
 
   it('отмечает голос текущего пользователя', async () => {
     const mine = await getQuotes(null, player);
-    const all = [mine.featured, ...mine.quotes];
-    expect(all.find((quote) => quote?.body === 'Свежая цитата.')?.myVote).toBe(true);
+    expect(mine.quotes.find((quote) => quote.body === 'Свежая цитата.')?.myVote).toBe(true);
 
     const theirs = await getQuotes(null, other);
-    const allTheirs = [theirs.featured, ...theirs.quotes];
-    expect(allTheirs.find((quote) => quote?.body === 'Свежая цитата.')?.myVote).toBe(false);
+    expect(theirs.quotes.find((quote) => quote.body === 'Свежая цитата.')?.myVote).toBe(false);
   });
 
   it('фильтр по автору отбирает по слагу персонажа', async () => {
-    expect((await getQuotes('geroy', null)).quotes).toHaveLength(1);
+    /* Обе цитаты фикстуры принадлежат Герою, поэтому фильтр их не сужает,
+     * а вот несуществующий автор не даёт ничего. */
+    expect((await getQuotes('geroy', null)).quotes).toHaveLength(2);
     expect((await getQuotes('nikto', null)).quotes).toHaveLength(0);
+  });
+});
+
+describe('getRandomQuote', () => {
+  it('со временем показывает разные цитаты', async () => {
+    const seen = new Set<string>();
+    for (let i = 0; i < 40; i += 1) {
+      seen.add((await getRandomQuote(null))?.id ?? '');
+    }
+    expect(seen.size).toBe(2);
+  });
+
+  it('отдаёт голос текущего пользователя', async () => {
+    for (let i = 0; i < 10; i += 1) {
+      const quote = await getRandomQuote(player);
+      if (quote?.body === 'Свежая цитата.') {
+        expect(quote.myVote).toBe(true);
+        return;
+      }
+    }
+    throw new Error('свежая цитата ни разу не выпала за десять попыток');
   });
 });
 

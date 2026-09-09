@@ -5,7 +5,9 @@ import { useRouter } from 'next/navigation';
 import { MonoLabel } from '@/components/primitives';
 import { NodePicker, type PickerOption } from '@/components/editor/NodePicker';
 import { useQuickEntry } from '@/components/editor/QuickEntryProvider';
+import { ConfirmDialog } from '@/components/editor/ConfirmDialog';
 import { createBoardNode, linkNodes } from '@/lib/actions/board';
+import { deleteNode } from '@/lib/actions/nodes';
 import { NODE_KIND_LABEL } from '@/lib/nodes';
 import type { NodeKind } from '@/lib/db/schema';
 import picker from '@/components/editor/Picker.module.css';
@@ -226,5 +228,63 @@ export function LinkNodeButton({
         </button>
       </div>
     </form>
+  );
+}
+
+/** Убрать выбранный узел прямо с доски. Персонажа партии удалить нельзя —
+ *  у него своя строка в characters и своя страница. */
+export function DeleteNodeButton({
+  nodeId,
+  name,
+  isCharacter,
+}: {
+  nodeId: string;
+  name: string;
+  isCharacter: boolean;
+}) {
+  const router = useRouter();
+  const { canWrite } = useQuickEntry();
+  const [confirming, setConfirming] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  if (!canWrite || isCharacter) return null;
+
+  return (
+    <>
+      <button type="button" className={styles.deleteNode} onClick={() => setConfirming(true)}>
+        УДАЛИТЬ УЗЕЛ
+      </button>
+
+      {error ? (
+        <MonoLabel size={10} tracking="0.06em" tone="accent" block>
+          {error}
+        </MonoLabel>
+      ) : null}
+
+      {confirming ? (
+        <ConfirmDialog
+          title="Удалить узел?"
+          body="Исчезнут его связи на доске и упоминания в графе. Текст записей не изменится: ссылки на него останутся, но станут простым текстом."
+          quoted={name}
+          confirmLabel="УДАЛИТЬ"
+          pending={pending}
+          onConfirm={() =>
+            startTransition(async () => {
+              const result = await deleteNode(nodeId);
+              if (!result.ok) {
+                setError(result.error);
+                setConfirming(false);
+                return;
+              }
+              setConfirming(false);
+              router.replace('/board');
+              router.refresh();
+            })
+          }
+          onCancel={() => setConfirming(false)}
+        />
+      ) : null}
+    </>
   );
 }

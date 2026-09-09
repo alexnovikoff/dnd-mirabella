@@ -67,6 +67,39 @@ export async function createBoardNode(name: string, kind: t.NodeKind = 'unknown'
   });
 
   revalidatePath('/board');
+  revalidatePath('/entities/[slug]', 'page');
+  return { ok: true as const };
+}
+
+/** Сменить тип уже существующей связи. */
+export async function updateLink(linkId: string, label: string) {
+  await requireViewer();
+
+  await runDb(async (db) => {
+    await db
+      .update(t.links)
+      .set({ label: label.trim() || null })
+      .where(and(eq(t.links.id, linkId), eq(t.links.kind, 'manual')));
+  });
+
+  revalidatePath('/board');
+  revalidatePath('/kb');
+  revalidatePath('/entities/[slug]', 'page');
+  return { ok: true as const };
+}
+
+/** Убрать ручную связь. Рёбра-упоминания так не удаляются: они выводятся
+ *  из текста, и убрать их можно только правкой самой записи. */
+export async function deleteLink(linkId: string) {
+  await requireViewer();
+
+  await runDb(async (db) => {
+    await db.delete(t.links).where(and(eq(t.links.id, linkId), eq(t.links.kind, 'manual')));
+  });
+
+  revalidatePath('/board');
+  revalidatePath('/kb');
+  revalidatePath('/entities/[slug]', 'page');
   return { ok: true as const };
 }
 
@@ -101,5 +134,6 @@ export async function linkNodes(fromNodeId: string, toNodeId: string, label: str
   });
 
   revalidatePath('/board');
+  revalidatePath('/entities/[slug]', 'page');
   return { ok: true as const };
 }

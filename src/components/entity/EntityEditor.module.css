@@ -8,6 +8,11 @@
   flex-wrap: wrap;
 }
 
+/* Кнопка прижата вправо, прежние имена остаются слева. */
+.bar .action {
+  margin-left: auto;
+}
+
 .action {
   background: transparent;
   border: 1px solid var(--rule);

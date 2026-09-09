@@ -267,14 +267,41 @@
   gap: 6px;
 }
 
+/* Действия над выбранным узлом прижаты к низу панели. */
+.panelActions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: auto;
+}
+
 .mentions {
   font-size: 13px;
   line-height: 1.6;
   color: var(--ink-muted);
 }
 
+.deleteNode {
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  color: var(--ink-muted);
+  padding: 9px 12px;
+  min-height: 44px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  transition:
+    border-color var(--hover-fast),
+    color var(--hover-fast);
+}
+
+.deleteNode:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 .linkButton {
-  margin-top: auto;
   background: var(--accent);
   border: 1px solid var(--accent);
   border-radius: var(--radius);

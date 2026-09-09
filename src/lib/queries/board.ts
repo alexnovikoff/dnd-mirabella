@@ -120,7 +120,14 @@ export type NodeDetail = {
   aliases: string[];
   /** Персонаж партии: тип не меняется, удалить нельзя. */
   isCharacter: boolean;
-  relations: { id: string; name: string; slug: string; label: string | null }[];
+  relations: {
+    /** id ребра — по нему связь правят и удаляют. */
+    linkId: string;
+    id: string;
+    name: string;
+    slug: string;
+    label: string | null;
+  }[];
   mentions: {
     moments: { id: string; title: string | null; sessionNumber: number | null }[];
     notes: number;
@@ -139,7 +146,12 @@ export function getNodeDetail(slug: string): Promise<NodeDetail | null> {
     if (!node) return null;
 
     const manual = await db
-      .select({ from: t.links.fromNodeId, to: t.links.toNodeId, label: t.links.label })
+      .select({
+        linkId: t.links.id,
+        from: t.links.fromNodeId,
+        to: t.links.toNodeId,
+        label: t.links.label,
+      })
       .from(t.links)
       .where(
         and(
@@ -158,7 +170,7 @@ export function getNodeDetail(slug: string): Promise<NodeDetail | null> {
       .map((link) => {
         const otherId = link.from === node.id ? link.to : link.from;
         const other = otherId ? byId.get(otherId) : undefined;
-        return other ? { ...other, label: link.label } : null;
+        return other ? { linkId: link.linkId, ...other, label: link.label } : null;
       })
       .filter((row): row is NonNullable<typeof row> => row !== null);
 

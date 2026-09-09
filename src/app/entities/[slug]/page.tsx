@@ -2,7 +2,9 @@ import { notFound } from 'next/navigation';
 import { Screen } from '@/components/shell/Screen';
 import { LinkRow, MonoLabel, StatusPill } from '@/components/primitives';
 import { EntityEditor } from '@/components/entity/EntityEditor';
-import { getNodeDetail } from '@/lib/queries/board';
+import { RelationsEditor } from '@/components/entity/RelationsEditor';
+import { getBoard, getNodeDetail } from '@/lib/queries/board';
+import { getLinkLabels } from '@/lib/queries/labels';
 import { NODE_KIND_LABEL } from '@/lib/nodes';
 import styles from '@/components/board/Board.module.css';
 
@@ -11,6 +13,8 @@ export default async function EntityPage({ params }: { params: Promise<{ slug: s
   const { slug } = await params;
   const detail = await getNodeDetail(slug);
   if (!detail) notFound();
+
+  const [board, labels] = await Promise.all([getBoard(), getLinkLabels()]);
 
   return (
     <Screen
@@ -41,23 +45,14 @@ export default async function EntityPage({ params }: { params: Promise<{ slug: s
         <MonoLabel size={10} tracking="0.14em" block>
           {`Связи · ${detail.relations.length}`}
         </MonoLabel>
-        <div className={styles.rows}>
-          {detail.relations.length === 0 ? (
-            <MonoLabel size={9} tracking="0.08em" tone="faint">
-              Связей пока нет
-            </MonoLabel>
-          ) : (
-            detail.relations.map((relation) => (
-              <LinkRow
-                key={`${relation.id}-${relation.label ?? ''}`}
-                arrow
-                name={relation.name}
-                label={relation.label?.toUpperCase()}
-                href={`/entities/${relation.slug}`}
-              />
-            ))
-          )}
-        </div>
+        <RelationsEditor
+          nodeId={detail.id}
+          relations={detail.relations}
+          labels={labels}
+          candidates={board.nodes
+            .filter((item) => item.id !== detail.id)
+            .map((item) => ({ id: item.id, name: item.name, kind: item.kind }))}
+        />
       </div>
 
       <div className={styles.block}>

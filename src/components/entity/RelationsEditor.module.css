@@ -1,0 +1,126 @@
+/* Связи сущности: список с правкой ярлыка и удалением, плюс форма добавления.
+ * Ряды выглядят как LinkRow — те же цвета и отступы, просто с действиями. */
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.name {
+  flex: 1;
+  min-width: 0;
+  color: inherit;
+}
+
+.name:hover {
+  color: var(--accent);
+}
+
+.labelInput {
+  width: 150px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  padding: 4px 6px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.labelInput:hover,
+.labelInput:focus {
+  border-color: var(--rule);
+  color: var(--ink);
+}
+
+.remove {
+  background: transparent;
+  border: 0;
+  padding: 4px 6px;
+  min-height: 32px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-faint);
+  transition: color var(--hover-fast);
+}
+
+.remove:hover {
+  color: var(--accent);
+}
+
+.addRow {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.addField {
+  flex: 1;
+  min-width: 170px;
+}
+
+.addButton {
+  background: transparent;
+  border: 1px dashed var(--dash);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  min-height: 44px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-label);
+  transition:
+    border-color var(--hover-fast),
+    color var(--hover-fast);
+}
+
+.addButton:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.submit {
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  color: var(--accent-on-warm);
+  padding: 11px 16px;
+  min-height: 44px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+
+.cancel {
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  color: var(--ink-muted);
+  padding: 11px 16px;
+  min-height: 44px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+
+.buttons {
+  display: flex;
+  gap: 8px;
+}

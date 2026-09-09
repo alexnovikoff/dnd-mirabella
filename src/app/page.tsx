@@ -1,4 +1,4 @@
-import { MonoLabel } from '@/components/primitives';
+import { AccentQuoteCard, MonoLabel } from '@/components/primitives';
 import { BoardPreview } from '@/components/chronicle/BoardPreview';
 import { FeedFilters } from '@/components/chronicle/FeedFilters';
 import { Hero } from '@/components/chronicle/Hero';
@@ -17,6 +17,7 @@ import {
   getStatusNodes,
   isFeedFilter,
 } from '@/lib/queries/chronicle';
+import { getRandomQuote } from '@/lib/queries/quotes';
 import { getViewer } from '@/lib/viewer';
 import styles from './chronicle.module.css';
 
@@ -42,6 +43,10 @@ export default async function ChroniclePage({
       getActiveSession(),
     ]);
 
+  /* Случайная цитата над лентой: в цитатнике все равноценны, а здесь одна
+   * вытаскивается наугад. Меняется на каждое обновление страницы. */
+  const randomQuote = await getRandomQuote(viewer);
+
   /* Свежие записи идут полными карточками, ранние — компактными:
    * так лента держит ритм макета, а не превращается в стену. */
   const compactBelow = activeSession ? activeSession.number - 1 : 0;
@@ -61,6 +66,15 @@ export default async function ChroniclePage({
 
       <div className={styles.grid}>
         <section className={styles.feed}>
+          {randomQuote ? (
+            <AccentQuoteCard
+              eyebrow="Случайная цитата"
+              quote={randomQuote.body ?? ''}
+              author={randomQuote.authorName ? `— ${randomQuote.authorName}` : undefined}
+              meta={randomQuote.sessionNumber ? `Сессия ${randomQuote.sessionNumber}` : undefined}
+            />
+          ) : null}
+
           <div className={styles.head}>
             <h2 className={styles.title}>Яркие моменты</h2>
             <FeedFilters active={active} />
@@ -76,28 +90,30 @@ export default async function ChroniclePage({
               </MonoLabel>
             </div>
           ) : (
-            feed.map((entry) => {
-              if (entry.kind === 'quote')
-                return (
-                  <QuoteEntry key={entry.id} entry={entry} canEdit={canEdit(entry.authorId)} />
+            feed
+              .filter((entry) => entry.id !== randomQuote?.id)
+              .map((entry) => {
+                if (entry.kind === 'quote')
+                  return (
+                    <QuoteEntry key={entry.id} entry={entry} canEdit={canEdit(entry.authorId)} />
+                  );
+                const compact = (entry.sessionNumber ?? 0) < compactBelow;
+                return compact ? (
+                  <CompactMomentCard
+                    key={entry.id}
+                    entry={entry}
+                    index={index}
+                    canEdit={canEdit(entry.authorId)}
+                  />
+                ) : (
+                  <MomentCard
+                    key={entry.id}
+                    entry={entry}
+                    index={index}
+                    canEdit={canEdit(entry.authorId)}
+                  />
                 );
-              const compact = (entry.sessionNumber ?? 0) < compactBelow;
-              return compact ? (
-                <CompactMomentCard
-                  key={entry.id}
-                  entry={entry}
-                  index={index}
-                  canEdit={canEdit(entry.authorId)}
-                />
-              ) : (
-                <MomentCard
-                  key={entry.id}
-                  entry={entry}
-                  index={index}
-                  canEdit={canEdit(entry.authorId)}
-                />
-              );
-            })
+              })
           )}
         </section>
 

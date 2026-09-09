@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { LinkRow, MonoLabel } from '@/components/primitives';
 import { BoardCanvas } from '@/components/board/BoardCanvas';
-import { BoardToolbar, LinkNodeButton } from '@/components/board/BoardActions';
+import { BoardToolbar, DeleteNodeButton, LinkNodeButton } from '@/components/board/BoardActions';
 import { getBoard, getNodeDetail } from '@/lib/queries/board';
 import { getLinkLabels } from '@/lib/queries/labels';
 import { NODE_KIND_LABEL } from '@/lib/nodes';
@@ -110,13 +110,20 @@ export default async function BoardPage({
               </Link>
             </div>
 
-            <LinkNodeButton
-              fromNodeId={detail.id}
-              labels={labels}
-              candidates={board.nodes
-                .filter((item) => item.id !== detail.id)
-                .map((item) => ({ id: item.id, name: item.name, kind: item.kind }))}
-            />
+            <div className={styles.panelActions}>
+              <LinkNodeButton
+                fromNodeId={detail.id}
+                labels={labels}
+                candidates={board.nodes
+                  .filter((item) => item.id !== detail.id)
+                  .map((item) => ({ id: item.id, name: item.name, kind: item.kind }))}
+              />
+              <DeleteNodeButton
+                nodeId={detail.id}
+                name={detail.name}
+                isCharacter={detail.isCharacter}
+              />
+            </div>
           </>
         ) : (
           <MonoLabel size={10} tracking="0.08em" tone="faint" block>

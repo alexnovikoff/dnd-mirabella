@@ -91,7 +91,7 @@ export async function updateNode(nodeId: string, patch: NodePatch): Promise<Upda
     revalidatePath('/');
     revalidatePath('/board');
     revalidatePath('/kb');
-    revalidatePath(`/entities/${slug}`);
+    revalidatePath('/entities/[slug]', 'page');
 
     return { ok: true as const, slug, renamedFrom: renamed ? node.name : null };
   });
@@ -127,6 +127,7 @@ export async function deleteNode(nodeId: string): Promise<DeleteNodeResult> {
     revalidatePath('/');
     revalidatePath('/board');
     revalidatePath('/kb');
+    revalidatePath('/entities/[slug]', 'page');
     return { ok: true as const };
   });
 }

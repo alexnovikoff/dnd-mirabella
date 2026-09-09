@@ -1,11 +1,5 @@
 import { Screen } from '@/components/shell/Screen';
-import {
-  AccentQuoteCard,
-  FilterChips,
-  MonoLabel,
-  ParchmentCard,
-  QuoteBody,
-} from '@/components/primitives';
+import { FilterChips, MonoLabel, ParchmentCard, QuoteBody } from '@/components/primitives';
 import { VoteButton } from '@/components/quotes/VoteButton';
 import { getQuoteAuthors, getQuotes } from '@/lib/queries/quotes';
 import { getViewer } from '@/lib/viewer';
@@ -25,7 +19,7 @@ export default async function QuotesPage({
   return (
     <Screen
       title="Цитатник"
-      note={`${data.total} ${plural(data.total, 'цитата', 'цитаты', 'цитат')} за ${data.sessions} ${plural(data.sessions, 'сессию', 'сессии', 'сессий')}. Наверху — случайная: обновите страницу, выпадет другая.`}
+      note={`${data.total} ${plural(data.total, 'цитата', 'цитаты', 'цитат')} за ${data.sessions} ${plural(data.sessions, 'сессию', 'сессии', 'сессий')}.`}
       aside={
         <FilterChips
           activeId={author ?? 'all'}
@@ -42,19 +36,6 @@ export default async function QuotesPage({
       }
     >
       <div className={styles.grid}>
-        {/* Наверху — случайная цитата, каждое обновление страницы другая.
-            Голосовать за неё нельзя: она попала сюда не по заслугам. */}
-        {data.featured ? (
-          <AccentQuoteCard
-            className={styles.wide}
-            variant="feature"
-            eyebrow="Случайная цитата"
-            quote={data.featured.body ?? ''}
-            author={data.featured.authorName ? `— ${data.featured.authorName}` : undefined}
-            meta={data.featured.sessionNumber ? `Сессия ${data.featured.sessionNumber}` : undefined}
-          />
-        ) : null}
-
         {data.quotes.map((quote) => (
           <ParchmentCard key={quote.id} as="article" padding="tight" className={styles.card}>
             <blockquote className={styles.quote}>
