@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { AccountChip } from './AccountChip';
 import { useQuickEntry } from '@/components/editor/QuickEntryProvider';
-import { NAV, actionFor, isActive } from '@/lib/nav';
+import { NAV, actionFor, isActive, kindFor } from '@/lib/nav';
 import type { Viewer } from '@/lib/auth-shared';
 import styles from './Header.module.css';
 
@@ -53,7 +53,11 @@ export function Header({
         {sessionLabel ? <span className={styles.session}>{sessionLabel}</span> : null}
         {/* Разлогиненным писать нечем — контент только для чтения. */}
         {viewer ? (
-          <button type="button" className={styles.action} onClick={quickEntry.open}>
+          <button
+            type="button"
+            className={styles.action}
+            onClick={() => quickEntry.open(kindFor(pathname))}
+          >
             {actionFor(pathname)}
           </button>
         ) : null}

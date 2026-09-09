@@ -3,10 +3,12 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { QuickEntry, type EditableEntry } from './QuickEntry';
 import { QuickEntryBar } from './QuickEntryBar';
+import type { EntryKind } from '@/lib/db/schema';
 import type { PickerNode } from '@/lib/queries/nodes';
 
 type QuickEntryContext = {
-  open: () => void;
+  /** Тип задаёт кнопка экрана: «Новая цитата» открывает шит сразу цитатой. */
+  open: (kind?: EntryKind) => void;
   /** Открыть шит на правку уже существующей записи. */
   openForEdit: (entry: EditableEntry) => void;
   sessionShort: string;
@@ -40,12 +42,17 @@ export function QuickEntryProvider({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [editing, setEditing] = useState<EditableEntry | null>(null);
+  const [kind, setKind] = useState<EntryKind>('moment');
 
-  const open = useCallback(() => {
-    if (!canWrite) return;
-    setEditing(null);
-    setIsOpen(true);
-  }, [canWrite]);
+  const open = useCallback(
+    (next: EntryKind = 'moment') => {
+      if (!canWrite) return;
+      setEditing(null);
+      setKind(next);
+      setIsOpen(true);
+    },
+    [canWrite],
+  );
 
   const openForEdit = useCallback(
     (entry: EditableEntry) => {
@@ -76,11 +83,11 @@ export function QuickEntryProvider({
       if (target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) return;
 
       event.preventDefault();
-      setIsOpen(true);
+      open();
     }
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [canWrite]);
+  }, [canWrite, open]);
 
   return (
     <Context.Provider value={value}>
@@ -91,9 +98,9 @@ export function QuickEntryProvider({
           /* Ключ сбрасывает состояние полей при переходе к другой записи. */
           key={editing?.id ?? 'new'}
           entry={editing}
+          defaultKind={kind}
           nodes={nodes}
           characters={characters}
-          sessionShort={sessionShort}
           isDm={isDm}
           onClose={close}
         />

@@ -43,7 +43,7 @@ export function AccentQuoteCard({
 
       {author || meta ? (
         <figcaption className={styles.footer}>
-          <MonoLabel size={10} tracking="0.1em" tone="onAccentDim">
+          <MonoLabel size={11} tracking="0.1em" tone="onAccentDim">
             {author}
           </MonoLabel>
           {meta ? (

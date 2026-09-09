@@ -4,13 +4,20 @@ import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import { runDb } from '@/lib/db/client';
 import * as t from '@/lib/db/schema';
 import { CAMPAIGN_ID } from '@/lib/db/seed';
+import type { Visibility } from '@/lib/db/schema';
 import type { Viewer } from '@/lib/auth-shared';
 
 export type QuoteCard = {
   id: string;
   body: string | null;
+  /** Кому цитата приписана: персонаж, а если его нет — тот, кто её записал. */
   authorName: string | null;
   authorSlug: string | null;
+  /** Кто завёл запись. Нужен, чтобы решить, показывать ли правку с удалением. */
+  authorId: string | null;
+  /** Персонаж-говорящий: шит правки открывается с ним в селекте. */
+  subjectId: string | null;
+  visibility: Visibility;
   sessionNumber: number | null;
   votes: number;
   myVote: boolean;
@@ -43,6 +50,9 @@ export function getQuotes(authorSlug: string | null, viewer: Viewer | null) {
         id: t.entries.id,
         body: t.entries.body,
         sessionNumber: t.sessions.number,
+        authorId: t.entries.authorId,
+        subjectId: t.entries.subjectId,
+        visibility: t.entries.visibility,
         authorName: t.nodes.name,
         authorSlug: t.nodes.slug,
         fallbackAuthor: t.users.name,
@@ -75,6 +85,9 @@ export function getQuotes(authorSlug: string | null, viewer: Viewer | null) {
       body: row.body,
       authorName: row.authorName ?? row.fallbackAuthor,
       authorSlug: row.authorSlug,
+      authorId: row.authorId,
+      subjectId: row.subjectId,
+      visibility: row.visibility,
       sessionNumber: row.sessionNumber,
       votes: counts.get(row.id) ?? 0,
       myVote: mine.has(row.id),
@@ -101,6 +114,9 @@ export function getRandomQuote(viewer: Viewer | null): Promise<QuoteCard | null>
         id: t.entries.id,
         body: t.entries.body,
         sessionNumber: t.sessions.number,
+        authorId: t.entries.authorId,
+        subjectId: t.entries.subjectId,
+        visibility: t.entries.visibility,
         authorName: t.nodes.name,
         authorSlug: t.nodes.slug,
         fallbackAuthor: t.users.name,
@@ -130,6 +146,9 @@ export function getRandomQuote(viewer: Viewer | null): Promise<QuoteCard | null>
       body: row.body,
       authorName: row.authorName ?? row.fallbackAuthor,
       authorSlug: row.authorSlug,
+      authorId: row.authorId,
+      subjectId: row.subjectId,
+      visibility: row.visibility,
       sessionNumber: row.sessionNumber,
       votes: votes.length,
       myVote: viewer ? votes.some((vote) => vote.userId === viewer.id) : false,
