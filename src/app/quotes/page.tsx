@@ -25,7 +25,7 @@ export default async function QuotesPage({
   return (
     <Screen
       title="Цитатник"
-      note={`${data.total} ${plural(data.total, 'цитата', 'цитаты', 'цитат')} за ${data.sessions} ${plural(data.sessions, 'сессию', 'сессии', 'сессий')}. Цитата недели — та, что набрала больше голосов за последние семь дней.`}
+      note={`${data.total} ${plural(data.total, 'цитата', 'цитаты', 'цитат')} за ${data.sessions} ${plural(data.sessions, 'сессию', 'сессии', 'сессий')}. Наверху — случайная: обновите страницу, выпадет другая.`}
       aside={
         <FilterChips
           activeId={author ?? 'all'}
@@ -42,21 +42,16 @@ export default async function QuotesPage({
       }
     >
       <div className={styles.grid}>
-        {data.ofWeek && !author ? (
+        {/* Наверху — случайная цитата, каждое обновление страницы другая.
+            Голосовать за неё нельзя: она попала сюда не по заслугам. */}
+        {data.featured ? (
           <AccentQuoteCard
             className={styles.wide}
             variant="feature"
-            eyebrow={`Цитата недели${data.ofWeek.sessionNumber ? ` · сессия ${data.ofWeek.sessionNumber}` : ''}`}
-            quote={data.ofWeek.body ?? ''}
-            author={data.ofWeek.authorName ? `— ${data.ofWeek.authorName}` : undefined}
-            meta={
-              <VoteButton
-                entryId={data.ofWeek.id}
-                votes={data.ofWeek.votes}
-                mine={data.ofWeek.myVote}
-                withNoun
-              />
-            }
+            eyebrow="Случайная цитата"
+            quote={data.featured.body ?? ''}
+            author={data.featured.authorName ? `— ${data.featured.authorName}` : undefined}
+            meta={data.featured.sessionNumber ? `Сессия ${data.featured.sessionNumber}` : undefined}
           />
         ) : null}
 

@@ -42,7 +42,6 @@ export function getQuotes(authorSlug: string | null, viewer: Viewer | null) {
       .select({
         id: t.entries.id,
         body: t.entries.body,
-        createdAt: t.entries.createdAt,
         sessionNumber: t.sessions.number,
         authorName: t.nodes.name,
         authorSlug: t.nodes.slug,
@@ -81,16 +80,13 @@ export function getQuotes(authorSlug: string | null, viewer: Viewer | null) {
       myVote: mine.has(row.id),
     }));
 
-    /* Цитата недели — максимум голосов среди цитат за последние 7 дней
-     * (README «Голосование за цитату»). */
-    const weekAgo = Date.now() - 7 * 24 * 3600 * 1000;
-    const recent = rows.filter((row) => row.createdAt.getTime() >= weekAgo).map((row) => row.id);
-    const ofWeek =
-      all
-        .filter((quote) => recent.includes(quote.id) && quote.votes > 0)
-        .sort((a, b) => b.votes - a.votes)[0] ?? null;
-
     const filtered = authorSlug ? all.filter((quote) => quote.authorSlug === authorSlug) : all;
+
+    /* Наверху страницы — случайная цитата из тех, что видны при текущем
+     * фильтре. Выбор делается на сервере при каждом запросе, поэтому
+     * обновление страницы её меняет. */
+    const featured =
+      filtered.length > 0 ? filtered[Math.floor(Math.random() * filtered.length)] : null;
 
     const [{ sessions }] = await db
       .select({ sessions: sql<number>`count(*)::int` })
@@ -100,19 +96,8 @@ export function getQuotes(authorSlug: string | null, viewer: Viewer | null) {
     return {
       total: all.length,
       sessions,
-      ofWeek,
-      quotes: filtered.filter((quote) => quote.id !== ofWeek?.id),
+      featured,
+      quotes: filtered.filter((quote) => quote.id !== featured?.id),
     };
-  });
-}
-
-/** Сколько голосов у цитаты сейчас — после переключения голоса. */
-export function countVotes(entryId: string) {
-  return runDb(async (db) => {
-    const [row] = await db
-      .select({ n: sql<number>`count(*)::int` })
-      .from(t.votes)
-      .where(eq(t.votes.entryId, entryId));
-    return row?.n ?? 0;
   });
 }

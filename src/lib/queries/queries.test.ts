@@ -128,16 +128,35 @@ describe('getFreeNotes', () => {
 });
 
 describe('getQuotes', () => {
-  it('цитата недели — свежая, даже если у старой голосов больше', async () => {
+  it('наверх попадает одна из цитат, и в сетке её уже нет', async () => {
     const data = await getQuotes(null, null);
-    expect(data.ofWeek?.body).toBe('Свежая цитата.');
-    expect(data.quotes.map((quote) => quote.body)).toEqual(['Старая цитата.']);
+    expect(data.total).toBe(2);
+    expect(data.featured).not.toBeNull();
+    expect(data.quotes).toHaveLength(1);
+    expect(data.quotes.map((quote) => quote.id)).not.toContain(data.featured?.id);
+  });
+
+  it('со временем показывает наверху разные цитаты', async () => {
+    const seen = new Set<string>();
+    for (let i = 0; i < 40; i += 1) {
+      seen.add((await getQuotes(null, null)).featured?.id ?? '');
+    }
+    expect(seen.size).toBe(2);
+  });
+
+  it('при фильтре по автору случайная берётся из его же цитат', async () => {
+    const data = await getQuotes('geroy', null);
+    expect(data.featured?.authorSlug).toBe('geroy');
   });
 
   it('отмечает голос текущего пользователя', async () => {
-    const data = await getQuotes(null, player);
-    expect(data.ofWeek?.myVote).toBe(true);
-    expect((await getQuotes(null, other)).ofWeek?.myVote).toBe(false);
+    const mine = await getQuotes(null, player);
+    const all = [mine.featured, ...mine.quotes];
+    expect(all.find((quote) => quote?.body === 'Свежая цитата.')?.myVote).toBe(true);
+
+    const theirs = await getQuotes(null, other);
+    const allTheirs = [theirs.featured, ...theirs.quotes];
+    expect(allTheirs.find((quote) => quote?.body === 'Свежая цитата.')?.myVote).toBe(false);
   });
 
   it('фильтр по автору отбирает по слагу персонажа', async () => {
