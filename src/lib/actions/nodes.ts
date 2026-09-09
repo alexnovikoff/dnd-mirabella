@@ -100,18 +100,15 @@ export async function updateNode(nodeId: string, patch: NodePatch): Promise<Upda
 export type DeleteNodeResult = { ok: true } | { ok: false; error: string };
 
 /**
- * Удаление сущности. Доступно только мастеру: узел висит в записях всей
- * партии, и его исчезновение рвёт связи в чужих текстах.
+ * Удаление сущности. Доступно любому вошедшему: сущности — общее хозяйство
+ * кампании, их и заводят все.
  *
  * Рёбра и позиция на доске уходят каскадом. Текст записей не трогаем:
  * `[[Имя]]` останется и будет рисоваться серым — текст первичен, и решать,
  * переписывать ли его, автору записи.
  */
 export async function deleteNode(nodeId: string): Promise<DeleteNodeResult> {
-  const viewer = await requireViewer();
-  if (viewer.role !== 'dm') {
-    return { ok: false, error: 'Удалять сущности может только мастер' };
-  }
+  await requireViewer();
 
   return runDb(async (db) => {
     const [character] = await db

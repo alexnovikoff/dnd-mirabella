@@ -22,7 +22,6 @@ const STATUSES: { value: string; label: string }[] = [
 
 export function EntityEditor({
   node,
-  canDelete,
 }: {
   node: {
     id: string;
@@ -33,8 +32,6 @@ export function EntityEditor({
     aliases: string[];
     isCharacter: boolean;
   };
-  /** Удаление — только мастеру: узел висит в записях всей партии. */
-  canDelete: boolean;
 }) {
   const router = useRouter();
   const { canWrite } = useQuickEntry();
@@ -187,7 +184,8 @@ export function EntityEditor({
           ОТМЕНА
         </button>
 
-        {canDelete && !node.isCharacter ? (
+        {/* Персонажа партии не удаляем: у него своя строка в characters. */}
+        {!node.isCharacter ? (
           <button
             type="button"
             className={styles.danger}

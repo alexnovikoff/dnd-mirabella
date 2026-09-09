@@ -3,14 +3,13 @@ import { Screen } from '@/components/shell/Screen';
 import { LinkRow, MonoLabel, StatusPill } from '@/components/primitives';
 import { EntityEditor } from '@/components/entity/EntityEditor';
 import { getNodeDetail } from '@/lib/queries/board';
-import { getViewer } from '@/lib/viewer';
 import { NODE_KIND_LABEL } from '@/lib/nodes';
 import styles from '@/components/board/Board.module.css';
 
 /** Куда ведут [[wiki-ссылки]] и узлы доски. */
 export default async function EntityPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const [detail, viewer] = await Promise.all([getNodeDetail(slug), getViewer()]);
+  const detail = await getNodeDetail(slug);
   if (!detail) notFound();
 
   return (
@@ -27,7 +26,6 @@ export default async function EntityPage({ params }: { params: Promise<{ slug: s
       }
     >
       <EntityEditor
-        canDelete={viewer?.role === 'dm'}
         node={{
           id: detail.id,
           name: detail.name,
