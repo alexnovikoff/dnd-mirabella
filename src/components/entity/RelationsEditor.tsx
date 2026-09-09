@@ -5,10 +5,10 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { LinkRow, MonoLabel } from '@/components/primitives';
 import { ConfirmDialog } from '@/components/editor/ConfirmDialog';
+import { LabelInput } from '@/components/editor/LabelInput';
 import { NodePicker, type PickerOption } from '@/components/editor/NodePicker';
 import { useQuickEntry } from '@/components/editor/QuickEntryProvider';
 import { deleteLink, linkNodes, updateLink } from '@/lib/actions/board';
-import picker from '@/components/editor/Picker.module.css';
 import styles from './RelationsEditor.module.css';
 
 export type Relation = {
@@ -78,20 +78,14 @@ export function RelationsEditor({
             → {relation.name}
           </Link>
 
-          {/* Ярлык правится на месте: сохраняем по Enter и по уходу фокуса. */}
-          <input
-            className={styles.labelInput}
-            defaultValue={relation.label ?? ''}
-            placeholder="ТИП СВЯЗИ"
-            list="relation-labels"
-            aria-label={`Тип связи с «${relation.name}»`}
-            onKeyDown={(event) => {
-              if (event.key !== 'Enter') return;
-              event.preventDefault();
-              saveLabel(relation, event.currentTarget.value);
-              event.currentTarget.blur();
-            }}
-            onBlur={(event) => saveLabel(relation, event.currentTarget.value)}
+          {/* Тип правится на месте: Enter, уход фокуса или выбор из списка. */}
+          <LabelInput
+            className={styles.labelField}
+            value={relation.label ?? ''}
+            labels={labels}
+            placeholder="ТИП"
+            ariaLabel={`Тип связи с «${relation.name}»`}
+            onCommit={(next) => saveLabel(relation, next)}
           />
 
           <button
@@ -105,12 +99,6 @@ export function RelationsEditor({
           </button>
         </div>
       ))}
-
-      <datalist id="relation-labels">
-        {labels.map((label) => (
-          <option key={label} value={label} />
-        ))}
-      </datalist>
 
       {adding ? (
         <div className={styles.addRow}>
@@ -128,12 +116,12 @@ export function RelationsEditor({
             <MonoLabel size={9} tracking="0.14em" block>
               Тип связи
             </MonoLabel>
-            <input
-              className={picker.field}
+            <LabelInput
               value={newLabel}
-              onChange={(e) => setNewLabel(e.currentTarget.value)}
+              labels={labels}
               placeholder="Долг, вражда, след…"
-              list="relation-labels"
+              ariaLabel="Тип новой связи"
+              onCommit={setNewLabel}
             />
           </div>
 

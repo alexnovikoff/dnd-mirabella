@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { MonoLabel } from '@/components/primitives';
+import { LabelInput } from '@/components/editor/LabelInput';
 import { NodePicker, type PickerOption } from '@/components/editor/NodePicker';
 import { useQuickEntry } from '@/components/editor/QuickEntryProvider';
 import { ConfirmDialog } from '@/components/editor/ConfirmDialog';
@@ -191,18 +192,13 @@ export function LinkNodeButton({
         <MonoLabel size={9} tracking="0.14em" block>
           Тип связи
         </MonoLabel>
-        <input
-          className={picker.field}
+        <LabelInput
           value={label}
-          onChange={(e) => setLabel(e.currentTarget.value)}
+          labels={labels}
           placeholder="Долг, вражда, след…"
-          list="link-labels"
+          ariaLabel="Тип связи"
+          onCommit={setLabel}
         />
-        <datalist id="link-labels">
-          {labels.map((item) => (
-            <option key={item} value={item} />
-          ))}
-        </datalist>
       </div>
 
       {error ? (

@@ -23,29 +23,17 @@
   flex: 1;
   min-width: 0;
   color: inherit;
+  overflow-wrap: anywhere;
 }
 
 .name:hover {
   color: var(--accent);
 }
 
-.labelInput {
-  width: 150px;
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: var(--radius);
-  padding: 4px 6px;
-  font-family: var(--font-mono);
-  font-size: 9px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--ink-faint);
-}
-
-.labelInput:hover,
-.labelInput:focus {
-  border-color: var(--rule);
-  color: var(--ink);
+/* Тип связи занимает столько, сколько нужно ему, остальное — названию. */
+.labelField {
+  flex: 0 0 auto;
+  width: 96px;
 }
 
 .remove {
