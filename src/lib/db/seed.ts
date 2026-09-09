@@ -223,14 +223,6 @@ const ENTRIES: EntrySeed[] = [
     tags: ['#метель', '#стоунфеллоу', '#таверна'],
   },
   {
-    id: 'e-26-2',
-    kind: 'quote',
-    session: 26,
-    body: 'Я не спрашиваю, чья это жемчужина. Я спрашиваю, чья она будет.',
-    author: 'u-ogen',
-    subject: 'n-ogen',
-  },
-  {
     id: 'e-25-1',
     kind: 'moment',
     session: 25,
@@ -251,37 +243,6 @@ const ENTRIES: EntrySeed[] = [
     roll: 1,
     isFail: true,
     tags: ['#дамайя', '#тупик'],
-  },
-  {
-    id: 'e-24-1',
-    kind: 'quote',
-    session: 24,
-    body: 'Мой отец говорил: не бери в долг у того, кто улыбается. Я взяла у двоих.',
-    author: 'u-aelis',
-    subject: 'n-aelis',
-  },
-  {
-    id: 'e-26-3',
-    kind: 'quote',
-    session: 26,
-    body: 'Он назвал меня по имени. Значит, кто-то уже назвал ему моё.',
-    author: 'u-metel',
-    subject: 'n-metel',
-  },
-  {
-    id: 'e-25-3',
-    kind: 'quote',
-    session: 25,
-    body: 'Это не мародёрство, это инвентаризация.',
-    author: 'u-jadu',
-    subject: 'n-jadu',
-  },
-  {
-    id: 'e-24-3',
-    kind: 'quote',
-    session: 24,
-    body: 'У меня нет плана. У меня есть последовательность решений.',
-    author: 'u-dm',
   },
   {
     id: 'e-26-note',
@@ -315,6 +276,65 @@ const ENTRIES: EntrySeed[] = [
     author: 'u-metel',
     subject: 'n-metel',
     tags: ['#метель', '#слёзы'],
+  },
+];
+
+/* Цитатник — настоящий, со слов Алекса. Сессии он не называл, поэтому
+ * цитаты не привязаны ни к одной: в карточке просто не будет метки «С14».
+ * Диалог хранится одной цитатой в две строки — реплика без подводки теряет
+ * смысл; автором считается тот, кто начал. */
+type QuoteSeed = { id: string; author: string; subject: string; lines: string[] };
+
+const QUOTES: QuoteSeed[] = [
+  {
+    id: 'q-dvor-metel',
+    author: 'u-metel',
+    subject: 'n-metel',
+    lines: ['Ты бы не выжил при моём дворе!'],
+  },
+  {
+    id: 'q-aziz',
+    author: 'u-aelis',
+    subject: 'n-aelis',
+    lines: [
+      'Предсказатель Азиз говорил, что мы потеряем наши деньги и мы их действительно потеряли, потому что сообщник Азиза обчистил наши карманы! Получается, сбылось предсказание! Азиз как бы и не обманул, а ощущение обмана всё равно осталось!',
+    ],
+  },
+  {
+    id: 'q-said',
+    author: 'u-ogen',
+    subject: 'n-ogen',
+    lines: [
+      'Оген: Саид нам расскажет, что он хочет. Мы ему расскажем, что мы хотим взамен того, что он хочет. Потом мы будем долго спорить кто из нас чего больше хочет. Потом мы договоримся… или нет',
+      'Аэлис: Ты тоже пророк, почти как Азиз!',
+    ],
+  },
+  {
+    id: 'q-nyt',
+    author: 'u-ogen',
+    subject: 'n-ogen',
+    lines: ['А ты умеешь, что-нибудь, кроме того, чтобы ныть?'],
+  },
+  {
+    id: 'q-butylka',
+    author: 'u-ogen',
+    subject: 'n-ogen',
+    lines: [
+      'Оген (про артефакт): С этой бутылкой есть проблема — она просит её открыть',
+      'Аэлис: Знаешь, я иногда сижу в баре и бутылка тоже как будто просит себя открыть…',
+    ],
+  },
+  {
+    id: 'q-arbalet',
+    author: 'u-ogen',
+    subject: 'n-ogen',
+    lines: ['Я делаю странное: достаю арбалет и стреляю из лука'],
+  },
+  {
+    id: 'q-dvor-ogen',
+    author: 'u-ogen',
+    subject: 'n-ogen',
+    lines: ['Ты бы не выжила при своём дворе!'],
   },
 ];
 
@@ -458,6 +478,22 @@ export async function seed(db: Db) {
     })),
   );
 
+  await db.insert(t.entries).values(
+    QUOTES.map((quote) => ({
+      id: quote.id,
+      campaignId: CAMPAIGN_ID,
+      sessionId: null,
+      kind: 'quote' as const,
+      title: null,
+      body: quote.lines.join('\n'),
+      authorId: quote.author,
+      subjectId: quote.subject,
+      tags: [],
+      visibility: 'public' as const,
+      createdAt: LAST_SESSION_DATE,
+    })),
+  );
+
   await db.insert(t.images).values(
     IMAGES.map((im) => ({
       id: im.id,
@@ -509,17 +545,6 @@ export async function seed(db: Db) {
   if (mentions.length > 0) await db.insert(t.links).values(mentions);
 
   /* Голоса за цитаты — чтобы «♦ N» было не нулём. */
-  await db.insert(t.votes).values([
-    { entryId: 'e-26-2', userId: 'u-aelis' },
-    { entryId: 'e-26-2', userId: 'u-jadu' },
-    { entryId: 'e-26-2', userId: 'u-metel' },
-    { entryId: 'e-26-2', userId: 'u-dm' },
-    { entryId: 'e-26-3', userId: 'u-ogen' },
-    { entryId: 'e-26-3', userId: 'u-jadu' },
-    { entryId: 'e-24-1', userId: 'u-ogen' },
-    { entryId: 'e-25-3', userId: 'u-metel' },
-  ]);
-
   await db.execute(sql`select 1`);
 }
 

@@ -1,5 +1,11 @@
 import { Screen } from '@/components/shell/Screen';
-import { AccentQuoteCard, FilterChips, MonoLabel, ParchmentCard } from '@/components/primitives';
+import {
+  AccentQuoteCard,
+  FilterChips,
+  MonoLabel,
+  ParchmentCard,
+  QuoteBody,
+} from '@/components/primitives';
 import { VoteButton } from '@/components/quotes/VoteButton';
 import { getQuoteAuthors, getQuotes } from '@/lib/queries/quotes';
 import { getViewer } from '@/lib/viewer';
@@ -56,7 +62,9 @@ export default async function QuotesPage({
 
         {data.quotes.map((quote) => (
           <ParchmentCard key={quote.id} as="article" padding="tight" className={styles.card}>
-            <blockquote className={styles.quote}>«{quote.body}»</blockquote>
+            <blockquote className={styles.quote}>
+              <QuoteBody text={quote.body ?? ''} />
+            </blockquote>
             <div className={styles.footer}>
               <MonoLabel size={9} tracking="0.08em" tone="faint">
                 {[quote.authorName, quote.sessionNumber ? `С${quote.sessionNumber}` : null]

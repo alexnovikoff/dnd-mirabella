@@ -1,8 +1,10 @@
 import { MonoLabel } from './MonoLabel';
+import { QuoteBody } from './QuoteBody';
 import styles from './AccentQuoteCard.module.css';
 
 export type AccentQuoteCardProps = {
-  /** Текст без кавычек — «ёлочки» ставит сам компонент. */
+  /** Текст без кавычек — «ёлочки» ставит сам компонент.
+   *  Несколько строк считаются диалогом и кавычками не оборачиваются. */
   quote: string;
   /** Слева в футере: «— ОГЕН, СЕССИЯ 13». */
   author?: React.ReactNode;
@@ -35,7 +37,9 @@ export function AccentQuoteCard({
         </MonoLabel>
       ) : null}
 
-      <blockquote className={styles.quote}>«{quote}»</blockquote>
+      <blockquote className={styles.quote}>
+        <QuoteBody text={quote} />
+      </blockquote>
 
       {author || meta ? (
         <figcaption className={styles.footer}>

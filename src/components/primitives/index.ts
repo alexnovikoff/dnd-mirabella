@@ -24,3 +24,5 @@ export { LinkRow } from './LinkRow';
 export { Metric } from './Metric';
 
 export { Skeleton, SkeletonCard } from './Skeleton';
+
+export { QuoteBody } from './QuoteBody';
