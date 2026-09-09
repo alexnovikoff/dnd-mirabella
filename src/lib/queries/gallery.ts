@@ -1,7 +1,7 @@
 /* Запросы экрана «Галерея»: лента изображений, сгруппированная по сессиям
  * либо плоская по дате. */
 
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, ne } from 'drizzle-orm';
 import { runDb } from '@/lib/db/client';
 import * as t from '@/lib/db/schema';
 import { CAMPAIGN_ID } from '@/lib/db/seed';
@@ -19,11 +19,14 @@ export function isGalleryFilter(value: string | undefined): value is GalleryFilt
   return GALLERY_FILTERS.some((f) => f.id === value);
 }
 
+/** Всё, кроме достижений: те живут на странице персонажа. */
+export type GalleryKind = Exclude<t.ImageKind, 'achievement'>;
+
 export type GalleryImage = {
   id: string;
   url: string | null;
   caption: string | null;
-  kind: 'art' | 'map' | 'screenshot';
+  kind: GalleryKind;
   isKey: boolean;
   uploaderName: string | null;
   sessionNumber: number | null;
@@ -38,7 +41,9 @@ export type GalleryGroup = {
 
 export function getGallery(filter: GalleryFilter, grouped: boolean) {
   return runDb(async (db) => {
-    const conditions = [eq(t.images.campaignId, CAMPAIGN_ID)];
+    /* Достижения — часть страницы персонажа, а не хроники кампании:
+     * фильтра под них здесь нет, и в «ВСЁ» они тоже не попадают. */
+    const conditions = [eq(t.images.campaignId, CAMPAIGN_ID), ne(t.images.kind, 'achievement')];
     if (filter !== 'all') conditions.push(eq(t.images.kind, filter));
 
     const rows = await db
@@ -108,7 +113,7 @@ type Row = {
   id: string;
   url: string | null;
   caption: string | null;
-  kind: 'art' | 'map' | 'screenshot';
+  kind: t.ImageKind;
   isKey: boolean;
   uploaderName: string | null;
   sessionNumber: number | null;
@@ -119,7 +124,8 @@ function toImage(row: Row): GalleryImage {
     id: row.id,
     url: row.url,
     caption: row.caption,
-    kind: row.kind,
+    /* Достижения отсечены условием выборки — сюда доходят только виды ленты. */
+    kind: row.kind as GalleryKind,
     isKey: row.isKey,
     uploaderName: row.uploaderName,
     sessionNumber: row.sessionNumber,
