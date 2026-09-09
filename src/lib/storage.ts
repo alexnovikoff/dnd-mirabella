@@ -25,9 +25,19 @@ const EXTENSIONS: Record<string, string> = {
 };
 
 /* Читаем лениво, а не на импорте модуля: в тестах и скриптах окружение
- * может появиться позже самого модуля. */
+ * может появиться позже самого модуля.
+ *
+ * Признак «хранилище подключено» — не только статический токен. Vercel
+ * подключает хранилище к проекту через OIDC и кладёт BLOB_STORE_ID, а токен
+ * SDK получает и обновляет сам. Если ориентироваться только на токен,
+ * приложение на Vercel решит, что Blob'а нет, и полезет писать на диск,
+ * которого там нет. */
 function blobToken(): string | undefined {
   return process.env.BLOB_READ_WRITE_TOKEN || undefined;
+}
+
+function usesBlob(): boolean {
+  return Boolean(process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB_STORE_ID);
 }
 
 export function isSupportedImage(type: string): boolean {
@@ -42,15 +52,16 @@ export async function saveUpload(file: File): Promise<string> {
   const name = `${randomUUID()}.${extension}`;
   const token = blobToken();
 
-  if (token) {
+  if (usesBlob()) {
     const { put } = await import('@vercel/blob');
     /* Имя уже случайное — суффикс от Blob только испортил бы совпадение
-     * URL с тем, что лежит в базе. */
+     * URL с тем, что лежит в базе. Токен передаём, только если он есть:
+     * иначе SDK возьмёт OIDC сам. */
     const { url } = await put(`uploads/${name}`, file, {
       access: 'public',
       contentType: file.type,
       addRandomSuffix: false,
-      token,
+      ...(token ? { token } : {}),
     });
     return url;
   }
@@ -68,11 +79,11 @@ export async function removeUpload(url: string | null): Promise<void> {
 
   if (url.startsWith('https://')) {
     const token = blobToken();
-    if (!token || !url.includes('.public.blob.vercel-storage.com/')) return;
+    if (!usesBlob() || !url.includes('.public.blob.vercel-storage.com/')) return;
 
     const { del } = await import('@vercel/blob');
     try {
-      await del(url, { token });
+      await del(url, token ? { token } : undefined);
     } catch {
       /* Файла уже нет — значит, задача выполнена. */
     }
