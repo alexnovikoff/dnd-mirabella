@@ -30,8 +30,14 @@
 }
 
 /* На узком экране зона касания всё равно должна быть 44px. */
+/* Зона касания 44px — только там, где пальцем. */
 @media (max-width: 767px) {
-  .action {
+  .action,
+  .submit,
+  .cancel,
+  .danger,
+  .form input,
+  .form select {
     min-height: 44px;
   }
 }
@@ -44,31 +50,41 @@
 .form {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
   background: var(--panel);
   border: 1px solid var(--rule);
   border-radius: var(--radius);
-  padding: 18px 20px;
+  padding: 12px 14px;
 }
 
 .row {
   display: flex;
-  gap: 12px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
 .field {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
   flex: 1;
-  min-width: 180px;
+  min-width: 120px;
+}
+
+/* Поля внутри формы правки ниже обычных: панель узла всего 300px,
+ * и полноразмерные поля раздували её вдвое. */
+.form input,
+.form select,
+.form textarea {
+  min-height: 30px;
+  padding: 6px 8px;
+  font-size: 13px;
 }
 
 .textarea {
-  min-height: 88px;
+  min-height: 58px;
   resize: vertical;
-  line-height: 1.6;
+  line-height: 1.5;
 }
 
 .buttons {
@@ -82,8 +98,7 @@
   border: 1px solid var(--accent);
   border-radius: var(--radius);
   color: var(--accent-on-warm);
-  padding: 11px 16px;
-  min-height: 44px;
+  padding: 7px 12px;
   font-family: var(--font-mono);
   font-size: 10px;
   letter-spacing: 0.08em;
@@ -99,8 +114,7 @@
   border: 1px solid var(--rule);
   border-radius: var(--radius);
   color: var(--ink-muted);
-  padding: 11px 16px;
-  min-height: 44px;
+  padding: 7px 12px;
   font-family: var(--font-mono);
   font-size: 10px;
   letter-spacing: 0.08em;
@@ -112,8 +126,7 @@
   border: 1px solid var(--accent);
   border-radius: var(--radius);
   color: var(--accent);
-  padding: 11px 16px;
-  min-height: 44px;
+  padding: 7px 12px;
   font-family: var(--font-mono);
   font-size: 10px;
   letter-spacing: 0.08em;
