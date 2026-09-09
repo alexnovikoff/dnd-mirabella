@@ -101,7 +101,7 @@ pnpm auth:password «Имя»  # сменить пароль участнику 
 src/
   app/            маршруты: / /party /gallery /quotes /kb /board /login
                   /account /characters/[slug] /entities/[slug]
-                  /sessions/[number], служебный /styleguide
+                  /sessions и /sessions/[number], служебный /styleguide
   components/
     shell/        оболочка: лист, шапка, чип аккаунта, заголовок экрана
     primitives/   ParchmentCard, AccentQuoteCard, MonoLabel, StatusPill,

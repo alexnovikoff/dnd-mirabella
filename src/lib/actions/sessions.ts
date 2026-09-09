@@ -35,6 +35,7 @@ export async function createSession(): Promise<SessionResult> {
   });
 
   revalidatePath('/');
+  revalidatePath('/sessions');
   revalidatePath('/gallery');
   revalidatePath(`/sessions/${number}`);
   return { ok: true, number };
@@ -62,6 +63,7 @@ export async function updateSession(
   if (!ok) return { ok: false, error: 'Сессия не найдена' };
 
   revalidatePath('/');
+  revalidatePath('/sessions');
   revalidatePath('/gallery');
   revalidatePath(`/sessions/${number}`);
   return { ok: true, number };
