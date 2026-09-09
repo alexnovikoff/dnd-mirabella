@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { MonoLabel } from '@/components/primitives';
 import { saveNodePosition } from '@/lib/actions/board';
@@ -16,9 +16,13 @@ const DRAG_THRESHOLD = 4;
  * чисто визуальная штука: он ничего не пересчитывает и никуда не сохраняется. */
 const ZOOM_STEPS = [0.6, 0.75, 0.9, 1, 1.25, 1.5, 2] as const;
 const ZOOM_DEFAULT = ZOOM_STEPS.indexOf(1);
-const CANVAS_HEIGHT = 560;
-/** README: граф не сжимается на узких экранах. */
-const CANVAS_MIN_WIDTH = 900;
+
+/* Собственный размер полотна: он не зависит от ширины колонки, поэтому
+ * координаты узлов (проценты) всегда ложатся в одну и ту же систему, а
+ * места хватает, чтобы двигать доску даже на 100%. В макете было 900×560,
+ * но там доска и не двигалась. */
+const BOARD_WIDTH = 1500;
+const BOARD_HEIGHT = 900;
 
 type NodeDrag = { id: string; movedFar: boolean };
 type Pan = {
@@ -45,10 +49,6 @@ export function BoardCanvas({
   const canvasRef = useRef<HTMLDivElement>(null);
 
   const [zoomStep, setZoomStep] = useState<number>(ZOOM_DEFAULT);
-  /* Ширину канвы держим в пикселях, а не в процентах: процентная ширина
-   * ребёнка не создаёт прокрутки у контейнера, и доска отказывалась
-   * прокручиваться при увеличении. */
-  const [baseWidth, setBaseWidth] = useState(CANVAS_MIN_WIDTH);
   const [drag, setDrag] = useState<NodeDrag | null>(null);
   const [pan, setPan] = useState<Pan | null>(null);
   /* Локальные координаты на время перетаскивания — линии едут за узлом. */
@@ -57,18 +57,29 @@ export function BoardCanvas({
   const zoom = ZOOM_STEPS[zoomStep];
   const byId = new Map(nodes.map((node) => [node.id, node]));
 
-  useLayoutEffect(() => {
+  /* Полотно больше окна, поэтому выбранный узел может оказаться за краем —
+   * например при переходе по связи из панели. Подкручиваем к нему. */
+  useEffect(() => {
     const scroller = scrollerRef.current;
-    if (!scroller) return;
+    if (!scroller || !selectedSlug) return;
 
-    const measure = () =>
-      setBaseWidth(Math.max(CANVAS_MIN_WIDTH, Math.round(scroller.clientWidth)));
+    const node = nodes.find((item) => item.slug === selectedSlug);
+    if (!node) return;
 
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(scroller);
-    return () => observer.disconnect();
-  }, []);
+    const position = positions[node.id] ?? { x: node.x, y: node.y };
+    const target = {
+      left: (BOARD_WIDTH * zoom * position.x) / 100 - scroller.clientWidth / 2,
+      top: (BOARD_HEIGHT * zoom * position.y) / 100 - scroller.clientHeight / 2,
+    };
+    scroller.scrollTo({
+      left: Math.max(0, target.left),
+      top: Math.max(0, target.top),
+      behavior: 'smooth',
+    });
+    /* Только на смену выбора: при перетаскивании и масштабировании
+     * доска не должна прыгать сама. */
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedSlug]);
 
   const positionOf = useCallback(
     (node: BoardNode) => positions[node.id] ?? { x: node.x, y: node.y },
@@ -127,7 +138,7 @@ export function BoardCanvas({
             здесь же — иначе по краям масштабированной канвы виден просвет. */}
         <div
           className={pan?.movedFar ? `${styles.sizer} ${styles.panning}` : styles.sizer}
-          style={{ width: baseWidth * zoom, height: CANVAS_HEIGHT * zoom }}
+          style={{ width: BOARD_WIDTH * zoom, height: BOARD_HEIGHT * zoom }}
           onPointerDown={(event) => {
             /* Тянем за пустое место — двигаем доску. */
             if (event.button !== 0) return;
@@ -175,8 +186,8 @@ export function BoardCanvas({
             className={styles.canvas}
             ref={canvasRef}
             style={{
-              width: baseWidth,
-              height: CANVAS_HEIGHT,
+              width: BOARD_WIDTH,
+              height: BOARD_HEIGHT,
               transform: `scale(${zoom})`,
               transformOrigin: 'top left',
             }}
