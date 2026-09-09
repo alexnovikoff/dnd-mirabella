@@ -12,7 +12,14 @@
 }
 
 .portrait {
+  position: relative;
   height: 180px;
+  overflow: hidden;
+  border: 1px solid var(--rule);
+}
+
+.portraitImage {
+  object-fit: cover;
 }
 
 .name {

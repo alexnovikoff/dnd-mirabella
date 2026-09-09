@@ -100,7 +100,12 @@ export function getCharacter(slug: string, viewer: Viewer | null) {
       .map(withVotes);
 
     const manual = await db
-      .select({ from: t.links.fromNodeId, to: t.links.toNodeId, label: t.links.label })
+      .select({
+        linkId: t.links.id,
+        from: t.links.fromNodeId,
+        to: t.links.toNodeId,
+        label: t.links.label,
+      })
       .from(t.links)
       .where(
         and(
@@ -119,7 +124,7 @@ export function getCharacter(slug: string, viewer: Viewer | null) {
       .map((link) => {
         const otherId = link.from === row.id ? link.to : link.from;
         const other = otherId ? byId.get(otherId) : undefined;
-        return other ? { ...other, label: link.label } : null;
+        return other ? { linkId: link.linkId, ...other, label: link.label } : null;
       })
       .filter((entry): entry is NonNullable<typeof entry> => entry !== null);
 
@@ -159,6 +164,7 @@ export function getCharacters() {
         race: t.characters.race,
         classes: t.characters.classes,
         bio: t.characters.bio,
+        portrait: t.characters.portrait,
       })
       .from(t.characters)
       .innerJoin(t.nodes, eq(t.nodes.id, t.characters.nodeId))

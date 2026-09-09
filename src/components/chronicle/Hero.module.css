@@ -55,6 +55,17 @@
   transition: box-shadow var(--hover-slow);
 }
 
+/* Загруженный портрет в том же круге, что и штриховка-плейсхолдер. */
+.avatarImage {
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  border: 1px solid var(--dash);
+  object-fit: cover;
+  transition: box-shadow var(--hover-slow);
+}
+
+.member:hover .avatarImage,
 .member:hover .avatar {
   box-shadow: var(--node-shadow-sm);
 }

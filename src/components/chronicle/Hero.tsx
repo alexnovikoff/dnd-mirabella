@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import { MonoLabel } from '@/components/primitives';
 import styles from './Hero.module.css';
@@ -8,6 +9,7 @@ type Member = {
   slug: string;
   race: string | null;
   classes: string | null;
+  portrait: string | null;
 };
 
 export function Hero({
@@ -46,7 +48,17 @@ export function Hero({
       <div className={styles.party}>
         {party.map((member) => (
           <Link key={member.id} href={`/characters/${member.slug}`} className={styles.member}>
-            <span className={styles.avatar} aria-hidden="true" />
+            {member.portrait ? (
+              <Image
+                src={member.portrait}
+                alt=""
+                width={62}
+                height={62}
+                className={styles.avatarImage}
+              />
+            ) : (
+              <span className={styles.avatar} aria-hidden="true" />
+            )}
             <span className={styles.name}>{member.name}</span>
             <span className={styles.role}>
               {member.race}

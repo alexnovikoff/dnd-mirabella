@@ -55,7 +55,7 @@ const PARTY: (NodeSeed & { race: string; classes: string; bio: string })[] = [
     classes: 'Плут · Монах',
     x: 30,
     y: 62,
-    bio: 'Держит дистанцию со всеми, кроме партии, и не любит разговоров про свою семью.',
+    bio: 'Уверовал в Леад',
   },
   {
     id: 'n-jadu',
@@ -65,7 +65,7 @@ const PARTY: (NodeSeed & { race: string; classes: string; bio: string })[] = [
     classes: 'Волшебник',
     x: 28,
     y: 20,
-    bio: 'Считает, что любой предмет считается за один, если его правильно упаковать.',
+    bio: 'Считает, что хорошие дела должны хорошо оплачиваться',
   },
   {
     id: 'n-metel',
@@ -75,7 +75,7 @@ const PARTY: (NodeSeed & { race: string; classes: string; bio: string })[] = [
     classes: 'Плут',
     x: 60,
     y: 40,
-    bio: 'Ведёт переговоры как бой и обычно выходит из них с чужим имуществом.',
+    bio: 'Ты бы не выжил при её дворе',
   },
   {
     id: 'n-ogen',
@@ -85,7 +85,7 @@ const PARTY: (NodeSeed & { race: string; classes: string; bio: string })[] = [
     classes: 'Плут · Чародей',
     x: 84,
     y: 46,
-    bio: 'Задаёт вопросы, ответы на которые никому не нравятся, и всё равно оказывается прав.',
+    bio: 'Не любит распространяться о своём прошлом',
   },
 ];
 

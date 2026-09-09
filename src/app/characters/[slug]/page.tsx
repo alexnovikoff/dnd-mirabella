@@ -2,7 +2,6 @@ import { notFound } from 'next/navigation';
 import {
   AccentQuoteCard,
   ImagePlaceholder,
-  LinkRow,
   Metric,
   MonoLabel,
   ParchmentCard,
@@ -12,6 +11,9 @@ import { EntryActions } from '@/components/entry/EntryActions';
 import { CharacterEditor } from '@/components/character/CharacterEditor';
 import { PersonalNotes } from '@/components/character/PersonalNotes';
 import { PortraitEditor } from '@/components/character/PortraitEditor';
+import { RelationsEditor } from '@/components/entity/RelationsEditor';
+import { getBoard } from '@/lib/queries/board';
+import { getLinkLabels } from '@/lib/queries/labels';
 import { getCharacter } from '@/lib/queries/characters';
 import { getNodeIndex } from '@/lib/queries/chronicle';
 import { getViewer } from '@/lib/viewer';
@@ -20,7 +22,12 @@ import styles from '@/components/character/Character.module.css';
 export default async function CharacterPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const viewer = await getViewer();
-  const [character, index] = await Promise.all([getCharacter(slug, viewer), getNodeIndex()]);
+  const [character, index, board, labels] = await Promise.all([
+    getCharacter(slug, viewer),
+    getNodeIndex(),
+    getBoard(),
+    getLinkLabels(),
+  ]);
 
   if (!character) notFound();
 
@@ -137,23 +144,14 @@ export default async function CharacterPage({ params }: { params: Promise<{ slug
             <MonoLabel size={10} tracking="0.14em" block>
               Связи
             </MonoLabel>
-            <div className={styles.rows}>
-              {character.relations.length === 0 ? (
-                <MonoLabel size={9} tracking="0.08em" tone="faint">
-                  Связей пока нет
-                </MonoLabel>
-              ) : (
-                character.relations.map((relation) => (
-                  <LinkRow
-                    key={`${relation.id}-${relation.label ?? ''}`}
-                    name={relation.name}
-                    label={relation.label?.toUpperCase()}
-                    href={`/entities/${relation.slug}`}
-                    accent={relation.label?.toLowerCase() === 'тайна'}
-                  />
-                ))
-              )}
-            </div>
+            <RelationsEditor
+              nodeId={character.id}
+              relations={character.relations}
+              labels={labels}
+              candidates={board.nodes
+                .filter((item) => item.id !== character.id)
+                .map((item) => ({ id: item.id, name: item.name, kind: item.kind }))}
+            />
           </div>
 
           <PersonalNotes

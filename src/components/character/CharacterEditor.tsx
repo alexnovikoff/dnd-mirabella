@@ -44,8 +44,8 @@ export function CharacterEditor({
 
   if (!open) {
     return (
-      <button type="button" className={styles.smallAction} onClick={() => setOpen(true)}>
-        Править персонажа
+      <button type="button" className={styles.compactAction} onClick={() => setOpen(true)}>
+        Править
       </button>
     );
   }
