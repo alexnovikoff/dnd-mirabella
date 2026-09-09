@@ -55,7 +55,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     getViewer(),
   ]);
   const title = campaign?.title ?? 'Кампания';
-  const sessionLabel = session ? `Сессия ${session.number} · ${shortRuDate(session.date)}` : '';
+  /* Даты у сессии может не быть — тогда в шапке остаётся один номер. */
+  const sessionLabel = session
+    ? [`Сессия ${session.number}`, shortRuDate(session.date)].filter(Boolean).join(' · ')
+    : '';
   const sessionShort = session ? `С${session.number}` : '';
   const characters = nodes.filter((node) => node.kind === 'character');
 

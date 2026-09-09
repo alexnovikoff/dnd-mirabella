@@ -7,7 +7,9 @@ import { CAMPAIGN_ID } from '@/lib/db/seed';
 import type { Viewer } from '@/lib/auth-shared';
 import { visibleEntries } from '@/lib/visibility';
 
-export function getSessions() {
+/** Полный список сессий: последняя сверху. Счётчик записей считается по тем,
+ *  что зритель вправе увидеть, — иначе список выдавал бы чужие черновики. */
+export function getSessions(viewer: Viewer | null = null) {
   return runDb(async (db) => {
     const rows = await db
       .select({
@@ -21,10 +23,11 @@ export function getSessions() {
       .where(eq(t.sessions.campaignId, CAMPAIGN_ID))
       .orderBy(desc(t.sessions.number));
 
+    const visible = visibleEntries(viewer);
     const counts = await db
       .select({ sessionId: t.entries.sessionId, n: sql<number>`count(*)::int` })
       .from(t.entries)
-      .where(eq(t.entries.campaignId, CAMPAIGN_ID))
+      .where(and(eq(t.entries.campaignId, CAMPAIGN_ID), ...(visible ? [visible] : [])))
       .groupBy(t.entries.sessionId);
     const byId = new Map(counts.map((row) => [row.sessionId, row.n]));
 

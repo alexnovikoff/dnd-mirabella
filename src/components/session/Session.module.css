@@ -142,3 +142,50 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
+
+/* — Список всех сессий (/sessions) — */
+.list {
+  display: flex;
+  flex-direction: column;
+}
+
+.listRow {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--rule);
+  color: var(--ink);
+}
+
+.listRow:last-child {
+  border-bottom: 0;
+}
+
+.listRow:hover {
+  color: var(--accent);
+}
+
+.listTitle {
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+.listUntitled {
+  font-size: 16px;
+  line-height: 1.45;
+  color: var(--ink-faint);
+  font-style: italic;
+}
+
+@media (max-width: 767px) {
+  .listRow {
+    grid-template-columns: 32px minmax(0, 1fr);
+    gap: 6px 10px;
+  }
+
+  .listRow > :last-child {
+    grid-column: 2;
+  }
+}

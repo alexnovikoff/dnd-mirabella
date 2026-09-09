@@ -21,6 +21,12 @@
   gap: 10px;
 }
 
+/* Заголовок-ссылка на полный список сессий: цвет задан внутри MonoLabel,
+ * поэтому hover перекрашивает именно её. */
+.blockTitle:hover span {
+  color: var(--accent);
+}
+
 /* — Сессии — */
 .sessionRow {
   display: flex;
@@ -34,6 +40,15 @@
 
 a.sessionRow:hover {
   color: var(--accent);
+}
+
+/* Заголовки сессий бывают в абзац длиной — в сайдбаре режем до строки,
+ * целиком они видны в списке и на странице сессии. */
+.sessionTitle {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .sessionRow:last-child {

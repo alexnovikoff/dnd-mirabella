@@ -39,7 +39,13 @@ export default async function SessionPage({ params }: { params: Promise<{ number
       title={
         session.title ? `Сессия ${session.number} — ${session.title}` : `Сессия ${session.number}`
       }
-      note={[numericDate(session.date), session.location].filter(Boolean).join(' · ') || undefined}
+      /* Даты может не быть — тогда подписи под заголовком нет вовсе,
+         а не прочерк, которым numericDate заполняет пустую ячейку списка. */
+      note={
+        [session.date ? numericDate(session.date) : null, session.location]
+          .filter(Boolean)
+          .join(' · ') || undefined
+      }
       aside={
         <div className={styles.nav}>
           {session.previous ? (
