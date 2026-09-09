@@ -1,0 +1,95 @@
+/* Учётная запись: кто вошёл и смена своего пароля. Узкая колонка —
+ * форма здесь единственное содержимое экрана. */
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 420px;
+  background: var(--card-bg);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  box-shadow: var(--card-shadow);
+  padding: 20px 22px;
+}
+
+.who {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--rule-soft);
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex: none;
+  background: var(--accent);
+  color: var(--accent-on-warm);
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+.name {
+  font-family: var(--font-display);
+  font-size: 22px;
+  line-height: 1.2;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.input {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  min-height: 40px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--ink-body-2);
+}
+
+.submit {
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  color: var(--accent-on-warm);
+  padding: 12px;
+  min-height: 44px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  transition: background var(--hover-fast);
+}
+
+.submit:hover {
+  background: var(--accent-hover);
+}
+
+.submit:disabled {
+  opacity: 0.55;
+}
+
+/* Ошибка — плашка на акценте, как на экране входа (README «Состояния»). */
+.error {
+  background: var(--accent);
+  color: var(--accent-on);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  font-size: 14px;
+}

@@ -1,6 +1,9 @@
 /* Общие типы сессии. Отдельный файл, чтобы их можно было импортировать
  * и в клиентских компонентах, не таща за собой серверный next-auth. */
 
+/** Короче — не пароль. То же ограничение проверяет pnpm auth:password. */
+export const MIN_PASSWORD_LENGTH = 8;
+
 export type Role = 'player' | 'dm';
 
 export type Viewer = {
