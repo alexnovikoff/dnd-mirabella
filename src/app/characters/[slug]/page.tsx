@@ -8,6 +8,7 @@ import {
   ParchmentCard,
 } from '@/components/primitives';
 import { WikiText } from '@/components/wiki/WikiText';
+import { EntryActions } from '@/components/entry/EntryActions';
 import { getCharacter } from '@/lib/queries/characters';
 import { getNodeIndex } from '@/lib/queries/chronicle';
 import { getViewer } from '@/lib/viewer';
@@ -19,6 +20,9 @@ export default async function CharacterPage({ params }: { params: Promise<{ slug
   const [character, index] = await Promise.all([getCharacter(slug, viewer), getNodeIndex()]);
 
   if (!character) notFound();
+
+  const canEdit = (authorId: string | null) =>
+    viewer !== null && (viewer.role === 'dm' || authorId === viewer.id);
 
   const meta = [
     character.race,
@@ -82,16 +86,39 @@ export default async function CharacterPage({ params }: { params: Promise<{ slug
                   <WikiText body={moment.body} index={index} />
                 </p>
               ) : null}
+              <EntryActions
+                canEdit={canEdit(moment.authorId)}
+                entry={{
+                  id: moment.id,
+                  kind: moment.kind,
+                  title: moment.title,
+                  body: moment.body,
+                  subjectId: moment.subjectId,
+                  visibility: moment.visibility,
+                }}
+              />
             </ParchmentCard>
           ))}
 
           {character.quotes.map((quote) => (
-            <AccentQuoteCard
-              key={quote.id}
-              quote={quote.body ?? ''}
-              author={`— ${character.name}${quote.sessionNumber ? `, сессия ${quote.sessionNumber}` : ''}`}
-              meta={quote.votes > 0 ? `♦ ${quote.votes}` : undefined}
-            />
+            <div key={quote.id}>
+              <AccentQuoteCard
+                quote={quote.body ?? ''}
+                author={`— ${character.name}${quote.sessionNumber ? `, сессия ${quote.sessionNumber}` : ''}`}
+                meta={quote.votes > 0 ? `♦ ${quote.votes}` : undefined}
+              />
+              <EntryActions
+                canEdit={canEdit(quote.authorId)}
+                entry={{
+                  id: quote.id,
+                  kind: quote.kind,
+                  title: quote.title,
+                  body: quote.body,
+                  subjectId: quote.subjectId,
+                  visibility: quote.visibility,
+                }}
+              />
+            </div>
           ))}
         </section>
 

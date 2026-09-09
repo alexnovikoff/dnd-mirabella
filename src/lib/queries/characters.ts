@@ -16,6 +16,9 @@ export type CharacterEntry = {
   isFail: boolean;
   sessionNumber: number | null;
   votes: number;
+  visibility: t.Visibility;
+  authorId: string | null;
+  subjectId: string | null;
 };
 
 export function getCharacter(slug: string, viewer: Viewer | null) {
@@ -80,6 +83,9 @@ export function getCharacter(slug: string, viewer: Viewer | null) {
       isFail: entry.isFail,
       sessionNumber: entry.sessionNumber,
       votes: votes.get(entry.id) ?? 0,
+      visibility: entry.visibility,
+      authorId: entry.authorId,
+      subjectId: row.id,
     });
 
     const publicEntries = entryRows.filter(

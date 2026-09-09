@@ -1,0 +1,30 @@
+/* Правка и удаление записи. Держим мелко и в стороне: это служебные действия,
+ * а не часть чтения хроники. */
+
+.row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.action {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  transition: color var(--hover-fast);
+}
+
+.action:hover {
+  color: var(--accent);
+}
+
+@media (max-width: 767px) {
+  .action {
+    min-height: 44px;
+  }
+}

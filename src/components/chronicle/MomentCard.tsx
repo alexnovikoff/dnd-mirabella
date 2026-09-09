@@ -1,6 +1,7 @@
 import { Fragment } from 'react';
 import { ImagePlaceholder, MonoLabel, ParchmentCard } from '@/components/primitives';
 import { WikiText } from '@/components/wiki/WikiText';
+import { EntryActions } from '@/components/entry/EntryActions';
 import type { FeedEntry } from '@/lib/queries/chronicle';
 import styles from './MomentCard.module.css';
 
@@ -27,7 +28,15 @@ function Meta({ entry }: { entry: FeedEntry }) {
   );
 }
 
-export function MomentCard({ entry, index }: { entry: FeedEntry; index: Map<string, string> }) {
+export function MomentCard({
+  entry,
+  index,
+  canEdit = false,
+}: {
+  entry: FeedEntry;
+  index: Map<string, string>;
+  canEdit?: boolean;
+}) {
   return (
     <ParchmentCard as="article" interactive>
       <Meta entry={entry} />
@@ -49,17 +58,32 @@ export function MomentCard({ entry, index }: { entry: FeedEntry; index: Map<stri
           ))}
         </div>
       ) : null}
+      <EntryActions entry={toEditable(entry)} canEdit={canEdit} />
     </ParchmentCard>
   );
+}
+
+/** Поля для шита правки — они уже есть в карточке, лишний запрос не нужен. */
+export function toEditable(entry: FeedEntry) {
+  return {
+    id: entry.id,
+    kind: entry.kind,
+    title: entry.title,
+    body: entry.body,
+    subjectId: entry.subjectId,
+    visibility: entry.visibility,
+  };
 }
 
 /** Компактная карточка для записей постарше — README «Компактная карточка». */
 export function CompactMomentCard({
   entry,
   index,
+  canEdit = false,
 }: {
   entry: FeedEntry;
   index: Map<string, string>;
+  canEdit?: boolean;
 }) {
   return (
     <ParchmentCard as="article" padding="tight" interactive className={styles.compact}>
@@ -78,6 +102,7 @@ export function CompactMomentCard({
             <WikiText body={entry.body} index={index} />
           </p>
         ) : null}
+        <EntryActions entry={toEditable(entry)} canEdit={canEdit} />
       </div>
     </ParchmentCard>
   );

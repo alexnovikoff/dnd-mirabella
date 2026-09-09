@@ -46,6 +46,10 @@ export default async function ChroniclePage({
    * так лента держит ритм макета, а не превращается в стену. */
   const compactBelow = activeSession ? activeSession.number - 1 : 0;
 
+  /* Право на правку считает сервер: автор либо мастер. */
+  const canEdit = (authorId: string | null) =>
+    viewer !== null && (viewer.role === 'dm' || authorId === viewer.id);
+
   return (
     <>
       <Hero
@@ -73,12 +77,25 @@ export default async function ChroniclePage({
             </div>
           ) : (
             feed.map((entry) => {
-              if (entry.kind === 'quote') return <QuoteEntry key={entry.id} entry={entry} />;
+              if (entry.kind === 'quote')
+                return (
+                  <QuoteEntry key={entry.id} entry={entry} canEdit={canEdit(entry.authorId)} />
+                );
               const compact = (entry.sessionNumber ?? 0) < compactBelow;
               return compact ? (
-                <CompactMomentCard key={entry.id} entry={entry} index={index} />
+                <CompactMomentCard
+                  key={entry.id}
+                  entry={entry}
+                  index={index}
+                  canEdit={canEdit(entry.authorId)}
+                />
               ) : (
-                <MomentCard key={entry.id} entry={entry} index={index} />
+                <MomentCard
+                  key={entry.id}
+                  entry={entry}
+                  index={index}
+                  canEdit={canEdit(entry.authorId)}
+                />
               );
             })
           )}

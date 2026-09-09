@@ -123,6 +123,110 @@ export async function resolveMention(
   return { ok: true, unresolved };
 }
 
+export type EntryPatch = {
+  title?: string;
+  body: string;
+  caption?: string;
+  subjectId?: string;
+  publish: boolean;
+  dmOnly?: boolean;
+};
+
+/** Править и удалять запись может её автор либо мастер. */
+async function requireOwnership(entryId: string) {
+  const viewer = await requireViewer();
+
+  const entry = await runDb(async (db) => {
+    const [row] = await db
+      .select({ id: t.entries.id, kind: t.entries.kind, authorId: t.entries.authorId })
+      .from(t.entries)
+      .where(eq(t.entries.id, entryId))
+      .limit(1);
+    return row ?? null;
+  });
+
+  if (!entry) throw new Error('Запись не найдена');
+  if (viewer.role !== 'dm' && entry.authorId !== viewer.id) {
+    throw new Error('Эту запись писали не вы');
+  }
+  return { viewer, entry };
+}
+
+export async function updateEntry(entryId: string, input: EntryPatch): Promise<CreateEntryResult> {
+  const { viewer, entry } = await requireOwnership(entryId);
+
+  const body = input.body.trim();
+  const title = input.title?.trim() || null;
+
+  if (entry.kind === 'image') {
+    if (!input.caption?.trim()) return { ok: false, error: 'Добавьте подпись к кадру' };
+  } else if (!body) {
+    return { ok: false, error: 'Запись не может быть пустой' };
+  }
+
+  const result = await runDb(async (db) => {
+    await db
+      .update(t.entries)
+      .set({
+        title,
+        body: entry.kind === 'image' ? null : body,
+        subjectId: input.subjectId ?? null,
+        visibility: !input.publish
+          ? 'draft'
+          : input.dmOnly && viewer.role === 'dm'
+            ? 'dm_only'
+            : 'public',
+      })
+      .where(eq(t.entries.id, entryId));
+
+    if (entry.kind === 'image' && input.caption) {
+      await db
+        .update(t.images)
+        .set({ caption: input.caption.trim() })
+        .where(eq(t.images.entryId, entryId));
+    }
+
+    /* Ради этого правка и нужна: рёбра приводятся в соответствие новому
+     * тексту, и ссылка, убранная из записи, уносит за собой ребро графа. */
+    const sync = await syncEntryLinks(
+      db,
+      CAMPAIGN_ID,
+      entryId,
+      entry.kind === 'image' ? null : body,
+    );
+    return sync.unresolved;
+  });
+
+  revalidatePath('/');
+  revalidatePath('/board');
+  revalidatePath('/kb');
+  revalidatePath('/quotes');
+  return { ok: true, entryId, unresolved: result };
+}
+
+export async function deleteEntry(
+  entryId: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { entry } = await requireOwnership(entryId);
+
+  await runDb(async (db) => {
+    /* Рёбра и голоса уходят каскадом по внешним ключам. Картинки,
+     * приложенные к моменту, каскад только отвязывает — они остаются в
+     * галерее. Исключение — запись типа «фото»: она сама и есть кадр. */
+    if (entry.kind === 'image') {
+      await db.delete(t.images).where(eq(t.images.entryId, entryId));
+    }
+    await db.delete(t.entries).where(eq(t.entries.id, entryId));
+  });
+
+  revalidatePath('/');
+  revalidatePath('/board');
+  revalidatePath('/kb');
+  revalidatePath('/quotes');
+  revalidatePath('/gallery');
+  return { ok: true };
+}
+
 /** Опция «+ создать «…»» в автодополнении: черновая сущность типа
  *  «неизвестно», которую потом дополнят на странице сущности. */
 export async function createDraftNode(rawName: string): Promise<PickerNode> {

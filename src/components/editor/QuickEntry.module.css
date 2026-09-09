@@ -83,6 +83,11 @@
     color var(--hover-fast);
 }
 
+.type:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
 .typeActive {
   background: var(--accent);
   border-color: var(--accent);

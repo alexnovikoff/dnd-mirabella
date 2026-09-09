@@ -4,23 +4,43 @@ import { useEffect, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { DropZone, MonoLabel } from '@/components/primitives';
 import { WikiTextarea } from './WikiTextarea';
-import { createDraftNode, createEntry, resolveMention } from '@/lib/actions/entries';
-import type { EntryKind } from '@/lib/db/schema';
+import { ConfirmDialog } from './ConfirmDialog';
+import {
+  createDraftNode,
+  createEntry,
+  deleteEntry,
+  resolveMention,
+  updateEntry,
+} from '@/lib/actions/entries';
+import type { EntryKind, Visibility } from '@/lib/db/schema';
 import type { PickerNode } from '@/lib/queries/nodes';
 import styles from './QuickEntry.module.css';
 
 const TYPES: { id: EntryKind; label: string; lands: string }[] = [
   { id: 'moment', label: 'МОМЕНТ', lands: 'Попадёт в ленту «Хроники»' },
   { id: 'quote', label: 'ЦИТАТА', lands: 'Попадёт в ленту и в цитатник' },
-  { id: 'image', label: 'ФОТО', lands: 'Попадёт в галерею; загрузка файлов — позже' },
+  { id: 'image', label: 'ФОТО', lands: 'Попадёт в галерею; файлы бросают на «Галерею»' },
   { id: 'note', label: 'ЗАМЕТКА', lands: 'Попадёт в базу знаний' },
 ];
+
+/** Запись, открытая на правку. Данные берём из карточки — лишний запрос
+ *  ради полей, которые уже отрисованы, не нужен. */
+export type EditableEntry = {
+  id: string;
+  kind: EntryKind;
+  title: string | null;
+  body: string | null;
+  subjectId: string | null;
+  visibility: Visibility;
+  caption?: string | null;
+};
 
 export function QuickEntry({
   nodes,
   characters,
   sessionShort,
   isDm,
+  entry,
   onClose,
 }: {
   nodes: PickerNode[];
@@ -29,15 +49,21 @@ export function QuickEntry({
   sessionShort: string;
   /** Мастеру доступна пометка «скрыть от игроков». */
   isDm: boolean;
+  /** Задана — шит открыт на правку, а не на создание. */
+  entry?: EditableEntry | null;
   onClose: () => void;
 }) {
   const router = useRouter();
-  const [kind, setKind] = useState<EntryKind>('moment');
-  const [title, setTitle] = useState('');
-  const [body, setBody] = useState('');
-  const [caption, setCaption] = useState('');
-  const [subjectId, setSubjectId] = useState(characters[0]?.id ?? '');
-  const [dmOnly, setDmOnly] = useState(false);
+  const editing = entry ?? null;
+
+  const [kind, setKind] = useState<EntryKind>(editing?.kind ?? 'moment');
+  const [title, setTitle] = useState(editing?.title ?? '');
+  const [body, setBody] = useState(editing?.body ?? '');
+  const [caption, setCaption] = useState(editing?.caption ?? '');
+  const [subjectId, setSubjectId] = useState(editing?.subjectId ?? characters[0]?.id ?? '');
+  const [dmOnly, setDmOnly] = useState(editing?.visibility === 'dm_only');
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const isDraft = editing?.visibility === 'draft';
   const [error, setError] = useState<string | null>(null);
   /* Имена из [[скобок]], которым не нашлось сущности. Пока они висят,
    * шит не закрывается: иначе ребро графа не появится никогда. */
@@ -64,15 +90,18 @@ export function QuickEntry({
   function submit(publish: boolean) {
     setError(null);
     startTransition(async () => {
-      const result = await createEntry({
-        kind,
+      const payload = {
         title: kind === 'moment' ? title : undefined,
         body,
         caption: kind === 'image' ? caption : undefined,
         subjectId: kind === 'quote' ? subjectId || undefined : undefined,
         publish,
         dmOnly,
-      });
+      };
+
+      const result = editing
+        ? await updateEntry(editing.id, payload)
+        : await createEntry({ kind, ...payload });
 
       if (!result.ok) {
         setError(result.error);
@@ -85,6 +114,21 @@ export function QuickEntry({
         setUnresolved({ entryId: result.entryId, names: result.unresolved });
         return;
       }
+      onClose();
+    });
+  }
+
+  function remove() {
+    setError(null);
+    startTransition(async () => {
+      if (!editing) return;
+      const result = await deleteEntry(editing.id);
+      if (!result.ok) {
+        setError(result.error);
+        setConfirmingDelete(false);
+        return;
+      }
+      router.refresh();
       onClose();
     });
   }
@@ -125,7 +169,7 @@ export function QuickEntry({
           <button type="button" className={styles.close} onClick={onClose} aria-label="Закрыть">
             ×
           </button>
-          <span className={styles.title}>Быстрая запись</span>
+          <span className={styles.title}>{editing ? 'Правка записи' : 'Быстрая запись'}</span>
           <span className={styles.session}>{`${sessionShort} · ${openedAt}`}</span>
         </div>
 
@@ -177,6 +221,10 @@ export function QuickEntry({
                   className={
                     option.id === kind ? `${styles.type} ${styles.typeActive}` : styles.type
                   }
+                  /* Тип записи при правке не меняем: он определяет и набор
+                   * полей, и то, где запись живёт. */
+                  disabled={Boolean(editing)}
+                  title={editing ? 'Тип записи менять нельзя' : undefined}
                   onClick={() => {
                     setKind(option.id);
                     setError(null);
@@ -258,26 +306,72 @@ export function QuickEntry({
             ) : null}
 
             <div className={styles.buttons}>
-              <button
-                type="button"
-                className={styles.button}
-                disabled={pending}
-                onClick={() => submit(false)}
-              >
-                ЧЕРНОВИК
-              </button>
-              <button
-                type="button"
-                className={`${styles.button} ${styles.primary}`}
-                disabled={pending}
-                onClick={() => submit(true)}
-              >
-                В ХРОНИКУ
-              </button>
+              {editing ? (
+                <>
+                  <button
+                    type="button"
+                    className={styles.button}
+                    disabled={pending}
+                    onClick={() => setConfirmingDelete(true)}
+                  >
+                    УДАЛИТЬ
+                  </button>
+                  {/* Черновик можно и сохранить черновиком, и опубликовать. */}
+                  <button
+                    type="button"
+                    className={isDraft ? styles.button : `${styles.button} ${styles.primary}`}
+                    disabled={pending}
+                    onClick={() => submit(!isDraft)}
+                  >
+                    СОХРАНИТЬ
+                  </button>
+                  {isDraft ? (
+                    <button
+                      type="button"
+                      className={`${styles.button} ${styles.primary}`}
+                      disabled={pending}
+                      onClick={() => submit(true)}
+                    >
+                      В ХРОНИКУ
+                    </button>
+                  ) : null}
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    className={styles.button}
+                    disabled={pending}
+                    onClick={() => submit(false)}
+                  >
+                    ЧЕРНОВИК
+                  </button>
+                  <button
+                    type="button"
+                    className={`${styles.button} ${styles.primary}`}
+                    disabled={pending}
+                    onClick={() => submit(true)}
+                  >
+                    В ХРОНИКУ
+                  </button>
+                </>
+              )}
             </div>
           </div>
         )}
       </div>
+
+      {confirmingDelete && editing ? (
+        <ConfirmDialog
+          title="Удалить запись?"
+          body="Вместе с ней исчезнут её связи в графе и голоса. Изображения останутся в галерее."
+          quoted={editing.title ?? editing.body ?? editing.caption ?? null}
+          confirmLabel="УДАЛИТЬ"
+          pending={pending}
+          onConfirm={remove}
+          onCancel={() => setConfirmingDelete(false)}
+        />
+      ) : null}
     </div>
   );
 }
