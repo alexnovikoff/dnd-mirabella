@@ -25,7 +25,8 @@ export type NewEntry = {
   dmOnly?: boolean;
 };
 
-export type CreateEntryResult = { ok: true; unresolved: string[] } | { ok: false; error: string };
+export type CreateEntryResult =
+  { ok: true; entryId: string; unresolved: string[] } | { ok: false; error: string };
 
 export async function createEntry(input: NewEntry): Promise<CreateEntryResult> {
   const viewer = await requireViewer();
@@ -71,18 +72,55 @@ export async function createEntry(input: NewEntry): Promise<CreateEntryResult> {
         campaignId: CAMPAIGN_ID,
         sessionId: session?.id ?? null,
         entryId,
-        url: null, // загрузка файлов — этап 6
+        url: null, // из шита приходит только подпись; файл грузят на «Галерее»
         caption: input.caption?.trim() ?? null,
         uploaderId: viewer.id,
         kind: 'art',
       });
     }
 
-    return syncEntryLinks(db, CAMPAIGN_ID, entryId, input.kind === 'image' ? null : body);
+    const sync = await syncEntryLinks(
+      db,
+      CAMPAIGN_ID,
+      entryId,
+      input.kind === 'image' ? null : body,
+    );
+    return { entryId, unresolved: sync.unresolved };
   });
 
   revalidatePath('/');
-  return { ok: true, unresolved: result.unresolved };
+  return { ok: true, entryId: result.entryId, unresolved: result.unresolved };
+}
+
+/** Завести сущность по имени, которое осталось неразрешённым в уже сохранённой
+ *  записи, и тут же пересчитать её связи — иначе ребро графа не появится
+ *  никогда: пересчёт бывает только при сохранении. */
+export async function resolveMention(
+  entryId: string,
+  name: string,
+): Promise<{ ok: true; unresolved: string[] } | { ok: false; error: string }> {
+  await requireViewer();
+  if (!name.trim()) return { ok: false, error: 'Пустое имя сущности' };
+
+  await createDraftNode(name);
+
+  const unresolved = await runDb(async (db) => {
+    const [entry] = await db
+      .select({ body: t.entries.body })
+      .from(t.entries)
+      .where(eq(t.entries.id, entryId))
+      .limit(1);
+    if (!entry) return null;
+
+    const sync = await syncEntryLinks(db, CAMPAIGN_ID, entryId, entry.body);
+    return sync.unresolved;
+  });
+
+  if (unresolved === null) return { ok: false, error: 'Запись не найдена' };
+
+  revalidatePath('/');
+  revalidatePath('/board');
+  return { ok: true, unresolved };
 }
 
 /** Опция «+ создать «…»» в автодополнении: черновая сущность типа
@@ -120,6 +158,17 @@ export async function createDraftNode(rawName: string): Promise<PickerNode> {
       aliases: [],
     };
     await db.insert(t.nodes).values(node);
+
+    /* Сразу кладём узел на доску: без координат он в граф не попадает,
+     * а сущность, созданная из редактора, — полноценный участник графа.
+     * Место у центра со сдвигом, чтобы новые узлы не ложились стопкой. */
+    const placed = await db.select({ nodeId: t.boardPositions.nodeId }).from(t.boardPositions);
+    const offset = (placed.length % 6) * 5;
+    await db.insert(t.boardPositions).values({
+      nodeId: node.id,
+      x: 45 + offset,
+      y: 45 + (placed.length % 3) * 6,
+    });
 
     return { id: node.id, name: node.name, slug: node.slug, kind: node.kind };
   });

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { DropZone, MonoLabel } from '@/components/primitives';
 import { WikiTextarea } from './WikiTextarea';
-import { createDraftNode, createEntry } from '@/lib/actions/entries';
+import { createDraftNode, createEntry, resolveMention } from '@/lib/actions/entries';
 import type { EntryKind } from '@/lib/db/schema';
 import type { PickerNode } from '@/lib/queries/nodes';
 import styles from './QuickEntry.module.css';
@@ -39,6 +39,9 @@ export function QuickEntry({
   const [subjectId, setSubjectId] = useState(characters[0]?.id ?? '');
   const [dmOnly, setDmOnly] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /* Имена из [[скобок]], которым не нашлось сущности. Пока они висят,
+   * шит не закрывается: иначе ребро графа не появится никогда. */
+  const [unresolved, setUnresolved] = useState<{ entryId: string; names: string[] } | null>(null);
   const [pending, startTransition] = useTransition();
   const sheetRef = useRef<HTMLDivElement>(null);
 
@@ -75,8 +78,32 @@ export function QuickEntry({
         setError(result.error);
         return;
       }
+
       router.refresh();
+
+      if (result.unresolved.length > 0) {
+        setUnresolved({ entryId: result.entryId, names: result.unresolved });
+        return;
+      }
       onClose();
+    });
+  }
+
+  function resolve(name: string) {
+    if (!unresolved) return;
+    setError(null);
+    startTransition(async () => {
+      const result = await resolveMention(unresolved.entryId, name);
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      router.refresh();
+      if (result.unresolved.length === 0) {
+        onClose();
+        return;
+      }
+      setUnresolved({ ...unresolved, names: result.unresolved });
     });
   }
 
@@ -102,112 +129,154 @@ export function QuickEntry({
           <span className={styles.session}>{`${sessionShort} · ${openedAt}`}</span>
         </div>
 
-        <div className={styles.body}>
-          <div className={styles.types}>
-            {TYPES.map((option) => (
-              <button
-                key={option.id}
-                type="button"
-                className={option.id === kind ? `${styles.type} ${styles.typeActive}` : styles.type}
-                onClick={() => {
-                  setKind(option.id);
-                  setError(null);
-                }}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-
-          <MonoLabel size={9} tracking="0.08em" tone="faint" block>
-            {type.lands}
-          </MonoLabel>
-
-          {kind === 'moment' ? (
-            <input
-              className={styles.titleField}
-              value={title}
-              onChange={(e) => setTitle(e.currentTarget.value)}
-              placeholder="Заголовок момента…"
-            />
-          ) : null}
-
-          {kind === 'quote' ? (
-            <select
-              className={styles.select}
-              value={subjectId}
-              onChange={(e) => setSubjectId(e.currentTarget.value)}
-              aria-label="Автор цитаты"
-            >
-              {characters.map((character) => (
-                <option key={character.id} value={character.id}>
-                  {character.name}
-                </option>
-              ))}
-            </select>
-          ) : null}
-
-          {kind === 'image' ? (
-            <>
-              {/* Приём файлов появится на этапе 6 — пока подпись к будущему кадру. */}
-              <DropZone label="Загрузка файлов — этап 6" />
-              <input
-                className={styles.caption}
-                value={caption}
-                onChange={(e) => setCaption(e.currentTarget.value)}
-                placeholder="Подпись к кадру…"
-              />
-            </>
-          ) : (
-            <WikiTextarea
-              value={body}
-              onChange={setBody}
-              nodes={nodes}
-              onCreateNode={createDraftNode}
-              placeholder={
-                kind === 'quote' ? 'Текст цитаты…' : 'Что произошло? Ссылки — в [[скобках]]'
-              }
-            />
-          )}
-
-          {isDm ? (
-            <label className={styles.dmOnly}>
-              <input
-                type="checkbox"
-                checked={dmOnly}
-                onChange={(e) => setDmOnly(e.currentTarget.checked)}
-              />
-              <MonoLabel size={9} tracking="0.08em" tone="faint">
-                Скрыть от игроков
-              </MonoLabel>
-            </label>
-          ) : null}
-
-          {error ? (
-            <MonoLabel size={10} tracking="0.06em" className={styles.error} block>
-              {error}
+        {unresolved ? (
+          <div className={styles.body}>
+            <MonoLabel size={10} tracking="0.14em" block>
+              Запись сохранена
             </MonoLabel>
-          ) : null}
+            <p className={styles.resolveNote}>
+              Для этих имён нет сущности, поэтому связи в графе не появились. Заведите их — или
+              оставьте, ссылки останутся простым текстом.
+            </p>
 
-          <div className={styles.buttons}>
-            <button
-              type="button"
-              className={styles.button}
-              disabled={pending}
-              onClick={() => submit(false)}
-            >
-              ЧЕРНОВИК
-            </button>
-            <button
-              type="button"
-              className={`${styles.button} ${styles.primary}`}
-              disabled={pending}
-              onClick={() => submit(true)}
-            >
-              В ХРОНИКУ
-            </button>
+            <div className={styles.resolveList}>
+              {unresolved.names.map((name) => (
+                <div key={name} className={styles.resolveRow}>
+                  <span>{name}</span>
+                  <button
+                    type="button"
+                    className={styles.resolveButton}
+                    disabled={pending}
+                    onClick={() => resolve(name)}
+                  >
+                    СОЗДАТЬ
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {error ? (
+              <MonoLabel size={10} tracking="0.06em" className={styles.error} block>
+                {error}
+              </MonoLabel>
+            ) : null}
+
+            <div className={styles.buttons}>
+              <button type="button" className={styles.button} onClick={onClose}>
+                ОСТАВИТЬ ТЕКСТОМ
+              </button>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className={styles.body}>
+            <div className={styles.types}>
+              {TYPES.map((option) => (
+                <button
+                  key={option.id}
+                  type="button"
+                  className={
+                    option.id === kind ? `${styles.type} ${styles.typeActive}` : styles.type
+                  }
+                  onClick={() => {
+                    setKind(option.id);
+                    setError(null);
+                  }}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+
+            <MonoLabel size={9} tracking="0.08em" tone="faint" block>
+              {type.lands}
+            </MonoLabel>
+
+            {kind === 'moment' ? (
+              <input
+                className={styles.titleField}
+                value={title}
+                onChange={(e) => setTitle(e.currentTarget.value)}
+                placeholder="Заголовок момента…"
+              />
+            ) : null}
+
+            {kind === 'quote' ? (
+              <select
+                className={styles.select}
+                value={subjectId}
+                onChange={(e) => setSubjectId(e.currentTarget.value)}
+                aria-label="Автор цитаты"
+              >
+                {characters.map((character) => (
+                  <option key={character.id} value={character.id}>
+                    {character.name}
+                  </option>
+                ))}
+              </select>
+            ) : null}
+
+            {kind === 'image' ? (
+              <>
+                {/* Приём файлов появится на этапе 6 — пока подпись к будущему кадру. */}
+                <DropZone label="Загрузка файлов — этап 6" />
+                <input
+                  className={styles.caption}
+                  value={caption}
+                  onChange={(e) => setCaption(e.currentTarget.value)}
+                  placeholder="Подпись к кадру…"
+                />
+              </>
+            ) : (
+              <WikiTextarea
+                value={body}
+                onChange={setBody}
+                nodes={nodes}
+                onCreateNode={createDraftNode}
+                placeholder={
+                  kind === 'quote' ? 'Текст цитаты…' : 'Что произошло? Ссылки — в [[скобках]]'
+                }
+              />
+            )}
+
+            {isDm ? (
+              <label className={styles.dmOnly}>
+                <input
+                  type="checkbox"
+                  checked={dmOnly}
+                  onChange={(e) => setDmOnly(e.currentTarget.checked)}
+                />
+                <MonoLabel size={9} tracking="0.08em" tone="faint">
+                  Скрыть от игроков
+                </MonoLabel>
+              </label>
+            ) : null}
+
+            {error ? (
+              <MonoLabel size={10} tracking="0.06em" className={styles.error} block>
+                {error}
+              </MonoLabel>
+            ) : null}
+
+            <div className={styles.buttons}>
+              <button
+                type="button"
+                className={styles.button}
+                disabled={pending}
+                onClick={() => submit(false)}
+              >
+                ЧЕРНОВИК
+              </button>
+              <button
+                type="button"
+                className={`${styles.button} ${styles.primary}`}
+                disabled={pending}
+                onClick={() => submit(true)}
+              >
+                В ХРОНИКУ
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -4,6 +4,7 @@ import { useMemo, useRef, useState } from 'react';
 import { MonoLabel } from '@/components/primitives';
 import { NODE_KIND_LABEL } from '@/lib/nodes';
 import type { PickerNode } from '@/lib/queries/nodes';
+import picker from './Picker.module.css';
 import styles from './WikiTextarea.module.css';
 
 const MAX_OPTIONS = 6;
@@ -126,8 +127,8 @@ export function WikiTextarea({
       />
 
       {open ? (
-        <div className={styles.panel}>
-          <div className={styles.panelHead}>
+        <div className={picker.panel}>
+          <div className={picker.panelHead}>
             <MonoLabel size={9} tracking="0.1em">
               Подставить сущность
             </MonoLabel>
@@ -137,7 +138,7 @@ export function WikiTextarea({
             <button
               key={node.id}
               type="button"
-              className={i === index ? `${styles.option} ${styles.optionActive}` : styles.option}
+              className={i === index ? `${picker.option} ${picker.optionActive}` : picker.option}
               onMouseEnter={() => setHighlighted(i)}
               onClick={() => void choose(i)}
             >
@@ -153,8 +154,8 @@ export function WikiTextarea({
               type="button"
               className={
                 index === matches.length
-                  ? `${styles.option} ${styles.create} ${styles.optionActive}`
-                  : `${styles.option} ${styles.create}`
+                  ? `${picker.option} ${picker.create} ${picker.optionActive}`
+                  : `${picker.option} ${picker.create}`
               }
               onMouseEnter={() => setHighlighted(matches.length)}
               onClick={() => void choose(matches.length)}

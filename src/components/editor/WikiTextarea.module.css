@@ -28,50 +28,6 @@
   outline-offset: -1px;
 }
 
-/* Панель подсказок. Стоит в потоке под полем — как в макете. */
-.panel {
-  display: flex;
-  flex-direction: column;
-  border: 1px solid var(--rule);
-  border-radius: var(--radius);
-  background: var(--panel);
-}
-
-.panelHead {
-  padding: 9px 12px;
-  border-bottom: 1px solid var(--panel-rule);
-}
-
-.option {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  padding: 10px 12px;
-  border-bottom: 1px solid var(--panel-rule-soft);
-  background: transparent;
-  border-left: 0;
-  border-right: 0;
-  border-top: 0;
-  text-align: left;
-  font-family: var(--font-body);
-  font-size: 14px;
-  color: var(--ink-muted);
-  width: 100%;
-}
-
-.option:last-child {
-  border-bottom: 0;
-}
-
-.optionActive {
-  background: var(--card);
-  color: var(--ink);
-}
-
-.create {
-  color: var(--accent);
-}
-
 .hint {
   display: flex;
   justify-content: space-between;

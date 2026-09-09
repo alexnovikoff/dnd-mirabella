@@ -1,0 +1,61 @@
+/* Панель подсказок. Общая для автодополнения `[[` в тексте и для выбора
+ * узла на доске связей — чтобы они выглядели одинаково.
+ * Значения — мобильный экран «Быстрая запись» в прототипе. */
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--panel);
+}
+
+.panelHead {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--panel-rule);
+}
+
+.option {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  border-bottom: 1px solid var(--panel-rule-soft);
+  background: transparent;
+  text-align: left;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--ink-muted);
+  transition: background var(--hover-fast);
+}
+
+.option:last-child {
+  border-bottom: 0;
+}
+
+.optionActive {
+  background: var(--card);
+  color: var(--ink);
+}
+
+.create {
+  color: var(--accent);
+}
+
+.field {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  min-height: 44px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--ink-body-2);
+  width: 100%;
+}
+
+.field::placeholder {
+  color: var(--placeholder);
+}

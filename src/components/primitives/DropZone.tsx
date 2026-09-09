@@ -5,7 +5,7 @@ export type DropZoneProps = {
   label: string;
   /** 'cell' — ячейка сетки в сайдбаре, 'band' — полоса на экране «Галерея». */
   variant?: 'cell' | 'band';
-  /** Подсветка при dragover. Обработчики повесит этап 6. */
+  /** Подсветка при dragover; обработчики вешает вызывающий экран. */
   active?: boolean;
   className?: string;
 };

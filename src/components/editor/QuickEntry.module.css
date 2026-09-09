@@ -127,6 +127,52 @@
   color: var(--placeholder);
 }
 
+/* Разбор имён, которым не нашлось сущности. */
+.resolveNote {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink-body-2);
+}
+
+.resolveList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.resolveRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.resolveButton {
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--accent);
+  padding: 6px 10px;
+  min-height: 44px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  transition:
+    background var(--hover-fast),
+    color var(--hover-fast);
+}
+
+.resolveButton:hover {
+  background: var(--accent);
+  color: var(--accent-on-warm);
+}
+
 .dmOnly {
   display: flex;
   align-items: center;

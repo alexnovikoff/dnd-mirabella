@@ -34,8 +34,9 @@ export async function saveNodePosition(nodeId: string, x: number, y: number) {
   revalidatePath('/board');
 }
 
-/** Кнопка «+ УЗЕЛ» на тулбаре доски. */
-export async function createBoardNode(name: string) {
+/** Кнопка «+ УЗЕЛ» на тулбаре доски. Тип выбирается сразу — иначе узлы
+ *  копятся с типом «неизвестно», а исправить его в интерфейсе нечем. */
+export async function createBoardNode(name: string, kind: t.NodeKind = 'unknown') {
   await requireViewer();
   const trimmed = name.trim();
   if (!trimmed) return { ok: false as const, error: 'Пустое имя узла' };
@@ -56,7 +57,7 @@ export async function createBoardNode(name: string) {
     await db.insert(t.nodes).values({
       id,
       campaignId: CAMPAIGN_ID,
-      kind: 'unknown',
+      kind,
       name: trimmed,
       slug,
       aliases: [],

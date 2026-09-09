@@ -67,6 +67,81 @@
   border-color: var(--accent);
 }
 
+/* Формы вместо системных окон: узел заводится и связывается прямо на месте. */
+.form {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--rule);
+  background: var(--panel);
+}
+
+.formField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 180px;
+  flex: 1;
+}
+
+.formSubmit {
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  color: var(--accent-on-warm);
+  padding: 11px 14px;
+  min-height: 44px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  transition: background var(--hover-fast);
+}
+
+.formSubmit:hover {
+  background: var(--accent-hover);
+}
+
+.formSubmit:disabled {
+  opacity: 0.55;
+}
+
+.formCancel {
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  color: var(--ink-muted);
+  padding: 11px 14px;
+  min-height: 44px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+
+.linkForm {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: auto;
+}
+
+.formButtons {
+  display: flex;
+  gap: 8px;
+}
+
+.formButtons .formSubmit,
+.formButtons .formCancel {
+  flex: 1;
+}
+
+@media (max-width: 767px) {
+  .form {
+    padding: 14px 16px;
+  }
+}
+
 /* Граф не сжимается на узких экранах — README. */
 .scroller {
   overflow-x: auto;

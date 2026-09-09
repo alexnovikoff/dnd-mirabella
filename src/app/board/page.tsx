@@ -1,17 +1,12 @@
 import Link from 'next/link';
 import { LinkRow, MonoLabel } from '@/components/primitives';
 import { BoardCanvas } from '@/components/board/BoardCanvas';
-import { AddNodeButton, LinkNodeButton } from '@/components/board/BoardActions';
+import { BoardToolbar, LinkNodeButton } from '@/components/board/BoardActions';
 import { getBoard, getNodeDetail } from '@/lib/queries/board';
+import { getLinkLabels } from '@/lib/queries/labels';
 import { NODE_KIND_LABEL } from '@/lib/nodes';
 import { plural } from '@/lib/plural';
 import styles from '@/components/board/Board.module.css';
-
-const LEGEND = [
-  { color: 'var(--status-open)', label: 'ОТКРЫТА' },
-  { color: 'var(--status-done)', label: 'РАСКРЫТА' },
-  { color: 'var(--status-dead)', label: 'ТУПИК' },
-];
 
 export default async function BoardPage({
   searchParams,
@@ -19,7 +14,7 @@ export default async function BoardPage({
   searchParams: Promise<{ node?: string }>;
 }) {
   const { node } = await searchParams;
-  const board = await getBoard();
+  const [board, labels] = await Promise.all([getBoard(), getLinkLabels()]);
 
   /* Без выбора показываем первый узел — панель не должна быть пустой. */
   const selectedSlug = node ?? board.nodes[0]?.slug ?? null;
@@ -28,18 +23,7 @@ export default async function BoardPage({
   return (
     <div className={styles.layout}>
       <div className={styles.main}>
-        <div className={styles.toolbar}>
-          <h1 className={styles.title}>Доска связей</h1>
-          <div className={styles.tools}>
-            {LEGEND.map((item) => (
-              <span key={item.label} className={styles.legendItem}>
-                <span className={styles.swatch} style={{ background: item.color }} />
-                {item.label}
-              </span>
-            ))}
-            <AddNodeButton />
-          </div>
-        </div>
+        <BoardToolbar />
 
         <div className={styles.scroller}>
           <BoardCanvas nodes={board.nodes} edges={board.edges} selectedSlug={selectedSlug} />
@@ -128,9 +112,10 @@ export default async function BoardPage({
 
             <LinkNodeButton
               fromNodeId={detail.id}
+              labels={labels}
               candidates={board.nodes
                 .filter((item) => item.id !== detail.id)
-                .map((item) => ({ id: item.id, name: item.name }))}
+                .map((item) => ({ id: item.id, name: item.name, kind: item.kind }))}
             />
           </>
         ) : (
