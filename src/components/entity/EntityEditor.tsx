@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
 import { MonoLabel } from '@/components/primitives';
 import { ConfirmDialog } from '@/components/editor/ConfirmDialog';
 import { useQuickEntry } from '@/components/editor/QuickEntryProvider';
@@ -38,6 +39,7 @@ export function EntityEditor({
   };
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const { canWrite } = useQuickEntry();
 
   const [open, setOpen] = useState(false);
@@ -49,7 +51,21 @@ export function EntityEditor({
   const [confirming, setConfirming] = useState(false);
   const [pending, startTransition] = useTransition();
 
-  if (!canWrite) return null;
+  /* Без входа править нечем. Пустое место на месте кнопки читается как
+   * поломка, поэтому вместо неё — строка со ссылкой на вход. На доске такая
+   * же строка уже висит в тулбаре, второй раз в панели она не нужна. */
+  if (!canWrite) {
+    if (returnTo === 'board') return null;
+    return (
+      <div className={styles.bar}>
+        <Link href={`/login?from=${encodeURIComponent(pathname)}`} className={styles.hint}>
+          <MonoLabel size={9} tracking="0.08em" tone="accent">
+            Только чтение · Войти
+          </MonoLabel>
+        </Link>
+      </div>
+    );
+  }
 
   if (!open) {
     return (

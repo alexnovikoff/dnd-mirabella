@@ -13,6 +13,11 @@
   margin-left: auto;
 }
 
+/* Ссылка на вход занимает место кнопки — и стоит там же, справа. */
+.bar .hint {
+  margin-left: auto;
+}
+
 .action {
   background: transparent;
   border: 1px solid var(--rule);

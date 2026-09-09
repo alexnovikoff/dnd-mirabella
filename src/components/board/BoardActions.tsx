@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { MonoLabel } from '@/components/primitives';
 import { LabelInput } from '@/components/editor/LabelInput';
@@ -52,7 +53,17 @@ export function BoardToolbar() {
             >
               {open ? '× ОТМЕНА' : '+ УЗЕЛ'}
             </button>
-          ) : null}
+          ) : (
+            /* Без входа доска только читается: узлы не двигаются, кнопок
+               правки и удаления нет. Молчать об этом нельзя — выглядит как поломка. */
+            <Link
+              href="/login?from=/board"
+              className={styles.readOnly}
+              title="Войдите, чтобы двигать узлы, править и удалять сущности"
+            >
+              ТОЛЬКО ЧТЕНИЕ · ВОЙТИ
+            </Link>
+          )}
         </div>
       </div>
 

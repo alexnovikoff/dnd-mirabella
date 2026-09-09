@@ -76,6 +76,20 @@
   border-color: var(--accent);
 }
 
+/* Режим чтения стоит там же, где была бы кнопка «+ УЗЕЛ». */
+.readOnly {
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 4px 8px;
+  color: var(--accent);
+  white-space: nowrap;
+  transition: border-color var(--hover-fast);
+}
+
+.readOnly:hover {
+  border-color: var(--accent);
+}
+
 /* Формы вместо системных окон: узел заводится и связывается прямо на месте. */
 .form {
   display: flex;
