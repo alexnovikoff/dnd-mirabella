@@ -62,6 +62,10 @@ export type NodeDetail = {
   kind: t.NodeKind;
   status: t.NodeStatus | null;
   description: string | null;
+  /** Прежние имена: по ним резолвятся [[ссылки]] в старых записях. */
+  aliases: string[];
+  /** Персонаж партии: тип не меняется, удалить нельзя. */
+  isCharacter: boolean;
   relations: { id: string; name: string; slug: string; label: string | null }[];
   mentions: {
     moments: { id: string; title: string | null; sessionNumber: number | null }[];
@@ -124,6 +128,12 @@ export function getNodeDetail(slug: string): Promise<NodeDetail | null> {
         sessionNumber: row.sessionNumber,
       }));
 
+    const [character] = await db
+      .select({ nodeId: t.characters.nodeId })
+      .from(t.characters)
+      .where(eq(t.characters.nodeId, node.id))
+      .limit(1);
+
     return {
       id: node.id,
       name: node.name,
@@ -131,6 +141,8 @@ export function getNodeDetail(slug: string): Promise<NodeDetail | null> {
       kind: node.kind,
       status: node.status,
       description: node.description,
+      aliases: node.aliases,
+      isCharacter: Boolean(character),
       relations,
       mentions: {
         moments,

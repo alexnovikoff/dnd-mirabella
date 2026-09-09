@@ -1,14 +1,16 @@
 import { notFound } from 'next/navigation';
 import { Screen } from '@/components/shell/Screen';
 import { LinkRow, MonoLabel, StatusPill } from '@/components/primitives';
+import { EntityEditor } from '@/components/entity/EntityEditor';
 import { getNodeDetail } from '@/lib/queries/board';
+import { getViewer } from '@/lib/viewer';
 import { NODE_KIND_LABEL } from '@/lib/nodes';
 import styles from '@/components/board/Board.module.css';
 
 /** Куда ведут [[wiki-ссылки]] и узлы доски. */
 export default async function EntityPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const detail = await getNodeDetail(slug);
+  const [detail, viewer] = await Promise.all([getNodeDetail(slug), getViewer()]);
   if (!detail) notFound();
 
   return (
@@ -24,6 +26,19 @@ export default async function EntityPage({ params }: { params: Promise<{ slug: s
         </div>
       }
     >
+      <EntityEditor
+        canDelete={viewer?.role === 'dm'}
+        node={{
+          id: detail.id,
+          name: detail.name,
+          kind: detail.kind,
+          status: detail.status,
+          description: detail.description,
+          aliases: detail.aliases,
+          isCharacter: detail.isCharacter,
+        }}
+      />
+
       <div className={styles.block}>
         <MonoLabel size={10} tracking="0.14em" block>
           {`Связи · ${detail.relations.length}`}
