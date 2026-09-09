@@ -17,8 +17,9 @@ export default async function BoardPage({
   const { node } = await searchParams;
   const [board, labels] = await Promise.all([getBoard(), getLinkLabels()]);
 
-  /* Без выбора показываем первый узел — панель не должна быть пустой. */
-  const selectedSlug = node ?? board.nodes[0]?.slug ?? null;
+  /* Без выбора панель пустая: снятие выделения должно снимать его, а не
+   * переводить на случайный первый узел. */
+  const selectedSlug = node ?? null;
   const detail = selectedSlug ? await getNodeDetail(selectedSlug) : null;
 
   return (
@@ -26,9 +27,8 @@ export default async function BoardPage({
       <div className={styles.main}>
         <BoardToolbar />
 
-        <div className={styles.scroller}>
-          <BoardCanvas nodes={board.nodes} edges={board.edges} selectedSlug={selectedSlug} />
-        </div>
+        {/* Прокрутка и масштаб живут внутри самой канвы. */}
+        <BoardCanvas nodes={board.nodes} edges={board.edges} selectedSlug={selectedSlug} />
 
         {/* <768px граф заменяется списком — README «Доска связей». */}
         <div className={styles.list}>

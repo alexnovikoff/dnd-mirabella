@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { MonoLabel } from '@/components/primitives';
 import { saveNodePosition } from '@/lib/actions/board';
@@ -9,18 +9,24 @@ import { NODE_KIND_LABEL } from '@/lib/nodes';
 import type { BoardEdge, BoardNode } from '@/lib/queries/board';
 import styles from './Board.module.css';
 
-/** Сдвиг больше этого — перетаскивание, меньше — клик по узлу. */
-const DRAG_THRESHOLD = 3;
+/** Сдвиг больше этого — перетаскивание, меньше — клик. */
+const DRAG_THRESHOLD = 4;
 
 /* Масштаб доски. Координаты узлов хранятся в процентах, поэтому масштаб —
  * чисто визуальная штука: он ничего не пересчитывает и никуда не сохраняется. */
 const ZOOM_STEPS = [0.6, 0.75, 0.9, 1, 1.25, 1.5, 2] as const;
 const ZOOM_DEFAULT = ZOOM_STEPS.indexOf(1);
 const CANVAS_HEIGHT = 560;
+/** README: граф не сжимается на узких экранах. */
+const CANVAS_MIN_WIDTH = 900;
 
-type Drag = {
-  id: string;
+type NodeDrag = { id: string; movedFar: boolean };
+type Pan = {
   pointerId: number;
+  x: number;
+  y: number;
+  left: number;
+  top: number;
   movedFar: boolean;
 };
 
@@ -34,21 +40,40 @@ export function BoardCanvas({
   selectedSlug: string | null;
 }) {
   const router = useRouter();
-  /* Разлогиненный узлы двигать не может — доска общая на кампанию. */
   const { canWrite } = useQuickEntry();
+  const scrollerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
-  const [drag, setDrag] = useState<Drag | null>(null);
+
   const [zoomStep, setZoomStep] = useState<number>(ZOOM_DEFAULT);
-  const zoom = ZOOM_STEPS[zoomStep];
+  /* Ширину канвы держим в пикселях, а не в процентах: процентная ширина
+   * ребёнка не создаёт прокрутки у контейнера, и доска отказывалась
+   * прокручиваться при увеличении. */
+  const [baseWidth, setBaseWidth] = useState(CANVAS_MIN_WIDTH);
+  const [drag, setDrag] = useState<NodeDrag | null>(null);
+  const [pan, setPan] = useState<Pan | null>(null);
   /* Локальные координаты на время перетаскивания — линии едут за узлом. */
   const [positions, setPositions] = useState<Record<string, { x: number; y: number }>>({});
+
+  const zoom = ZOOM_STEPS[zoomStep];
+  const byId = new Map(nodes.map((node) => [node.id, node]));
+
+  useLayoutEffect(() => {
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+
+    const measure = () =>
+      setBaseWidth(Math.max(CANVAS_MIN_WIDTH, Math.round(scroller.clientWidth)));
+
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(scroller);
+    return () => observer.disconnect();
+  }, []);
 
   const positionOf = useCallback(
     (node: BoardNode) => positions[node.id] ?? { x: node.x, y: node.y },
     [positions],
   );
-
-  const byId = new Map(nodes.map((node) => [node.id, node]));
 
   function toPercent(event: React.PointerEvent) {
     const rect = canvasRef.current?.getBoundingClientRect();
@@ -59,10 +84,14 @@ export function BoardCanvas({
     };
   }
 
+  function deselect() {
+    if (selectedSlug) router.push('/board', { scroll: false });
+  }
+
   return (
-    <div className={styles.zoomArea}>
-      {/* Масштаб живёт над канвой: подпись показывает текущий, клик по ней
-          возвращает к 100%. */}
+    <div className={styles.viewport}>
+      {/* Кнопки масштаба лежат вне прокручиваемой области и вне канвы,
+          поэтому изменение масштаба их не двигает. */}
       <div className={styles.zoomControls}>
         <button
           type="button"
@@ -92,136 +121,205 @@ export function BoardCanvas({
         </button>
       </div>
 
-      {/* Распорка задаёт место под увеличенную канву, чтобы появились
-          полосы прокрутки: transform на размеры в потоке не влияет. */}
-      <div
-        className={styles.zoomSizer}
-        style={{ width: `${100 * zoom}%`, height: CANVAS_HEIGHT * zoom }}
-      >
+      <div className={styles.scroller} ref={scrollerRef}>
+        {/* Распорка задаёт место под увеличенную канву: transform на размеры
+            в потоке не влияет, без неё не появилось бы прокрутки. Фон живёт
+            здесь же — иначе по краям масштабированной канвы виден просвет. */}
         <div
-          className={styles.canvas}
-          ref={canvasRef}
-          style={{
-            width: `${100 / zoom}%`,
-            height: CANVAS_HEIGHT,
-            transform: `scale(${zoom})`,
-            transformOrigin: 'top left',
+          className={pan?.movedFar ? `${styles.sizer} ${styles.panning}` : styles.sizer}
+          style={{ width: baseWidth * zoom, height: CANVAS_HEIGHT * zoom }}
+          onPointerDown={(event) => {
+            /* Тянем за пустое место — двигаем доску. */
+            if (event.button !== 0) return;
+            const scroller = scrollerRef.current;
+            if (!scroller) return;
+            /* Захват указателя — удобство, а не условие: если браузер его
+             * не даёт, панорамирование всё равно должно работать. */
+            try {
+              event.currentTarget.setPointerCapture(event.pointerId);
+            } catch {
+              /* пусто */
+            }
+            setPan({
+              pointerId: event.pointerId,
+              x: event.clientX,
+              y: event.clientY,
+              left: scroller.scrollLeft,
+              top: scroller.scrollTop,
+              movedFar: false,
+            });
           }}
+          onPointerMove={(event) => {
+            if (!pan || pan.pointerId !== event.pointerId) return;
+            const scroller = scrollerRef.current;
+            if (!scroller) return;
+
+            const dx = event.clientX - pan.x;
+            const dy = event.clientY - pan.y;
+            if (!pan.movedFar && Math.hypot(dx, dy) > DRAG_THRESHOLD) {
+              setPan({ ...pan, movedFar: true });
+            }
+            scroller.scrollLeft = pan.left - dx;
+            scroller.scrollTop = pan.top - dy;
+          }}
+          onPointerUp={(event) => {
+            if (!pan || pan.pointerId !== event.pointerId) return;
+            const wasPan = pan.movedFar;
+            setPan(null);
+            /* Клик по пустому месту — снять выделение. */
+            if (!wasPan) deselect();
+          }}
+          onPointerCancel={() => setPan(null)}
         >
-          <svg
-            className={styles.lines}
-            viewBox="0 0 100 100"
-            preserveAspectRatio="none"
-            aria-hidden="true"
+          <div
+            className={styles.canvas}
+            ref={canvasRef}
+            style={{
+              width: baseWidth,
+              height: CANVAS_HEIGHT,
+              transform: `scale(${zoom})`,
+              transformOrigin: 'top left',
+            }}
           >
-            {edges.map((edge) => {
-              const from = byId.get(edge.from);
-              const to = byId.get(edge.to);
-              if (!from || !to) return null;
-              const a = positionOf(from);
-              const b = positionOf(to);
-              /* Выведенное ребро тоньше и светлее ручного: оно не утверждение
-               * автора, а следствие того, что узлы названы в одной записи. */
-              const derived = edge.kind === 'mention';
+            <svg
+              className={styles.lines}
+              viewBox="0 0 100 100"
+              preserveAspectRatio="none"
+              aria-hidden="true"
+            >
+              {edges.map((edge) => {
+                const from = byId.get(edge.from);
+                const to = byId.get(edge.to);
+                if (!from || !to) return null;
+                const a = positionOf(from);
+                const b = positionOf(to);
+                /* Выведенное ребро тоньше и светлее ручного: оно не утверждение
+                 * автора, а следствие того, что узлы названы в одной записи. */
+                const derived = edge.kind === 'mention';
+                return (
+                  <line
+                    key={edge.id}
+                    x1={a.x}
+                    y1={a.y}
+                    x2={b.x}
+                    y2={b.y}
+                    stroke="#a6825a"
+                    strokeOpacity={derived ? 0.45 : 1}
+                    strokeWidth={derived ? 0.2 : 0.3}
+                    strokeDasharray={derived ? '1.5 2.5' : '3 2'}
+                    vectorEffect="non-scaling-stroke"
+                  >
+                    <title>{derived ? 'Упомянуты в одной записи' : (edge.label ?? 'Связь')}</title>
+                  </line>
+                );
+              })}
+            </svg>
+
+            {nodes.map((node) => {
+              const position = positionOf(node);
+              const selected = node.slug === selectedSlug;
+              const className = [
+                styles.node,
+                node.status === 'open' ? styles.open : undefined,
+                node.status === 'resolved' ? styles.resolved : undefined,
+                node.status === 'dead_end' ? styles.dead : undefined,
+                selected ? styles.selected : undefined,
+                drag?.id === node.id ? styles.dragging : undefined,
+              ]
+                .filter(Boolean)
+                .join(' ');
+
               return (
-                <line
-                  key={edge.id}
-                  x1={a.x}
-                  y1={a.y}
-                  x2={b.x}
-                  y2={b.y}
-                  stroke="#a6825a"
-                  strokeOpacity={derived ? 0.45 : 1}
-                  strokeWidth={derived ? 0.2 : 0.3}
-                  strokeDasharray={derived ? '1.5 2.5' : '3 2'}
-                  vectorEffect="non-scaling-stroke"
+                <div
+                  key={node.id}
+                  className={styles.nodeWrap}
+                  style={{ left: `${position.x}%`, top: `${position.y}%` }}
                 >
-                  <title>{derived ? 'Упомянуты в одной записи' : (edge.label ?? 'Связь')}</title>
-                </line>
+                  <button
+                    type="button"
+                    className={className}
+                    aria-pressed={selected}
+                    onPointerDown={(event) => {
+                      /* Узел свой жест: доску за него не тянем. */
+                      event.stopPropagation();
+                      if (!canWrite) return;
+                      try {
+                        event.currentTarget.setPointerCapture(event.pointerId);
+                      } catch {
+                        /* пусто */
+                      }
+                      setDrag({ id: node.id, movedFar: false });
+                    }}
+                    onPointerMove={(event) => {
+                      if (drag?.id !== node.id) return;
+                      const next = toPercent(event);
+                      if (!next) return;
+
+                      const start = positionOf(node);
+                      const far =
+                        drag.movedFar ||
+                        Math.abs(next.x - start.x) > 0.6 ||
+                        Math.abs(next.y - start.y) > 0.6;
+
+                      setDrag({ ...drag, movedFar: far });
+                      setPositions((current) => ({ ...current, [node.id]: next }));
+                    }}
+                    onPointerUp={(event) => {
+                      event.stopPropagation();
+                      if (drag?.id !== node.id) {
+                        router.push(`/board?node=${node.slug}`, { scroll: false });
+                        return;
+                      }
+                      try {
+                        event.currentTarget.releasePointerCapture(event.pointerId);
+                      } catch {
+                        /* пусто */
+                      }
+                      const moved = drag.movedFar;
+                      setDrag(null);
+
+                      if (!moved) {
+                        router.push(`/board?node=${node.slug}`, { scroll: false });
+                        return;
+                      }
+                      const next = positions[node.id];
+                      if (next) void saveNodePosition(node.id, next.x, next.y);
+                    }}
+                  >
+                    {node.name}
+                    <MonoLabel
+                      size={9}
+                      tracking="0.08em"
+                      tone={selected ? 'onAccentDim' : node.status === 'open' ? 'accent' : 'faint'}
+                      className={styles.kind}
+                      block
+                    >
+                      {[NODE_KIND_LABEL[node.kind], node.status === 'dead_end' ? 'ТУПИК' : null]
+                        .filter(Boolean)
+                        .join(' · ')}
+                    </MonoLabel>
+                  </button>
+
+                  {/* Снять выделение, не уходя с доски. */}
+                  {selected ? (
+                    <button
+                      type="button"
+                      className={styles.deselect}
+                      title="Снять выделение"
+                      aria-label="Снять выделение"
+                      onPointerDown={(event) => event.stopPropagation()}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        deselect();
+                      }}
+                    >
+                      ×
+                    </button>
+                  ) : null}
+                </div>
               );
             })}
-          </svg>
-
-          {nodes.map((node) => {
-            const position = positionOf(node);
-            const selected = node.slug === selectedSlug;
-            const className = [
-              styles.node,
-              node.status === 'open' ? styles.open : undefined,
-              node.status === 'resolved' ? styles.resolved : undefined,
-              node.status === 'dead_end' ? styles.dead : undefined,
-              selected ? styles.selected : undefined,
-              drag?.id === node.id ? styles.dragging : undefined,
-            ]
-              .filter(Boolean)
-              .join(' ');
-
-            return (
-              <button
-                key={node.id}
-                type="button"
-                className={className}
-                style={{ left: `${position.x}%`, top: `${position.y}%` }}
-                aria-pressed={selected}
-                onPointerDown={(event) => {
-                  if (!canWrite) return;
-                  /* Захват указателя — оптимизация, чтобы курсор мог уйти за
-                   * пределы узла. Если браузер его не даёт, перетаскивание всё
-                   * равно должно работать. */
-                  try {
-                    event.currentTarget.setPointerCapture(event.pointerId);
-                  } catch {
-                    /* пусто */
-                  }
-                  setDrag({ id: node.id, pointerId: event.pointerId, movedFar: false });
-                }}
-                onPointerMove={(event) => {
-                  if (drag?.id !== node.id) return;
-                  const next = toPercent(event);
-                  if (!next) return;
-
-                  const start = positionOf(node);
-                  const far =
-                    drag.movedFar ||
-                    Math.abs(next.x - start.x) > DRAG_THRESHOLD / 5 ||
-                    Math.abs(next.y - start.y) > DRAG_THRESHOLD / 5;
-
-                  setDrag({ ...drag, movedFar: far });
-                  setPositions((current) => ({ ...current, [node.id]: next }));
-                }}
-                onPointerUp={(event) => {
-                  if (drag?.id !== node.id) return;
-                  try {
-                    event.currentTarget.releasePointerCapture(event.pointerId);
-                  } catch {
-                    /* пусто */
-                  }
-                  const moved = drag.movedFar;
-                  setDrag(null);
-
-                  if (!moved) {
-                    router.push(`/board?node=${node.slug}`, { scroll: false });
-                    return;
-                  }
-                  const next = positions[node.id];
-                  if (next) void saveNodePosition(node.id, next.x, next.y);
-                }}
-              >
-                {node.name}
-                <MonoLabel
-                  size={9}
-                  tracking="0.08em"
-                  tone={selected ? 'onAccentDim' : node.status === 'open' ? 'accent' : 'faint'}
-                  className={styles.kind}
-                  block
-                >
-                  {[NODE_KIND_LABEL[node.kind], node.status === 'dead_end' ? 'ТУПИК' : null]
-                    .filter(Boolean)
-                    .join(' · ')}
-                </MonoLabel>
-              </button>
-            );
-          })}
+          </div>
         </div>
       </div>
     </div>
