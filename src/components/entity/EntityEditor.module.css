@@ -17,16 +17,23 @@
   background: transparent;
   border: 1px solid var(--rule);
   border-radius: var(--radius);
-  padding: 6px 10px;
-  min-height: 44px;
+  padding: 5px 9px;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 9px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--ink-muted);
+  white-space: nowrap;
+  color: var(--ink-faint);
   transition:
     border-color var(--hover-fast),
     color var(--hover-fast);
+}
+
+/* На узком экране зона касания всё равно должна быть 44px. */
+@media (max-width: 767px) {
+  .action {
+    min-height: 44px;
+  }
 }
 
 .action:hover {

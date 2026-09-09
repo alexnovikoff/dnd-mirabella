@@ -55,7 +55,7 @@ export function EntityEditor({
     return (
       <div className={styles.bar}>
         <button type="button" className={styles.action} onClick={() => setOpen(true)}>
-          Править сущность
+          Править
         </button>
         {node.aliases.length > 0 ? (
           <MonoLabel size={9} tracking="0.06em" tone="faint">
