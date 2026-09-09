@@ -1,0 +1,42 @@
+# Проверки, которые до сих пор гонялись руками: формат, линт, типы, тесты
+# и сборка. Гоняются на каждый PR и на каждый пуш в main.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Новый пуш в ветку отменяет предыдущий прогон по ней: очередь не копится.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm format:check
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+
+      # Сборка рендерит страницы, а страницы ходят в базу. В CI её роль
+      # играет тот же встроенный PGlite, что и в локальной разработке.
+      - run: pnpm db:setup
+
+      - run: pnpm build
+        env:
+          # Сборке нужен непустой секрет, настоящий живёт в переменных Vercel.
+          AUTH_SECRET: ci-build-only-not-a-real-secret
