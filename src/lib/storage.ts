@@ -1,9 +1,13 @@
 /* Хранилище загруженных файлов.
  *
- * Пока это локальный диск: файлы кладутся в public/uploads и раздаются
- * Next'ом как статика. На Vercel файловая система только для чтения —
- * там этот модуль заменит драйвер Vercel Blob (put из @vercel/blob),
- * а вызывающий код и колонка images.url останутся прежними.
+ * Драйвер выбирается по BLOB_READ_WRITE_TOKEN: токен есть — Vercel Blob
+ * (так работает продакшен, где файловая система только для чтения), токена
+ * нет — локальный диск, public/uploads, который раздаёт сам Next.
+ *
+ * Наружу оба драйвера отдают одно и то же: URL, который уходит в images.url
+ * и portrait. Локальный — относительный «/uploads/имя», Blob — абсолютный
+ * «https://….public.blob.vercel-storage.com/uploads/имя»; по этому различию
+ * removeUpload и понимает, чей файл удаляет.
  */
 
 import { randomUUID } from 'node:crypto';
@@ -20,6 +24,12 @@ const EXTENSIONS: Record<string, string> = {
   'image/avif': 'avif',
 };
 
+/* Читаем лениво, а не на импорте модуля: в тестах и скриптах окружение
+ * может появиться позже самого модуля. */
+function blobToken(): string | undefined {
+  return process.env.BLOB_READ_WRITE_TOKEN || undefined;
+}
+
 export function isSupportedImage(type: string): boolean {
   return type in EXTENSIONS;
 }
@@ -29,21 +39,49 @@ export async function saveUpload(file: File): Promise<string> {
   const extension = EXTENSIONS[file.type];
   if (!extension) throw new Error(`Неподдерживаемый тип файла: ${file.type}`);
 
-  await mkdir(UPLOAD_DIR, { recursive: true });
-
   const name = `${randomUUID()}.${extension}`;
-  const bytes = Buffer.from(await file.arrayBuffer());
-  await writeFile(path.join(UPLOAD_DIR, name), bytes);
+  const token = blobToken();
+
+  if (token) {
+    const { put } = await import('@vercel/blob');
+    /* Имя уже случайное — суффикс от Blob только испортил бы совпадение
+     * URL с тем, что лежит в базе. */
+    const { url } = await put(`uploads/${name}`, file, {
+      access: 'public',
+      contentType: file.type,
+      addRandomSuffix: false,
+      token,
+    });
+    return url;
+  }
+
+  await mkdir(UPLOAD_DIR, { recursive: true });
+  await writeFile(path.join(UPLOAD_DIR, name), Buffer.from(await file.arrayBuffer()));
 
   return `/uploads/${name}`;
 }
 
-/** Убрать файл, на который больше никто не ссылается. Работает только со
- *  своими URL вида /uploads/<имя>: путь собирается из basename, чтобы
- *  выход за пределы папки был невозможен. У драйвера Blob здесь будет del(). */
+/** Убрать файл, на который больше никто не ссылается. Чужие и внешние
+ *  адреса игнорируются: удаляем только то, что клали сами. */
 export async function removeUpload(url: string | null): Promise<void> {
-  if (!url?.startsWith('/uploads/')) return;
+  if (!url) return;
 
+  if (url.startsWith('https://')) {
+    const token = blobToken();
+    if (!token || !url.includes('.public.blob.vercel-storage.com/')) return;
+
+    const { del } = await import('@vercel/blob');
+    try {
+      await del(url, { token });
+    } catch {
+      /* Файла уже нет — значит, задача выполнена. */
+    }
+    return;
+  }
+
+  if (!url.startsWith('/uploads/')) return;
+
+  /* Путь собирается из basename, чтобы выход за пределы папки был невозможен. */
   const name = path.basename(url);
   if (!name || name === '.' || name === '..') return;
 

@@ -16,13 +16,16 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "db:generate": "drizzle-kit generate",
-    "db:reset": "rm -rf .pglite 2>/dev/null; rm -rf .pglite && pnpm db:setup",
-    "db:setup": "tsx src/lib/db/setup.ts",
+    "db:reset": "rm -rf .pglite && DATABASE_URL= pnpm db:setup",
+    "db:setup": "tsx --env-file-if-exists=.env src/lib/db/setup.ts",
+    "auth:password": "tsx --env-file-if-exists=.env scripts/set-password.ts",
     "test": "vitest run"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.8",
+    "@neondatabase/serverless": "^1.1.0",
     "@node-rs/argon2": "^2.2.0",
+    "@vercel/blob": "^2.8.0",
     "drizzle-orm": "^0.45.2",
     "next": "^15.5.0",
     "next-auth": "5.0.0-beta.32",

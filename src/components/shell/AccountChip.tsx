@@ -73,6 +73,15 @@ export function AccountChip({ viewer }: { viewer: Viewer | null }) {
             </Link>
           ) : null}
 
+          <Link
+            href="/account"
+            className={styles.menuItem}
+            role="menuitem"
+            onClick={() => setOpen(false)}
+          >
+            Сменить пароль
+          </Link>
+
           <form action={signOutAction}>
             <button type="submit" className={styles.menuItem} role="menuitem">
               Выйти

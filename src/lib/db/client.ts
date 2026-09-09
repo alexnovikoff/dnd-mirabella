@@ -1,23 +1,28 @@
-/* Локальная база разработки.
+/* Соединение с базой.
  *
- * Neon-проекта пока нет, поэтому Postgres поднимается встроенным PGlite:
- * тот же диалект и те же миграции, что уйдут в Neon, но без установки сервера.
- * Данные лежат в ./.pglite (в .gitignore). Переезд на Neon — замена драйвера
- * здесь на drizzle-orm/neon-http плюс DATABASE_URL; схема и миграции те же.
+ * Драйвер выбирается по DATABASE_URL: строка есть — Neon (так работает
+ * продакшен на Vercel), строки нет — встроенный PGlite в ./.pglite
+ * (так работает локальная разработка и CI). Диалект, схема и миграции
+ * у них общие, поэтому весь слой запросов о выборе драйвера не знает.
  *
  * Приложение базу только открывает. Миграции и сид — отдельный процесс,
  * `pnpm db:setup` (см. setup.ts).
  */
 
-import { PGlite } from '@electric-sql/pglite';
-import { drizzle } from 'drizzle-orm/pglite';
+import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core';
 import * as schema from './schema';
 
 /* Без node:fs и node:path: instrumentation.ts тянет этот модуль в том числе
  * в сборку edge-рантайма, где схема node: не разрешается. */
 const DATA_DIR = `${process.cwd()}/.pglite`;
 
-type Db = ReturnType<typeof drizzle<typeof schema>>;
+/* Общий тип поверх обоих драйверов: и neon-http, и pglite — это Postgres
+ * от drizzle, разница только в том, чем исполняется запрос. */
+type Db = PgDatabase<PgQueryResultHKT, typeof schema>;
+
+function neonUrl(): string | undefined {
+  return process.env.DATABASE_URL || undefined;
+}
 
 /* Dev-сервер пересоздаёт модули при горячей перезагрузке, а Next вдобавок
  * собирает отдельные графы модулей для слоёв RSC и SSR — этот модуль живёт
@@ -29,7 +34,23 @@ const globalForDb = globalThis as unknown as {
 };
 
 async function open(): Promise<Db> {
+  const url = neonUrl();
+
+  /* Динамический импорт, а не статический: в бандл, который уезжает на
+   * Vercel, незачем тащить wasm PGlite, а в CI и локально — драйвер Neon. */
+  if (url) {
+    const [{ neon }, { drizzle }] = await Promise.all([
+      import('@neondatabase/serverless'),
+      import('drizzle-orm/neon-http'),
+    ]);
+    return drizzle(neon(url), { schema });
+  }
+
   try {
+    const [{ PGlite }, { drizzle }] = await Promise.all([
+      import('@electric-sql/pglite'),
+      import('drizzle-orm/pglite'),
+    ]);
     /* Асинхронная фабрика: обычный конструктор возвращает объект
      * до готовности wasm, и первый же запрос может упасть. */
     const client = await PGlite.create(DATA_DIR);
@@ -52,9 +73,11 @@ export function warmDb(): Promise<Db> {
 
 /* PGlite — одно соединение на процесс, и параллельные запросы к нему рвут
  * его wasm-буфер. Поэтому весь доступ к базе идёт через очередь: страница
- * спокойно делает Promise.all, а сюда запросы приходят по одному. При
- * переезде на Neon с его пулом очередь снимается — там параллелизм штатный. */
+ * спокойно делает Promise.all, а сюда запросы приходят по одному. У Neon
+ * параллелизм штатный, там очередь только мешала бы — и её нет. */
 export function runDb<T>(fn: (db: Db) => Promise<T>): Promise<T> {
+  if (neonUrl()) return getDb().then(fn);
+
   const previous = globalForDb.__mirabellaQueue ?? Promise.resolve();
   const result = previous.then(async () => fn(await getDb()));
   globalForDb.__mirabellaQueue = result.catch(() => undefined);
