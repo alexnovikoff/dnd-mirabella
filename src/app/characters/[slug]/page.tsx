@@ -9,6 +9,9 @@ import {
 } from '@/components/primitives';
 import { WikiText } from '@/components/wiki/WikiText';
 import { EntryActions } from '@/components/entry/EntryActions';
+import { CharacterEditor } from '@/components/character/CharacterEditor';
+import { PersonalNotes } from '@/components/character/PersonalNotes';
+import { PortraitEditor } from '@/components/character/PortraitEditor';
 import { getCharacter } from '@/lib/queries/characters';
 import { getNodeIndex } from '@/lib/queries/chronicle';
 import { getViewer } from '@/lib/viewer';
@@ -37,11 +40,7 @@ export default async function CharacterPage({ params }: { params: Promise<{ slug
   return (
     <>
       <header className={styles.header}>
-        <ImagePlaceholder
-          caption={character.portrait ? undefined : 'Портрет 190×240'}
-          align="bottom"
-          className={styles.portrait}
-        />
+        <PortraitEditor nodeId={character.id} name={character.name} portrait={character.portrait} />
 
         <div className={styles.headText}>
           <MonoLabel size={11} tracking="0.16em" block>
@@ -50,11 +49,22 @@ export default async function CharacterPage({ params }: { params: Promise<{ slug
           <h1 className={styles.name}>{character.name}</h1>
           {character.bio ? <p className={styles.bio}>{character.bio}</p> : null}
 
-          <div className={styles.metrics}>
-            <Metric value={character.metrics.moments} label="МОМЕНТОВ" />
-            <Metric value={character.metrics.quotes} label="ЦИТАТ" />
-            <Metric value={character.metrics.links} label="СВЯЗЕЙ" />
-            <Metric value={character.metrics.crits} label="КРИТА" accent />
+          <div className={styles.headRow}>
+            <div className={styles.metrics}>
+              <Metric value={character.metrics.moments} label="МОМЕНТОВ" />
+              <Metric value={character.metrics.quotes} label="ЦИТАТ" />
+              <Metric value={character.metrics.links} label="СВЯЗЕЙ" />
+              <Metric value={character.metrics.crits} label="КРИТА" accent />
+            </div>
+            <CharacterEditor
+              nodeId={character.id}
+              name={character.name}
+              race={character.race}
+              classes={character.classes}
+              level={character.level}
+              bio={character.bio}
+              sinceSession={character.sinceSession}
+            />
           </div>
         </div>
       </header>
@@ -146,23 +156,10 @@ export default async function CharacterPage({ params }: { params: Promise<{ slug
             </div>
           </div>
 
-          {/* README: видна только владельцу и мастеру. До этапа 9 «владелец» —
-              захардкоженный пользователь, фильтрация уже в запросе. */}
-          {character.privateNotes.length > 0 ? (
-            <div className={styles.block}>
-              <MonoLabel size={10} tracking="0.14em" block>
-                Личная заметка
-              </MonoLabel>
-              {character.privateNotes.map((note) => (
-                <div key={note.id} className={styles.privateNote}>
-                  {note.body ? <WikiText body={note.body} index={index} /> : null}
-                  <MonoLabel size={9} tracking="0.06em" block>
-                    Видно только игроку
-                  </MonoLabel>
-                </div>
-              ))}
-            </div>
-          ) : null}
+          <PersonalNotes
+            nodeId={character.id}
+            notes={character.privateNotes.map((note) => ({ id: note.id, body: note.body }))}
+          />
 
           <div className={styles.block}>
             <MonoLabel size={10} tracking="0.14em" block>

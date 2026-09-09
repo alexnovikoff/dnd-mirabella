@@ -27,6 +27,96 @@ function pickSlug(base: string, taken: Set<string>): string {
   return slug;
 }
 
+/** Переименование: прежнее имя уходит в алиасы, слаг пересобирается.
+ *  Общее для сущностей и персонажей. */
+async function renameFields(
+  db: Parameters<Parameters<typeof runDb>[0]>[0],
+  node: { id: string; name: string; slug: string; aliases: string[] },
+  name: string,
+) {
+  const others = await db
+    .select({ id: t.nodes.id, name: t.nodes.name, slug: t.nodes.slug })
+    .from(t.nodes)
+    .where(and(eq(t.nodes.campaignId, CAMPAIGN_ID), ne(t.nodes.id, node.id)));
+
+  if (others.some((row) => row.name.toLowerCase() === name.toLowerCase())) {
+    return { ok: false as const, error: 'Сущность с таким именем уже есть' };
+  }
+
+  const renamed = node.name !== name;
+  return {
+    ok: true as const,
+    renamed,
+    aliases: renamed
+      ? [...new Set([...node.aliases, node.name])].filter(
+          (alias) => alias.toLowerCase() !== name.toLowerCase(),
+        )
+      : node.aliases,
+    slug: renamed ? pickSlug(name, new Set(others.map((row) => row.slug))) : node.slug,
+  };
+}
+
+export type CharacterPatch = {
+  name: string;
+  race: string;
+  classes: string;
+  level: string;
+  bio: string;
+  sinceSession: string;
+};
+
+/** Правка карточки персонажа: имя узла плюс его игровые поля. */
+export async function updateCharacter(
+  nodeId: string,
+  patch: CharacterPatch,
+): Promise<UpdateNodeResult> {
+  await requireViewer();
+
+  const name = patch.name.trim();
+  if (!name) return { ok: false, error: 'Имя не может быть пустым' };
+
+  const toNumber = (value: string) => {
+    const parsed = Number(value.trim());
+    return value.trim() === '' || Number.isNaN(parsed) ? null : Math.trunc(parsed);
+  };
+
+  return runDb(async (db) => {
+    const [node] = await db
+      .select()
+      .from(t.nodes)
+      .where(and(eq(t.nodes.id, nodeId), eq(t.nodes.campaignId, CAMPAIGN_ID)))
+      .limit(1);
+    if (!node) return { ok: false as const, error: 'Персонаж не найден' };
+
+    const rename = await renameFields(db, node, name);
+    if (!rename.ok) return rename;
+
+    await db
+      .update(t.nodes)
+      .set({ name, aliases: rename.aliases, slug: rename.slug })
+      .where(eq(t.nodes.id, nodeId));
+
+    await db
+      .update(t.characters)
+      .set({
+        race: patch.race.trim() || null,
+        classes: patch.classes.trim() || null,
+        level: toNumber(patch.level),
+        bio: patch.bio.trim() || null,
+        sinceSession: toNumber(patch.sinceSession),
+      })
+      .where(eq(t.characters.nodeId, nodeId));
+
+    revalidatePath('/');
+    revalidatePath('/party');
+    revalidatePath('/board');
+    revalidatePath('/characters/[slug]', 'page');
+    revalidatePath('/entities/[slug]', 'page');
+
+    return { ok: true as const, slug: rename.slug, renamedFrom: rename.renamed ? node.name : null };
+  });
+}
+
 /**
  * Правка сущности. Переименование не рвёт старые записи: прежнее имя уходит
  * в алиасы, и `[[Старое Имя]]` в уже написанных текстах продолжает
@@ -58,23 +148,8 @@ export async function updateNode(nodeId: string, patch: NodePatch): Promise<Upda
      * characters и своя страница, тип менять нельзя. */
     const kind = character ? 'character' : patch.kind;
 
-    const others = await db
-      .select({ id: t.nodes.id, name: t.nodes.name, slug: t.nodes.slug })
-      .from(t.nodes)
-      .where(and(eq(t.nodes.campaignId, CAMPAIGN_ID), ne(t.nodes.id, nodeId)));
-
-    if (others.some((row) => row.name.toLowerCase() === name.toLowerCase())) {
-      return { ok: false as const, error: 'Сущность с таким именем уже есть' };
-    }
-
-    const renamed = node.name !== name;
-    const aliases = renamed
-      ? [...new Set([...node.aliases, node.name])].filter(
-          (alias) => alias.toLowerCase() !== name.toLowerCase(),
-        )
-      : node.aliases;
-
-    const slug = renamed ? pickSlug(name, new Set(others.map((row) => row.slug))) : node.slug;
+    const rename = await renameFields(db, node, name);
+    if (!rename.ok) return rename;
 
     await db
       .update(t.nodes)
@@ -83,8 +158,8 @@ export async function updateNode(nodeId: string, patch: NodePatch): Promise<Upda
         kind,
         status: patch.status,
         description: patch.description?.trim() || null,
-        aliases,
-        slug,
+        aliases: rename.aliases,
+        slug: rename.slug,
       })
       .where(eq(t.nodes.id, nodeId));
 
@@ -93,7 +168,11 @@ export async function updateNode(nodeId: string, patch: NodePatch): Promise<Upda
     revalidatePath('/kb');
     revalidatePath('/entities/[slug]', 'page');
 
-    return { ok: true as const, slug, renamedFrom: renamed ? node.name : null };
+    return {
+      ok: true as const,
+      slug: rename.slug,
+      renamedFrom: rename.renamed ? node.name : null,
+    };
   });
 }
 

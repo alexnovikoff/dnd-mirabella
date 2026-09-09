@@ -14,6 +14,134 @@
   --hatch-step: 8px;
 }
 
+/* Портрет с действиями под ним. */
+.portraitBox {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: none;
+}
+
+.portraitImage {
+  width: 190px;
+  height: 240px;
+  border: 1px solid var(--rule);
+  object-fit: cover;
+}
+
+.portraitActions {
+  display: flex;
+  gap: 6px;
+}
+
+.smallAction {
+  flex: 1;
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 8px 6px;
+  min-height: 44px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  transition:
+    border-color var(--hover-fast),
+    color var(--hover-fast);
+}
+
+.smallAction:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.headRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+}
+
+.formRow {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.formField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 140px;
+}
+
+.formButtons {
+  display: flex;
+  gap: 8px;
+}
+
+.submit {
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  color: var(--accent-on-warm);
+  padding: 11px 16px;
+  min-height: 44px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+
+.cancel {
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  color: var(--ink-muted);
+  padding: 11px 16px;
+  min-height: 44px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+
+.noteTextarea {
+  min-height: 74px;
+  resize: vertical;
+  line-height: 1.6;
+}
+
+.noteRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.noteRemove {
+  background: transparent;
+  border: 0;
+  padding: 2px 4px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-faint);
+  transition: color var(--hover-fast);
+}
+
+.noteRemove:hover {
+  color: var(--accent);
+}
+
 .headText {
   display: flex;
   flex-direction: column;

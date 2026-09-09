@@ -138,7 +138,12 @@ async function requireOwnership(entryId: string) {
 
   const entry = await runDb(async (db) => {
     const [row] = await db
-      .select({ id: t.entries.id, kind: t.entries.kind, authorId: t.entries.authorId })
+      .select({
+        id: t.entries.id,
+        kind: t.entries.kind,
+        authorId: t.entries.authorId,
+        visibility: t.entries.visibility,
+      })
       .from(t.entries)
       .where(eq(t.entries.id, entryId))
       .limit(1);
@@ -171,11 +176,16 @@ export async function updateEntry(entryId: string, input: EntryPatch): Promise<C
         title,
         body: entry.kind === 'image' ? null : body,
         subjectId: input.subjectId ?? null,
-        visibility: !input.publish
-          ? 'draft'
-          : input.dmOnly && viewer.role === 'dm'
-            ? 'dm_only'
-            : 'public',
+        /* Личная заметка остаётся личной: кнопка «сохранить» не должна
+         * втихую опубликовать то, что человек писал для себя. */
+        visibility:
+          entry.visibility === 'private'
+            ? 'private'
+            : !input.publish
+              ? 'draft'
+              : input.dmOnly && viewer.role === 'dm'
+                ? 'dm_only'
+                : 'public',
       })
       .where(eq(t.entries.id, entryId));
 

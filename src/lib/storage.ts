@@ -7,7 +7,7 @@
  */
 
 import { randomUUID } from 'node:crypto';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, unlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 const UPLOAD_DIR = path.join(process.cwd(), 'public', 'uploads');
@@ -36,4 +36,20 @@ export async function saveUpload(file: File): Promise<string> {
   await writeFile(path.join(UPLOAD_DIR, name), bytes);
 
   return `/uploads/${name}`;
+}
+
+/** Убрать файл, на который больше никто не ссылается. Работает только со
+ *  своими URL вида /uploads/<имя>: путь собирается из basename, чтобы
+ *  выход за пределы папки был невозможен. У драйвера Blob здесь будет del(). */
+export async function removeUpload(url: string | null): Promise<void> {
+  if (!url?.startsWith('/uploads/')) return;
+
+  const name = path.basename(url);
+  if (!name || name === '.' || name === '..') return;
+
+  try {
+    await unlink(path.join(UPLOAD_DIR, name));
+  } catch {
+    /* Файла уже нет — значит, задача выполнена. */
+  }
 }
