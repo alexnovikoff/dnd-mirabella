@@ -24,6 +24,9 @@ async function main() {
   } else {
     await seed(db);
     console.log('База засеяна.');
+    console.log(
+      `Учётки: Аэлис, Джаду, Метель, Оген, Мастер. Пароль у всех — «${process.env.SEED_PASSWORD ?? 'мирабелла'}».`,
+    );
   }
 
   await client.close();

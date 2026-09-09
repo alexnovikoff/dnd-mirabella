@@ -43,6 +43,9 @@
 }
 
 .signIn {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
   border: 1px solid var(--accent);
   background: transparent;
   border-radius: var(--radius);
@@ -61,4 +64,62 @@
 .signIn:hover {
   background: var(--accent);
   color: var(--accent-on-warm);
+}
+
+/* Меню аккаунта: профиль и выход. */
+.wrap {
+  position: relative;
+  flex: none;
+}
+
+.menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  min-width: 190px;
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  box-shadow: var(--modal-shadow);
+}
+
+.menuItem {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 11px 12px;
+  min-height: 44px;
+  border: 0;
+  border-bottom: 1px solid var(--panel-rule-soft);
+  background: transparent;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  transition: background var(--hover-fast);
+}
+
+.menuItem:last-child {
+  border-bottom: 0;
+}
+
+.menuItem:hover {
+  background: var(--card);
+  color: var(--ink);
+}
+
+.role {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--panel-rule);
+}
+
+@media (max-width: 767px) {
+  .chip,
+  .signIn {
+    min-height: 44px;
+  }
 }

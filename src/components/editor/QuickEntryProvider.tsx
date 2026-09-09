@@ -2,9 +2,10 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { QuickEntry } from './QuickEntry';
+import { QuickEntryBar } from './QuickEntryBar';
 import type { PickerNode } from '@/lib/queries/nodes';
 
-type QuickEntryContext = { open: () => void };
+type QuickEntryContext = { open: () => void; sessionShort: string; canWrite: boolean };
 
 const Context = createContext<QuickEntryContext | null>(null);
 
@@ -19,21 +20,29 @@ export function QuickEntryProvider({
   nodes,
   characters,
   sessionShort,
+  canWrite,
+  isDm,
   children,
 }: {
   nodes: PickerNode[];
   characters: PickerNode[];
   sessionShort: string;
+  /** Разлогиненный посетитель читает, но не пишет. */
+  canWrite: boolean;
+  isDm: boolean;
   children: React.ReactNode;
 }) {
   const [isOpen, setIsOpen] = useState(false);
 
-  const open = useCallback(() => setIsOpen(true), []);
+  const open = useCallback(() => {
+    if (canWrite) setIsOpen(true);
+  }, [canWrite]);
   const close = useCallback(() => setIsOpen(false), []);
-  const value = useMemo(() => ({ open }), [open]);
+  const value = useMemo(() => ({ open, sessionShort, canWrite }), [open, sessionShort, canWrite]);
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
+      if (!canWrite) return;
       if (event.key !== 'n' || event.metaKey || event.ctrlKey || event.altKey) return;
 
       /* Не перехватываем «n», когда человек печатает. */
@@ -46,16 +55,18 @@ export function QuickEntryProvider({
     }
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, []);
+  }, [canWrite]);
 
   return (
     <Context.Provider value={value}>
       {children}
+      {canWrite ? <QuickEntryBar /> : null}
       {isOpen ? (
         <QuickEntry
           nodes={nodes}
           characters={characters}
           sessionShort={sessionShort}
+          isDm={isDm}
           onClose={close}
         />
       ) : null}

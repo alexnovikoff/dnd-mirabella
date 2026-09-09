@@ -2,7 +2,7 @@ import { Screen } from '@/components/shell/Screen';
 import { AccentQuoteCard, FilterChips, MonoLabel, ParchmentCard } from '@/components/primitives';
 import { VoteButton } from '@/components/quotes/VoteButton';
 import { getQuoteAuthors, getQuotes } from '@/lib/queries/quotes';
-import { STUB_USER_ID } from '@/lib/campaign';
+import { getViewer } from '@/lib/viewer';
 import { plural } from '@/lib/plural';
 import styles from '@/components/quotes/Quotes.module.css';
 
@@ -12,11 +12,9 @@ export default async function QuotesPage({
   searchParams: Promise<{ author?: string }>;
 }) {
   const { author } = await searchParams;
+  const viewer = await getViewer();
 
-  const [authors, data] = await Promise.all([
-    getQuoteAuthors(),
-    getQuotes(author ?? null, STUB_USER_ID),
-  ]);
+  const [authors, data] = await Promise.all([getQuoteAuthors(), getQuotes(author ?? null, viewer)]);
 
   return (
     <Screen

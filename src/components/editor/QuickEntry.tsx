@@ -20,12 +20,15 @@ export function QuickEntry({
   nodes,
   characters,
   sessionShort,
+  isDm,
   onClose,
 }: {
   nodes: PickerNode[];
   characters: PickerNode[];
   /** «С26» — короткая метка активной сессии. */
   sessionShort: string;
+  /** Мастеру доступна пометка «скрыть от игроков». */
+  isDm: boolean;
   onClose: () => void;
 }) {
   const router = useRouter();
@@ -34,6 +37,7 @@ export function QuickEntry({
   const [body, setBody] = useState('');
   const [caption, setCaption] = useState('');
   const [subjectId, setSubjectId] = useState(characters[0]?.id ?? '');
+  const [dmOnly, setDmOnly] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const sheetRef = useRef<HTMLDivElement>(null);
@@ -64,6 +68,7 @@ export function QuickEntry({
         caption: kind === 'image' ? caption : undefined,
         subjectId: kind === 'quote' ? subjectId || undefined : undefined,
         publish,
+        dmOnly,
       });
 
       if (!result.ok) {
@@ -164,6 +169,19 @@ export function QuickEntry({
               }
             />
           )}
+
+          {isDm ? (
+            <label className={styles.dmOnly}>
+              <input
+                type="checkbox"
+                checked={dmOnly}
+                onChange={(e) => setDmOnly(e.currentTarget.checked)}
+              />
+              <MonoLabel size={9} tracking="0.08em" tone="faint">
+                Скрыть от игроков
+              </MonoLabel>
+            </label>
+          ) : null}
 
           {error ? (
             <MonoLabel size={10} tracking="0.06em" className={styles.error} block>

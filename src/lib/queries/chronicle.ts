@@ -11,6 +11,8 @@ import { and, asc, desc, eq, inArray, isNotNull, sql } from 'drizzle-orm';
 import { runDb } from '@/lib/db/client';
 import * as t from '@/lib/db/schema';
 import { CAMPAIGN_ID } from '@/lib/db/seed';
+import type { Viewer } from '@/lib/auth-shared';
+import { visibleEntries } from '@/lib/visibility';
 
 export type FeedFilter = 'all' | 'quotes' | 'fails' | 'loot';
 
@@ -70,12 +72,13 @@ export function getNodeIndex() {
 
 export type FeedEntry = Awaited<ReturnType<typeof getFeed>>[number];
 
-export function getFeed(filter: FeedFilter = 'all') {
+export function getFeed(filter: FeedFilter = 'all', viewer: Viewer | null = null) {
   return runDb(async (db) => {
+    const visible = visibleEntries(viewer);
     const conditions = [
       eq(t.entries.campaignId, CAMPAIGN_ID),
-      eq(t.entries.visibility, 'public'),
       inArray(t.entries.kind, ['moment', 'quote'] as const),
+      ...(visible ? [visible] : []),
     ];
     if (filter === 'quotes') conditions.push(eq(t.entries.kind, 'quote'));
     if (filter === 'fails') conditions.push(eq(t.entries.isFail, true));

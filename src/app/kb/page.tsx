@@ -4,7 +4,7 @@ import { AddNoteButton } from '@/components/kb/AddNoteButton';
 import { FreeNoteCard, RumorNote } from '@/components/kb/NoteCards';
 import { getFreeNotes, getNodesByKind, getRumors, isKbTab, KB_TABS } from '@/lib/queries/kb';
 import { getNodeIndex } from '@/lib/queries/chronicle';
-import { STUB_USER_ID } from '@/lib/campaign';
+import { getViewer } from '@/lib/viewer';
 import { plural } from '@/lib/plural';
 import styles from '@/components/kb/NoteCards.module.css';
 
@@ -15,10 +15,11 @@ export default async function KnowledgeBasePage({
 }) {
   const { tab } = await searchParams;
   const active = isKbTab(tab) ? tab : 'notes';
+  const viewer = await getViewer();
 
   const [rumors, notes, npcs, locations, index] = await Promise.all([
     getRumors(),
-    getFreeNotes(STUB_USER_ID),
+    getFreeNotes(viewer),
     getNodesByKind('npc'),
     getNodesByKind('location'),
     getNodeIndex(),

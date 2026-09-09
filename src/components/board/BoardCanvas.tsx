@@ -4,6 +4,7 @@ import { useCallback, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { MonoLabel } from '@/components/primitives';
 import { saveNodePosition } from '@/lib/actions/board';
+import { useQuickEntry } from '@/components/editor/QuickEntryProvider';
 import { NODE_KIND_LABEL } from '@/lib/nodes';
 import type { BoardEdge, BoardNode } from '@/lib/queries/board';
 import styles from './Board.module.css';
@@ -27,6 +28,8 @@ export function BoardCanvas({
   selectedSlug: string | null;
 }) {
   const router = useRouter();
+  /* Разлогиненный узлы двигать не может — доска общая на кампанию. */
+  const { canWrite } = useQuickEntry();
   const canvasRef = useRef<HTMLDivElement>(null);
   const [drag, setDrag] = useState<Drag | null>(null);
   /* Локальные координаты на время перетаскивания — линии едут за узлом. */
@@ -100,6 +103,7 @@ export function BoardCanvas({
             style={{ left: `${position.x}%`, top: `${position.y}%` }}
             aria-pressed={selected}
             onPointerDown={(event) => {
+              if (!canWrite) return;
               /* Захват указателя — оптимизация, чтобы курсор мог уйти за
                * пределы узла. Если браузер его не даёт, перетаскивание всё
                * равно должно работать. */

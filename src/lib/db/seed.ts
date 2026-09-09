@@ -15,6 +15,7 @@
  *   — подписи изображений, ярлыки ручных связей, координаты узлов доски.
  */
 
+import { hash } from '@node-rs/argon2';
 import { sql } from 'drizzle-orm';
 import type { Db } from './client';
 import * as t from './schema';
@@ -365,13 +366,19 @@ const IMAGES: {
   },
 ];
 
+/** Пароль для всех учёток сида. Задаётся через SEED_PASSWORD;
+ *  значение по умолчанию — только для локальной разработки. */
+const SEED_PASSWORD = process.env.SEED_PASSWORD ?? 'мирабелла';
+
 export async function seed(db: Db) {
+  const passwordHash = await hash(SEED_PASSWORD);
+
   await db.insert(t.users).values([
-    { id: 'u-aelis', name: 'Аэлис', initial: 'А', role: 'player' },
-    { id: 'u-jadu', name: 'Джаду', initial: 'Д', role: 'player' },
-    { id: 'u-metel', name: 'Метель', initial: 'М', role: 'player' },
-    { id: 'u-ogen', name: 'Оген', initial: 'О', role: 'player' },
-    { id: 'u-dm', name: 'Мастер', initial: 'М', role: 'dm' },
+    { id: 'u-aelis', name: 'Аэлис', initial: 'А', role: 'player', passwordHash },
+    { id: 'u-jadu', name: 'Джаду', initial: 'Д', role: 'player', passwordHash },
+    { id: 'u-metel', name: 'Метель', initial: 'М', role: 'player', passwordHash },
+    { id: 'u-ogen', name: 'Оген', initial: 'О', role: 'player', passwordHash },
+    { id: 'u-dm', name: 'Мастер', initial: 'М', role: 'dm', passwordHash },
   ]);
 
   await db.insert(t.campaigns).values({

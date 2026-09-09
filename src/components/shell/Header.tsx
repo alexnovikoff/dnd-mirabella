@@ -4,18 +4,20 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { AccountChip } from './AccountChip';
 import { useQuickEntry } from '@/components/editor/QuickEntryProvider';
-import { STUB_USER } from '@/lib/campaign';
 import { NAV, actionFor, isActive } from '@/lib/nav';
+import type { Viewer } from '@/lib/auth-shared';
 import styles from './Header.module.css';
 
 export function Header({
   campaignTitle,
   seal,
   sessionLabel,
+  viewer,
 }: {
   campaignTitle: string;
   seal: string;
   sessionLabel: string;
+  viewer: Viewer | null;
 }) {
   const pathname = usePathname();
   const quickEntry = useQuickEntry();
@@ -49,10 +51,13 @@ export function Header({
 
       <div className={styles.actions}>
         {sessionLabel ? <span className={styles.session}>{sessionLabel}</span> : null}
-        <button type="button" className={styles.action} onClick={quickEntry.open}>
-          {actionFor(pathname)}
-        </button>
-        <AccountChip user={STUB_USER} />
+        {/* Разлогиненным писать нечем — контент только для чтения. */}
+        {viewer ? (
+          <button type="button" className={styles.action} onClick={quickEntry.open}>
+            {actionFor(pathname)}
+          </button>
+        ) : null}
+        <AccountChip viewer={viewer} />
       </div>
     </header>
   );

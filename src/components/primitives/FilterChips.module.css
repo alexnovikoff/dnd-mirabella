@@ -70,3 +70,18 @@
   flex: none;
   background: currentColor;
 }
+
+/* README «Адаптив»: минимальная зона касания 44px. */
+@media (max-width: 767px) {
+  .chip {
+    min-height: 44px;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  .sm .chip,
+  .md .chip {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+}

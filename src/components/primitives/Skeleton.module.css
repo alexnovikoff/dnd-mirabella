@@ -1,0 +1,19 @@
+/* Скелетоны загрузки. README «Состояния»: в тон пергамента, без спиннеров.
+ * Анимации нет намеренно — дизайн «бумажный». */
+
+.block {
+  background: var(--skeleton);
+  border-radius: var(--radius);
+}
+
+.row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}

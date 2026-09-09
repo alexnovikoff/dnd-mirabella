@@ -4,6 +4,7 @@ import { GalleryBoard } from '@/components/gallery/GalleryBoard';
 import { GALLERY_FILTERS, getGallery, isGalleryFilter } from '@/lib/queries/gallery';
 import { getActiveSession } from '@/lib/queries/chronicle';
 import { plural } from '@/lib/plural';
+import { getViewer } from '@/lib/viewer';
 
 export default async function GalleryPage({
   searchParams,
@@ -15,7 +16,11 @@ export default async function GalleryPage({
   /* Группировка включена по умолчанию — README «Галерея». */
   const grouped = group !== 'date';
 
-  const [gallery, session] = await Promise.all([getGallery(filter, grouped), getActiveSession()]);
+  const [gallery, session, viewer] = await Promise.all([
+    getGallery(filter, grouped),
+    getActiveSession(),
+    getViewer(),
+  ]);
 
   const query = (next: { kind?: string; group?: string }) => {
     const params = new URLSearchParams();
@@ -30,7 +35,7 @@ export default async function GalleryPage({
   return (
     <Screen
       title="Галерея"
-      note={`${gallery.total} ${plural(gallery.total, 'изображение', 'изображения', 'изображений')}. Перетащите файлы прямо на страницу — они попадут в текущую сессию.`}
+      note={`${gallery.total} ${plural(gallery.total, 'изображение', 'изображения', 'изображений')}.${viewer ? ' Перетащите файлы прямо на страницу — они попадут в текущую сессию.' : ''}`}
       aside={
         <FilterChips
           activeId={filter}

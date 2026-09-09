@@ -1,0 +1,78 @@
+/* Вход. Отдельный экран в той же бумажной эстетике, без шапки кампании. */
+
+.screen {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-width: 380px;
+  margin: 0 auto;
+  padding: 48px 32px 56px;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 42px;
+  line-height: 1;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.note {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink-muted-2);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.field {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--ink-body-2);
+  min-height: 44px;
+}
+
+.field::placeholder {
+  color: var(--placeholder);
+}
+
+.submit {
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  color: var(--accent-on-warm);
+  padding: 13px;
+  min-height: 44px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  transition: background var(--hover-fast);
+}
+
+.submit:hover {
+  background: var(--accent-hover);
+}
+
+.submit:disabled {
+  opacity: 0.55;
+}
+
+/* Ошибка — плашка на акценте (README «Состояния»). */
+.error {
+  background: var(--accent);
+  color: var(--accent-on);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+}
+
+.back {
+  text-align: center;
+}

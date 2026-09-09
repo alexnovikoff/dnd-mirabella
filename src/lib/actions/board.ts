@@ -7,9 +7,11 @@ import { runDb } from '@/lib/db/client';
 import * as t from '@/lib/db/schema';
 import { CAMPAIGN_ID } from '@/lib/db/seed';
 import { slugify } from '@/lib/slug';
+import { requireViewer } from './guard';
 
 /** Позиция в процентах — доска общая на кампанию (решение в docs/plan.md). */
 export async function saveNodePosition(nodeId: string, x: number, y: number) {
+  await requireViewer();
   const clamp = (value: number) => Math.min(97, Math.max(3, Math.round(value)));
 
   await runDb(async (db) => {
@@ -34,6 +36,7 @@ export async function saveNodePosition(nodeId: string, x: number, y: number) {
 
 /** Кнопка «+ УЗЕЛ» на тулбаре доски. */
 export async function createBoardNode(name: string) {
+  await requireViewer();
   const trimmed = name.trim();
   if (!trimmed) return { ok: false as const, error: 'Пустое имя узла' };
 
@@ -68,6 +71,7 @@ export async function createBoardNode(name: string) {
 
 /** «СВЯЗАТЬ С УЗЛОМ…»: ручное ребро с типом отношения. */
 export async function linkNodes(fromNodeId: string, toNodeId: string, label: string) {
+  await requireViewer();
   if (fromNodeId === toNodeId) return { ok: false as const, error: 'Узел нельзя связать с собой' };
 
   await runDb(async (db) => {

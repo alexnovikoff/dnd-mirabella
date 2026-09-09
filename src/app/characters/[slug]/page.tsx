@@ -10,12 +10,13 @@ import {
 import { WikiText } from '@/components/wiki/WikiText';
 import { getCharacter } from '@/lib/queries/characters';
 import { getNodeIndex } from '@/lib/queries/chronicle';
-import { STUB_USER_ID } from '@/lib/campaign';
+import { getViewer } from '@/lib/viewer';
 import styles from '@/components/character/Character.module.css';
 
 export default async function CharacterPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const [character, index] = await Promise.all([getCharacter(slug, STUB_USER_ID), getNodeIndex()]);
+  const viewer = await getViewer();
+  const [character, index] = await Promise.all([getCharacter(slug, viewer), getNodeIndex()]);
 
   if (!character) notFound();
 

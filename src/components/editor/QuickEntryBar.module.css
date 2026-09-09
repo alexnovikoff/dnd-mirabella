@@ -1,0 +1,34 @@
+/* Закреплённая снизу кнопка быстрой записи — только на мобильном.
+ * README §7: полоса с меткой сессии и кнопкой, зона касания не меньше 44px. */
+
+.bar {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .bar {
+    position: sticky;
+    bottom: 0;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 16px;
+    border-top: 1px solid var(--rule);
+    background: var(--bar-bg);
+    backdrop-filter: blur(6px);
+  }
+
+  .button {
+    background: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius);
+    color: var(--accent-on-warm);
+    padding: 11px 16px;
+    min-height: 44px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+  }
+}

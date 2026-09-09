@@ -107,12 +107,14 @@
   border-color: var(--accent-hover);
 }
 
-/* Полноценный мобильный паттерн (горизонтальные табы, «≡», нижняя
- * закреплённая кнопка) — этап 10. Здесь только чтобы 390px не ломался. */
+/* Мобильный паттерн — README §7: печать и название 16px, компактный чип
+ * справа, ряд табов mono 10px горизонтальным скроллом под ними. Кнопка
+ * записи уезжает в закреплённую полосу снизу (QuickEntryBar). */
 @media (max-width: 767px) {
   .header {
-    padding: 12px 16px;
-    gap: 12px;
+    padding: 10px 16px;
+    gap: 10px;
+    row-gap: 8px;
   }
 
   .title {
@@ -124,15 +126,31 @@
     width: 100%;
     flex-wrap: nowrap;
     overflow-x: auto;
-    gap: 16px;
+    gap: 18px;
     scrollbar-width: none;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
   }
 
   .nav::-webkit-scrollbar {
     display: none;
   }
 
+  /* Зона касания не меньше 44px — README «Адаптив». */
+  .tab {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    padding-bottom: 0;
+  }
+
   .session {
+    display: none;
+  }
+
+  .action {
     display: none;
   }
 }

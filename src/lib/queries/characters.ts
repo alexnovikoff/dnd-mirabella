@@ -4,6 +4,7 @@ import { and, desc, eq, inArray, or, sql } from 'drizzle-orm';
 import { runDb } from '@/lib/db/client';
 import * as t from '@/lib/db/schema';
 import { CAMPAIGN_ID } from '@/lib/db/seed';
+import type { Viewer } from '@/lib/auth-shared';
 
 export type CharacterEntry = {
   id: string;
@@ -17,7 +18,7 @@ export type CharacterEntry = {
   votes: number;
 };
 
-export function getCharacter(slug: string, viewerId: string | null) {
+export function getCharacter(slug: string, viewer: Viewer | null) {
   return runDb(async (db) => {
     const [row] = await db
       .select({
@@ -81,13 +82,15 @@ export function getCharacter(slug: string, viewerId: string | null) {
       votes: votes.get(entry.id) ?? 0,
     });
 
-    const publicEntries = entryRows.filter((entry) => entry.visibility === 'public');
+    const publicEntries = entryRows.filter(
+      (entry) =>
+        entry.visibility === 'public' || (viewer?.role === 'dm' && entry.visibility === 'dm_only'),
+    );
 
-    /* README: личная заметка видна только владельцу и мастеру.
-     * До этапа 9 «владелец» — это захардкоженный пользователь. */
+    /* README: личная заметка видна только владельцу и мастеру. */
     const privateNotes = entryRows
       .filter((entry) => entry.visibility === 'private' && entry.kind === 'note')
-      .filter((entry) => viewerId !== null && entry.authorId === viewerId)
+      .filter((entry) => viewer !== null && (viewer.role === 'dm' || entry.authorId === viewer.id))
       .map(withVotes);
 
     const manual = await db

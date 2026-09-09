@@ -4,6 +4,7 @@ import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import { runDb } from '@/lib/db/client';
 import * as t from '@/lib/db/schema';
 import { CAMPAIGN_ID } from '@/lib/db/seed';
+import type { Viewer } from '@/lib/auth-shared';
 
 export type QuoteCard = {
   id: string;
@@ -29,7 +30,7 @@ export function getQuoteAuthors() {
   });
 }
 
-export function getQuotes(authorSlug: string | null, viewerId: string | null) {
+export function getQuotes(authorSlug: string | null, viewer: Viewer | null) {
   return runDb(async (db) => {
     const conditions = [
       eq(t.entries.campaignId, CAMPAIGN_ID),
@@ -67,7 +68,7 @@ export function getQuotes(authorSlug: string | null, viewerId: string | null) {
     const mine = new Set<string>();
     for (const vote of voteRows) {
       counts.set(vote.entryId, (counts.get(vote.entryId) ?? 0) + 1);
-      if (viewerId && vote.userId === viewerId) mine.add(vote.entryId);
+      if (viewer && vote.userId === viewer.id) mine.add(vote.entryId);
     }
 
     const all: QuoteCard[] = rows.map((row) => ({

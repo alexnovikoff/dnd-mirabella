@@ -7,6 +7,7 @@ import styles from './NoteCards.module.css';
 /** «+ ЗАМЕТКА» — последний элемент списка, открывает быструю запись. */
 export function AddNoteButton() {
   const quickEntry = useQuickEntry();
+  if (!quickEntry.canWrite) return null;
 
   return (
     <button type="button" className={styles.add} onClick={quickEntry.open}>

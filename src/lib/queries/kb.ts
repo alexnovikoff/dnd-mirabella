@@ -1,10 +1,12 @@
 /* Запросы экрана «База знаний»: наводки со статусами, свободные заметки,
  * а также подтабы NPC и Локации. */
 
-import { and, desc, eq, inArray, isNotNull, ne, or, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNotNull, or, sql } from 'drizzle-orm';
 import { runDb } from '@/lib/db/client';
 import * as t from '@/lib/db/schema';
 import { CAMPAIGN_ID } from '@/lib/db/seed';
+import type { Viewer } from '@/lib/auth-shared';
+import { visibleEntries } from '@/lib/visibility';
 
 export type KbTab = 'notes' | 'npc' | 'locations';
 
@@ -90,12 +92,10 @@ export function getRumors(): Promise<RumorCard[]> {
   });
 }
 
-/** Свободные заметки. Личные видит только автор — до этапа 9 автор один. */
-export function getFreeNotes(viewerId: string | null): Promise<FreeNote[]> {
+/** Свободные заметки. Личные видит автор, мастер — все. */
+export function getFreeNotes(viewer: Viewer | null): Promise<FreeNote[]> {
   return runDb(async (db) => {
-    const visible = viewerId
-      ? or(eq(t.entries.visibility, 'public'), eq(t.entries.authorId, viewerId))
-      : eq(t.entries.visibility, 'public');
+    const visible = visibleEntries(viewer);
 
     const rows = await db
       .select({
@@ -108,14 +108,7 @@ export function getFreeNotes(viewerId: string | null): Promise<FreeNote[]> {
       .from(t.entries)
       .leftJoin(t.users, eq(t.users.id, t.entries.authorId))
       .leftJoin(t.sessions, eq(t.sessions.id, t.entries.sessionId))
-      .where(
-        and(
-          eq(t.entries.campaignId, CAMPAIGN_ID),
-          eq(t.entries.kind, 'note'),
-          ne(t.entries.visibility, 'draft'),
-          visible,
-        ),
-      )
+      .where(and(eq(t.entries.campaignId, CAMPAIGN_ID), eq(t.entries.kind, 'note'), visible))
       .orderBy(desc(t.entries.createdAt), desc(t.entries.id));
 
     return rows.map((row) => ({

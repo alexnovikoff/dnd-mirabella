@@ -1,0 +1,67 @@
+/* Ошибки и «ничего не найдено». README «Состояния»: ошибка — плашка
+ * на акценте, пусто — плейсхолдер в стиле дроп-зоны. */
+
+.screen {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 40px 32px 48px;
+}
+
+.plate {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--accent);
+  color: var(--accent-on);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  max-width: 560px;
+}
+
+.plateTitle {
+  font-family: var(--font-display);
+  font-size: 26px;
+  line-height: 1.15;
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 200px;
+  padding: 32px;
+  text-align: center;
+  border: 1px dashed var(--dash);
+  border-radius: var(--radius);
+}
+
+.button {
+  background: transparent;
+  border: 1px solid var(--accent-on);
+  border-radius: var(--radius);
+  color: var(--accent-on);
+  padding: 10px 14px;
+  min-height: 44px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  transition:
+    background var(--hover-fast),
+    color var(--hover-fast);
+}
+
+.button:hover {
+  background: var(--accent-on);
+  color: var(--accent);
+}
+
+@media (max-width: 767px) {
+  .screen {
+    padding: 28px 16px 36px;
+  }
+}

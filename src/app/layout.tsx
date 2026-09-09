@@ -5,6 +5,7 @@ import { Header } from '@/components/shell/Header';
 import { QuickEntryProvider } from '@/components/editor/QuickEntryProvider';
 import { getActiveSession, getCampaign } from '@/lib/queries/chronicle';
 import { getPickerNodes } from '@/lib/queries/nodes';
+import { getViewer } from '@/lib/viewer';
 import { shortRuDate } from '@/lib/dates';
 import '@/styles/globals.css';
 
@@ -47,10 +48,11 @@ export const viewport: Viewport = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const [campaign, session, nodes] = await Promise.all([
+  const [campaign, session, nodes, viewer] = await Promise.all([
     getCampaign(),
     getActiveSession(),
     getPickerNodes(),
+    getViewer(),
   ]);
   const title = campaign?.title ?? 'Кампания';
   const sessionLabel = session ? `Сессия ${session.number} · ${shortRuDate(session.date)}` : '';
@@ -60,12 +62,19 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="ru" className={`${cormorant.variable} ${spectral.variable} ${plexMono.variable}`}>
       <body>
-        <QuickEntryProvider nodes={nodes} characters={characters} sessionShort={sessionShort}>
+        <QuickEntryProvider
+          nodes={nodes}
+          characters={characters}
+          sessionShort={sessionShort}
+          canWrite={viewer !== null}
+          isDm={viewer?.role === 'dm'}
+        >
           <Sheet>
             <Header
               campaignTitle={title}
               seal={campaign?.seal ?? '?'}
               sessionLabel={sessionLabel}
+              viewer={viewer}
             />
             {children}
           </Sheet>

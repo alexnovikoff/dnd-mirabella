@@ -3,11 +3,15 @@
 import { useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { createBoardNode, linkNodes } from '@/lib/actions/board';
+import { useQuickEntry } from '@/components/editor/QuickEntryProvider';
 import styles from './Board.module.css';
 
 export function AddNodeButton() {
   const router = useRouter();
+  const { canWrite } = useQuickEntry();
   const [pending, startTransition] = useTransition();
+
+  if (!canWrite) return null;
 
   return (
     <button
@@ -36,7 +40,10 @@ export function LinkNodeButton({
   candidates: { id: string; name: string }[];
 }) {
   const router = useRouter();
+  const { canWrite } = useQuickEntry();
   const [pending, startTransition] = useTransition();
+
+  if (!canWrite) return null;
 
   return (
     <button

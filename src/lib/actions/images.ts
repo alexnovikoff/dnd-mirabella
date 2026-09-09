@@ -6,13 +6,14 @@ import { desc, eq } from 'drizzle-orm';
 import { runDb } from '@/lib/db/client';
 import * as t from '@/lib/db/schema';
 import { CAMPAIGN_ID } from '@/lib/db/seed';
-import { STUB_USER_ID } from '@/lib/campaign';
+import { requireViewer } from './guard';
 import { isSupportedImage, saveUpload } from '@/lib/storage';
 
 export type UploadResult = { ok: true; saved: number } | { ok: false; error: string };
 
 /** Drag-and-drop на страницу «Галерея»: файлы попадают в активную сессию. */
 export async function uploadImages(form: FormData): Promise<UploadResult> {
+  const viewer = await requireViewer();
   const files = form.getAll('files').filter((item): item is File => item instanceof File);
   if (files.length === 0) return { ok: false, error: 'Файлы не получены' };
 
@@ -42,7 +43,7 @@ export async function uploadImages(form: FormData): Promise<UploadResult> {
         entryId: null,
         url: item.url,
         caption: item.caption,
-        uploaderId: STUB_USER_ID,
+        uploaderId: viewer.id,
         kind: 'art' as const,
       })),
     );

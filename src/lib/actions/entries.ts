@@ -6,7 +6,7 @@ import { desc, eq } from 'drizzle-orm';
 import { runDb } from '@/lib/db/client';
 import * as t from '@/lib/db/schema';
 import { CAMPAIGN_ID } from '@/lib/db/seed';
-import { STUB_USER_ID } from '@/lib/campaign';
+import { requireViewer } from './guard';
 import { slugify } from '@/lib/slug';
 import { syncEntryLinks } from '@/lib/wiki/sync-links';
 import type { PickerNode } from '@/lib/queries/nodes';
@@ -21,11 +21,14 @@ export type NewEntry = {
   caption?: string;
   /** false — черновик: виден только автору (README «Быстрая запись»). */
   publish: boolean;
+  /** Мастер может скрыть запись от игроков (README «Роли»). */
+  dmOnly?: boolean;
 };
 
 export type CreateEntryResult = { ok: true; unresolved: string[] } | { ok: false; error: string };
 
 export async function createEntry(input: NewEntry): Promise<CreateEntryResult> {
+  const viewer = await requireViewer();
   const body = input.body.trim();
   const title = input.title?.trim() || null;
 
@@ -53,9 +56,13 @@ export async function createEntry(input: NewEntry): Promise<CreateEntryResult> {
       kind: input.kind,
       title,
       body: input.kind === 'image' ? null : body,
-      authorId: STUB_USER_ID,
+      authorId: viewer.id,
       subjectId: input.subjectId ?? null,
-      visibility: input.publish ? 'public' : 'draft',
+      visibility: !input.publish
+        ? 'draft'
+        : input.dmOnly && viewer.role === 'dm'
+          ? 'dm_only'
+          : 'public',
     });
 
     if (input.kind === 'image') {
@@ -66,7 +73,7 @@ export async function createEntry(input: NewEntry): Promise<CreateEntryResult> {
         entryId,
         url: null, // загрузка файлов — этап 6
         caption: input.caption?.trim() ?? null,
-        uploaderId: STUB_USER_ID,
+        uploaderId: viewer.id,
         kind: 'art',
       });
     }
@@ -81,6 +88,7 @@ export async function createEntry(input: NewEntry): Promise<CreateEntryResult> {
 /** Опция «+ создать «…»» в автодополнении: черновая сущность типа
  *  «неизвестно», которую потом дополнят на странице сущности. */
 export async function createDraftNode(rawName: string): Promise<PickerNode> {
+  await requireViewer();
   const name = rawName.trim();
   if (!name) throw new Error('Пустое имя сущности');
 

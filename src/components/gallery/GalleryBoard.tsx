@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { DropZone, MonoLabel } from '@/components/primitives';
 import { uploadImages } from '@/lib/actions/images';
+import { useQuickEntry } from '@/components/editor/QuickEntryProvider';
 import { numericDate } from '@/lib/dates';
 import { plural } from '@/lib/plural';
 import type { GalleryGroup, GalleryImage } from '@/lib/queries/gallery';
@@ -70,6 +71,7 @@ export function GalleryBoard({
   grouped: boolean;
 }) {
   const router = useRouter();
+  const { canWrite } = useQuickEntry();
   const [dragging, setDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lightbox, setLightbox] = useState<{ group: number; index: number } | null>(null);
@@ -97,6 +99,8 @@ export function GalleryBoard({
 
   /* Перетаскивание ловим на всей странице — README «Галерея». */
   useEffect(() => {
+    if (!canWrite) return;
+
     function onDragEnter(event: DragEvent) {
       if (!event.dataTransfer?.types.includes('Files')) return;
       depth.current += 1;
@@ -127,7 +131,7 @@ export function GalleryBoard({
       window.removeEventListener('dragleave', onDragLeave);
       window.removeEventListener('drop', onDrop);
     };
-  }, [upload]);
+  }, [upload, canWrite]);
 
   useEffect(() => {
     if (!lightbox) return;
@@ -168,12 +172,14 @@ export function GalleryBoard({
         </section>
       ))}
 
-      <div className={styles.drop}>
-        <DropZone
-          active={dragging}
-          label={pending ? 'Загружаем…' : `Бросьте файлы сюда · группа «${sessionLabel}»`}
-        />
-      </div>
+      {canWrite ? (
+        <div className={styles.drop}>
+          <DropZone
+            active={dragging}
+            label={pending ? 'Загружаем…' : `Бросьте файлы сюда · группа «${sessionLabel}»`}
+          />
+        </div>
+      ) : null}
 
       {error ? (
         <MonoLabel size={10} tracking="0.06em" tone="accent" block>

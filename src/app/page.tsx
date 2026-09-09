@@ -17,6 +17,7 @@ import {
   getStatusNodes,
   isFeedFilter,
 } from '@/lib/queries/chronicle';
+import { getViewer } from '@/lib/viewer';
 import styles from './chronicle.module.css';
 
 export default async function ChroniclePage({
@@ -26,12 +27,13 @@ export default async function ChroniclePage({
 }) {
   const { filter } = await searchParams;
   const active = isFeedFilter(filter) ? filter : 'all';
+  const viewer = await getViewer();
 
   const [campaign, party, feed, index, sessions, notes, gallery, board, activeSession] =
     await Promise.all([
       getCampaign(),
       getParty(),
-      getFeed(active),
+      getFeed(active, viewer),
       getNodeIndex(),
       getRecentSessions(5),
       getStatusNodes(4),
