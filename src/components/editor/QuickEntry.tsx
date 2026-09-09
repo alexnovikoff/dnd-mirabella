@@ -39,25 +39,25 @@ export type EditableEntry = {
 export function QuickEntry({
   nodes,
   characters,
-  sessionShort,
   isDm,
   entry,
+  defaultKind = 'moment',
   onClose,
 }: {
   nodes: PickerNode[];
   characters: PickerNode[];
-  /** «С26» — короткая метка активной сессии. */
-  sessionShort: string;
   /** Мастеру доступна пометка «скрыть от игроков». */
   isDm: boolean;
   /** Задана — шит открыт на правку, а не на создание. */
   entry?: EditableEntry | null;
+  /** Тип, выбранный при открытии: кнопка экрана «Цитаты» открывает цитату. */
+  defaultKind?: EntryKind;
   onClose: () => void;
 }) {
   const router = useRouter();
   const editing = entry ?? null;
 
-  const [kind, setKind] = useState<EntryKind>(editing?.kind ?? 'moment');
+  const [kind, setKind] = useState<EntryKind>(editing?.kind ?? defaultKind);
   const [title, setTitle] = useState(editing?.title ?? '');
   const [body, setBody] = useState(editing?.body ?? '');
   const [caption, setCaption] = useState(editing?.caption ?? '');
@@ -187,11 +187,11 @@ export function QuickEntry({
         aria-label="Быстрая запись"
       >
         <div className={styles.head}>
+          <span className={styles.title}>{editing ? 'Правка записи' : 'Быстрая запись'}</span>
+          <span className={styles.session}>{openedAt}</span>
           <button type="button" className={styles.close} onClick={onClose} aria-label="Закрыть">
             ×
           </button>
-          <span className={styles.title}>{editing ? 'Правка записи' : 'Быстрая запись'}</span>
-          <span className={styles.session}>{`${sessionShort} · ${openedAt}`}</span>
         </div>
 
         {unresolved ? (

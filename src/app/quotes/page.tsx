@@ -1,6 +1,7 @@
 import { Screen } from '@/components/shell/Screen';
 import { FilterChips, MonoLabel, ParchmentCard, QuoteBody } from '@/components/primitives';
-import { VoteButton } from '@/components/quotes/VoteButton';
+import { EntryActions } from '@/components/entry/EntryActions';
+import { NewQuoteButton } from '@/components/quotes/NewQuoteButton';
 import { getQuoteAuthors, getQuotes } from '@/lib/queries/quotes';
 import { getViewer } from '@/lib/viewer';
 import { plural } from '@/lib/plural';
@@ -15,6 +16,10 @@ export default async function QuotesPage({
   const viewer = await getViewer();
 
   const [authors, data] = await Promise.all([getQuoteAuthors(), getQuotes(author ?? null, viewer)]);
+
+  /* Правит свою цитату её автор; мастер — любую. Проверку повторяет сервер. */
+  const canEdit = (authorId: string | null) =>
+    viewer !== null && (viewer.role === 'dm' || authorId === viewer.id);
 
   return (
     <Screen
@@ -42,22 +47,27 @@ export default async function QuotesPage({
               <QuoteBody text={quote.body ?? ''} />
             </blockquote>
             <div className={styles.footer}>
-              <MonoLabel size={9} tracking="0.08em" tone="faint">
+              <MonoLabel size={10} tracking="0.08em" tone="faint">
                 {[quote.authorName, quote.sessionNumber ? `С${quote.sessionNumber}` : null]
                   .filter(Boolean)
                   .join(' · ')}
               </MonoLabel>
-              <VoteButton entryId={quote.id} votes={quote.votes} mine={quote.myVote} />
+              <EntryActions
+                entry={{
+                  id: quote.id,
+                  kind: 'quote',
+                  title: null,
+                  body: quote.body,
+                  subjectId: quote.subjectId,
+                  visibility: quote.visibility,
+                }}
+                canEdit={canEdit(quote.authorId)}
+              />
             </div>
           </ParchmentCard>
         ))}
 
-        {/* README: импорт из Discord или расшифровки — фича на потом. */}
-        <div className={styles.placeholder}>
-          <MonoLabel size={11} tracking="0.08em" tone="faint">
-            Вставить цитату из чата или голоса
-          </MonoLabel>
-        </div>
+        <NewQuoteButton />
       </div>
     </Screen>
   );

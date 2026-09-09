@@ -13,7 +13,7 @@ export function QuickEntryBar() {
       <MonoLabel size={10} tracking="0.08em" tone="faint">
         {quickEntry.sessionShort}
       </MonoLabel>
-      <button type="button" className={styles.button} onClick={quickEntry.open}>
+      <button type="button" className={styles.button} onClick={() => quickEntry.open()}>
         + БЫСТРАЯ ЗАПИСЬ
       </button>
     </div>

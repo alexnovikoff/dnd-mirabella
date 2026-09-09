@@ -10,7 +10,7 @@ export function AddNoteButton() {
   if (!quickEntry.canWrite) return null;
 
   return (
-    <button type="button" className={styles.add} onClick={quickEntry.open}>
+    <button type="button" className={styles.add} onClick={() => quickEntry.open()}>
       <MonoLabel size={10} tracking="0.08em">
         + Заметка
       </MonoLabel>
