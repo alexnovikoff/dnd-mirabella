@@ -1,11 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createTestDb } from '@/lib/db/test-db';
-import { setDbForTesting } from '@/lib/db/client';
+import { runDb, setDbForTesting } from '@/lib/db/client';
 import { FIXTURE, seedFixture } from '@/lib/db/fixture';
 import type { Viewer } from '@/lib/auth-shared';
 import * as t from '@/lib/db/schema';
 import { getBoard } from './board';
+import { getCharacter } from './characters';
 import { getFeed, getRecentSessions, getStatusNodes } from './chronicle';
+import { getGallery } from './gallery';
 import { getFreeNotes, getRumors } from './kb';
 import { getQuotes, getRandomQuote } from './quotes';
 
@@ -229,6 +231,48 @@ describe('getBoard', () => {
     expect(
       edges.some((edge) => edge.from === FIXTURE.nodes.hero || edge.to === FIXTURE.nodes.hero),
     ).toBe(false);
+  });
+});
+
+describe('достижения персонажа', () => {
+  it('приходят с подписью и автором загрузки', async () => {
+    const character = await getCharacter('geroy', null);
+    expect(character?.achievements).toHaveLength(1);
+    expect(character?.achievements[0]).toMatchObject({
+      caption: 'Первый уровень',
+      url: '/uploads/achievement.png',
+      uploaderId: FIXTURE.users.player,
+      uploaderName: 'Игрок',
+    });
+  });
+
+  it('в сетку сайдбара не попадают — она про кадры кампании', async () => {
+    const character = await getCharacter('geroy', null);
+    expect(character?.images.map((image) => image.caption)).toEqual(['Кадр']);
+  });
+
+  it('в общую «Галерею» не попадают ни в одном фильтре', async () => {
+    const all = await getGallery('all', false);
+    expect(all.total).toBe(2);
+    expect(all.groups[0].images.map((image) => image.caption)).not.toContain('Первый уровень');
+  });
+
+  it('чужого персонажа с собой не приносят', async () => {
+    await runDb(async (db) => {
+      await db.insert(t.characters).values({ nodeId: FIXTURE.nodes.ghost, isPc: false });
+      await db.insert(t.images).values({
+        id: 'i-achievement-ghost',
+        campaignId: FIXTURE.campaignId,
+        nodeId: FIXTURE.nodes.ghost,
+        url: '/uploads/ghost.png',
+        caption: 'Чужое',
+        uploaderId: FIXTURE.users.other,
+        kind: 'achievement',
+      });
+    });
+
+    const character = await getCharacter('geroy', null);
+    expect(character?.achievements.map((item) => item.caption)).toEqual(['Первый уровень']);
   });
 });
 

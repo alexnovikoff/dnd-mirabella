@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState, useTransition } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { DropZone, MonoLabel } from '@/components/primitives';
+import { DropZone, Lightbox, MonoLabel } from '@/components/primitives';
 import { uploadImages } from '@/lib/actions/images';
 import { useQuickEntry } from '@/components/editor/QuickEntryProvider';
 import { numericDate } from '@/lib/dates';
@@ -133,17 +133,6 @@ export function GalleryBoard({
     };
   }, [upload, canWrite]);
 
-  useEffect(() => {
-    if (!lightbox) return;
-    function onKey(event: KeyboardEvent) {
-      if (event.key === 'Escape') setLightbox(null);
-      if (event.key === 'ArrowRight') setLightbox((s) => step(s, groups, 1));
-      if (event.key === 'ArrowLeft') setLightbox((s) => step(s, groups, -1));
-    }
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [lightbox, groups]);
-
   const current = lightbox ? groups[lightbox.group]?.images[lightbox.index] : null;
 
   return (
@@ -194,49 +183,14 @@ export function GalleryBoard({
       ) : null}
 
       {current ? (
-        <div className={styles.lightbox} onClick={() => setLightbox(null)}>
-          <div className={styles.lightboxFrame} onClick={(e) => e.stopPropagation()}>
-            {current.url ? (
-              <Image
-                src={current.url}
-                alt={current.caption ?? ''}
-                fill
-                className={styles.lightboxImage}
-                sizes="100vw"
-              />
-            ) : (
-              <MonoLabel size={11} tracking="0.1em">
-                {current.caption ?? 'Изображение ещё не загружено'}
-              </MonoLabel>
-            )}
-          </div>
-          <div className={styles.lightboxBar} onClick={(e) => e.stopPropagation()}>
-            <button
-              type="button"
-              className={styles.navButton}
-              onClick={() => setLightbox((s) => step(s, groups, -1))}
-            >
-              ←
-            </button>
-            <span className={styles.lightboxCaption}>
-              {current.caption}
-              <br />
-              <MonoLabel size={9} tracking="0.08em" tone="onAccentDim">
-                {meta(current)}
-              </MonoLabel>
-            </span>
-            <button
-              type="button"
-              className={styles.navButton}
-              onClick={() => setLightbox((s) => step(s, groups, 1))}
-            >
-              →
-            </button>
-            <button type="button" className={styles.navButton} onClick={() => setLightbox(null)}>
-              ×
-            </button>
-          </div>
-        </div>
+        <Lightbox
+          url={current.url}
+          caption={current.caption}
+          meta={meta(current)}
+          onPrev={() => setLightbox((s) => step(s, groups, -1))}
+          onNext={() => setLightbox((s) => step(s, groups, 1))}
+          onClose={() => setLightbox(null)}
+        />
       ) : null}
     </div>
   );

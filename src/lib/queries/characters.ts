@@ -1,6 +1,6 @@
 /* Запросы страницы персонажа: метрики, его записи, связи, личная заметка. */
 
-import { and, desc, eq, inArray, or, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, ne, or, sql } from 'drizzle-orm';
 import { runDb } from '@/lib/db/client';
 import * as t from '@/lib/db/schema';
 import { CAMPAIGN_ID } from '@/lib/db/seed';
@@ -128,13 +128,40 @@ export function getCharacter(slug: string, viewer: Viewer | null) {
       })
       .filter((entry): entry is NonNullable<typeof entry> => entry !== null);
 
+    /* Достижения из блока внизу страницы в эту сетку не идут: у них своя
+     * галерея, и считать их дважды не за что. */
     const images = row.playerId
       ? await db
           .select({ id: t.images.id, caption: t.images.caption, url: t.images.url })
           .from(t.images)
-          .where(and(eq(t.images.campaignId, CAMPAIGN_ID), eq(t.images.uploaderId, row.playerId)))
+          .where(
+            and(
+              eq(t.images.campaignId, CAMPAIGN_ID),
+              eq(t.images.uploaderId, row.playerId),
+              ne(t.images.kind, 'achievement'),
+            ),
+          )
           .orderBy(desc(t.images.createdAt))
       : [];
+
+    const achievements = await db
+      .select({
+        id: t.images.id,
+        url: t.images.url,
+        caption: t.images.caption,
+        uploaderId: t.images.uploaderId,
+        uploaderName: t.users.name,
+      })
+      .from(t.images)
+      .leftJoin(t.users, eq(t.users.id, t.images.uploaderId))
+      .where(
+        and(
+          eq(t.images.campaignId, CAMPAIGN_ID),
+          eq(t.images.nodeId, row.id),
+          eq(t.images.kind, 'achievement'),
+        ),
+      )
+      .orderBy(desc(t.images.createdAt), desc(t.images.id));
 
     return {
       ...row,
@@ -143,6 +170,7 @@ export function getCharacter(slug: string, viewer: Viewer | null) {
       privateNotes,
       relations,
       images,
+      achievements,
       metrics: {
         moments: publicEntries.filter((entry) => entry.kind === 'moment').length,
         quotes: publicEntries.filter((entry) => entry.kind === 'quote').length,

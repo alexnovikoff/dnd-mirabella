@@ -284,6 +284,101 @@
   aspect-ratio: 1;
 }
 
+/* ── Достижения ──────────────────────────────────────────────────────
+ * Галерея во всю ширину под основной сеткой: сюда складывают картинки
+ * достижений персонажа. Заголовок с линейкой — как у групп «Галереи». */
+
+.achievements {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 26px 32px;
+  border-top: 1px solid var(--rule);
+}
+
+.achievementsHead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.rule {
+  flex: 1;
+  height: 1px;
+  background: var(--rule);
+}
+
+.achievementsGrid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.achievement {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.achievementTile {
+  position: relative;
+  aspect-ratio: 1;
+  width: 100%;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--hatch);
+  overflow: hidden;
+  --hatch-step: 6px;
+  transition:
+    border-color var(--hover-fast),
+    box-shadow var(--hover-slow);
+}
+
+.achievementTile:hover {
+  border-color: var(--accent);
+  box-shadow: var(--node-shadow-sm);
+}
+
+.achievementPhoto {
+  object-fit: cover;
+}
+
+/* Крестик поверх плитки: видно всегда — на сенсорном экране ховера нет. */
+.achievementRemove {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(43, 33, 24, 0.62);
+  border: 0;
+  border-radius: var(--radius);
+  color: #f3e9d4;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1;
+  transition: background var(--hover-fast);
+}
+
+.achievementRemove:hover {
+  background: var(--accent);
+}
+
+/* Дроп-зона кликабельна — это кнопка выбора файлов. */
+.achievementsDrop {
+  display: block;
+  width: 100%;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  text-align: inherit;
+}
+
 @media (max-width: 1023px) {
   .body {
     grid-template-columns: minmax(0, 1fr);
@@ -295,6 +390,10 @@
 
   .aside {
     border-top: 1px solid var(--rule);
+  }
+
+  .achievementsGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
@@ -315,5 +414,14 @@
 
   .aside {
     padding: 22px 16px;
+  }
+
+  .achievements {
+    padding: 22px 16px;
+  }
+
+  .achievementsGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
   }
 }

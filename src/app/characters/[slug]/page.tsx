@@ -8,6 +8,7 @@ import {
 } from '@/components/primitives';
 import { WikiText } from '@/components/wiki/WikiText';
 import { EntryActions } from '@/components/entry/EntryActions';
+import { Achievements } from '@/components/character/Achievements';
 import { CharacterEditor } from '@/components/character/CharacterEditor';
 import { PersonalNotes } from '@/components/character/PersonalNotes';
 import { PortraitEditor } from '@/components/character/PortraitEditor';
@@ -171,6 +172,18 @@ export default async function CharacterPage({ params }: { params: Promise<{ slug
           </div>
         </aside>
       </div>
+
+      <Achievements
+        nodeId={character.id}
+        name={character.name}
+        achievements={character.achievements.map((achievement) => ({
+          id: achievement.id,
+          url: achievement.url,
+          caption: achievement.caption,
+          uploaderName: achievement.uploaderName,
+          canRemove: canEdit(achievement.uploaderId),
+        }))}
+      />
     </>
   );
 }

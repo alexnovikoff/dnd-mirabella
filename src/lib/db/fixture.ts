@@ -20,6 +20,7 @@ export const FIXTURE = {
     privateNote: 'e-private',
     dmOnly: 'e-dm-only',
   },
+  images: { key: 'i-1', map: 'i-2', achievement: 'i-achievement' },
 } as const;
 
 const day = 24 * 3600 * 1000;
@@ -239,7 +240,7 @@ export async function seedFixture(db: Db) {
 
   await db.insert(t.images).values([
     {
-      id: 'i-1',
+      id: FIXTURE.images.key,
       campaignId: CAMPAIGN_ID,
       sessionId: 's-2',
       entryId: FIXTURE.entries.moment,
@@ -251,7 +252,7 @@ export async function seedFixture(db: Db) {
       createdAt: recent,
     },
     {
-      id: 'i-2',
+      id: FIXTURE.images.map,
       campaignId: CAMPAIGN_ID,
       sessionId: 's-1',
       url: null,
@@ -259,6 +260,17 @@ export async function seedFixture(db: Db) {
       uploaderId: FIXTURE.users.other,
       kind: 'map',
       createdAt: old,
+    },
+    /* Достижение: привязано к персонажу, а не к сессии. */
+    {
+      id: FIXTURE.images.achievement,
+      campaignId: CAMPAIGN_ID,
+      nodeId: FIXTURE.nodes.hero,
+      url: '/uploads/achievement.png',
+      caption: 'Первый уровень',
+      uploaderId: FIXTURE.users.player,
+      kind: 'achievement',
+      createdAt: recent,
     },
   ]);
 }

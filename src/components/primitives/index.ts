@@ -16,6 +16,9 @@ export type { ImagePlaceholderProps } from './ImagePlaceholder';
 export { DropZone } from './DropZone';
 export type { DropZoneProps } from './DropZone';
 
+export { Lightbox } from './Lightbox';
+export type { LightboxProps } from './Lightbox';
+
 export { FilterChips } from './FilterChips';
 export type { FilterChip } from './FilterChips';
 

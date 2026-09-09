@@ -46,7 +46,9 @@ export const entryKindEnum = pgEnum('entry_kind', ['moment', 'quote', 'note', 'i
 
 export const visibilityEnum = pgEnum('visibility', ['public', 'draft', 'private', 'dm_only']);
 
-export const imageKindEnum = pgEnum('image_kind', ['art', 'map', 'screenshot']);
+/** 'achievement' — плашка достижения персонажа: такой кадр привязан к узлу,
+ *  живёт только в блоке «Достижения» и в общую «Галерею» не попадает. */
+export const imageKindEnum = pgEnum('image_kind', ['art', 'map', 'screenshot', 'achievement']);
 
 /** mention — ребро из текста по [[ссылке]]; manual — связь, поставленная руками. */
 export const linkKindEnum = pgEnum('link_kind', ['mention', 'manual']);
@@ -176,6 +178,10 @@ export const images = pgTable(
       .references(() => campaigns.id, { onDelete: 'cascade' }),
     sessionId: text('session_id').references(() => sessions.id, { onDelete: 'set null' }),
     entryId: text('entry_id').references(() => entries.id, { onDelete: 'set null' }),
+    /** Узел, которому принадлежит кадр — сейчас это достижения персонажа.
+     *  Кадры кампании узла не имеют: их место задают сессия и запись.
+     *  Каскад, а не set null: достижение без персонажа показать негде. */
+    nodeId: text('node_id').references(() => nodes.id, { onDelete: 'cascade' }),
     /** null, пока картинка не загружена: показываем плейсхолдер со штриховкой. */
     url: text('url'),
     caption: text('caption'),
@@ -185,7 +191,7 @@ export const images = pgTable(
     isKey: boolean('is_key').notNull().default(false),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index('images_session').on(t.sessionId)],
+  (t) => [index('images_session').on(t.sessionId), index('images_node').on(t.nodeId)],
 );
 
 /** Ребро графа. Ровно один из fromNodeId / fromEntryId заполнен:
@@ -279,6 +285,7 @@ export const entryRelations = relations(entries, ({ one, many }) => ({
 export const imageRelations = relations(images, ({ one }) => ({
   session: one(sessions, { fields: [images.sessionId], references: [sessions.id] }),
   entry: one(entries, { fields: [images.entryId], references: [entries.id] }),
+  node: one(nodes, { fields: [images.nodeId], references: [nodes.id] }),
   uploader: one(users, { fields: [images.uploaderId], references: [users.id] }),
 }));
 
@@ -306,5 +313,6 @@ export const voteRelations = relations(votes, ({ one }) => ({
 export type NodeKind = (typeof nodeKindEnum.enumValues)[number];
 export type NodeStatus = (typeof nodeStatusEnum.enumValues)[number];
 export type EntryKind = (typeof entryKindEnum.enumValues)[number];
+export type ImageKind = (typeof imageKindEnum.enumValues)[number];
 export type Visibility = (typeof visibilityEnum.enumValues)[number];
 export type LinkKind = (typeof linkKindEnum.enumValues)[number];
