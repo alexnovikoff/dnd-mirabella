@@ -6,7 +6,7 @@ import { MonoLabel } from '@/components/primitives';
 import { ConfirmDialog } from '@/components/editor/ConfirmDialog';
 import { useQuickEntry } from '@/components/editor/QuickEntryProvider';
 import { deleteNode, updateNode } from '@/lib/actions/nodes';
-import { NODE_KIND_LABEL } from '@/lib/nodes';
+import { NODE_KIND_TITLE } from '@/lib/nodes';
 import type { NodeKind, NodeStatus } from '@/lib/db/schema';
 import picker from '@/components/editor/Picker.module.css';
 import styles from './EntityEditor.module.css';
@@ -22,7 +22,11 @@ const STATUSES: { value: string; label: string }[] = [
 
 export function EntityEditor({
   node,
+  returnTo = 'entity',
 }: {
+  /** 'board' — редактор открыт в панели доски: после переименования
+   *  остаёмся там же, а не уходим на страницу сущности. */
+  returnTo?: 'entity' | 'board';
   node: {
     id: string;
     name: string;
@@ -81,7 +85,9 @@ export function EntityEditor({
           }
           setOpen(false);
           /* Слаг мог смениться вместе с именем — уходим на новый адрес. */
-          router.replace(`/entities/${result.slug}`);
+          router.replace(
+            returnTo === 'board' ? `/board?node=${result.slug}` : `/entities/${result.slug}`,
+          );
           router.refresh();
         });
       }}
@@ -111,11 +117,11 @@ export function EntityEditor({
             onChange={(e) => setKind(e.currentTarget.value as NodeKind)}
           >
             {node.isCharacter ? (
-              <option value="character">{NODE_KIND_LABEL.character}</option>
+              <option value="character">{NODE_KIND_TITLE.character}</option>
             ) : (
               KINDS.map((item) => (
                 <option key={item} value={item}>
-                  {NODE_KIND_LABEL[item]}
+                  {NODE_KIND_TITLE[item]}
                 </option>
               ))
             )}

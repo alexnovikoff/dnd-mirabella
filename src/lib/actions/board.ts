@@ -103,7 +103,7 @@ export async function deleteLink(linkId: string) {
   return { ok: true as const };
 }
 
-/** «СВЯЗАТЬ С УЗЛОМ…»: ручное ребро с типом отношения. */
+/** «СВЯЗАТЬ С УЗЛОМ»: ручное ребро с типом отношения. */
 export async function linkNodes(fromNodeId: string, toNodeId: string, label: string) {
   await requireViewer();
   if (fromNodeId === toNodeId) return { ok: false as const, error: 'Узел нельзя связать с собой' };

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { LinkRow, MonoLabel } from '@/components/primitives';
 import { BoardCanvas } from '@/components/board/BoardCanvas';
 import { BoardToolbar, DeleteNodeButton, LinkNodeButton } from '@/components/board/BoardActions';
+import { EntityEditor } from '@/components/entity/EntityEditor';
 import { getBoard, getNodeDetail } from '@/lib/queries/board';
 import { getLinkLabels } from '@/lib/queries/labels';
 import { NODE_KIND_LABEL } from '@/lib/nodes';
@@ -53,6 +54,20 @@ export default async function BoardPage({
               {detail.description ? (
                 <p className={styles.description}>{detail.description}</p>
               ) : null}
+              {/* Тот же редактор, что на странице сущности: название, тип,
+                  статус и описание правятся не уходя с доски. */}
+              <EntityEditor
+                returnTo="board"
+                node={{
+                  id: detail.id,
+                  name: detail.name,
+                  kind: detail.kind,
+                  status: detail.status,
+                  description: detail.description,
+                  aliases: detail.aliases,
+                  isCharacter: detail.isCharacter,
+                }}
+              />
             </div>
 
             <div className={styles.block}>

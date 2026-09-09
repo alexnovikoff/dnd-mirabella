@@ -151,19 +151,75 @@
   }
 }
 
-/* Граф не сжимается на узких экранах — README. */
+/* Граф не сжимается на узких экранах — README. При увеличении масштаба
+ * появляется и вертикальная прокрутка, поэтому overflow по обеим осям. */
 .scroller {
-  overflow-x: auto;
-  overflow-y: hidden;
+  position: relative;
+  overflow: auto;
+  max-height: 620px;
+}
+
+.zoomArea {
+  position: relative;
+  min-width: 900px;
+}
+
+.zoomSizer {
+  min-width: 900px;
 }
 
 .canvas {
   position: relative;
-  height: 560px;
   min-width: 900px;
   overflow: hidden;
   background: var(--board-bg);
   touch-action: none;
+}
+
+/* Кнопки масштаба лежат поверх канвы и не уезжают с прокруткой. */
+.zoomControls {
+  position: sticky;
+  top: 10px;
+  left: 0;
+  z-index: 5;
+  float: right;
+  margin-right: 10px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  box-shadow: var(--node-shadow-sm);
+}
+
+.zoomButton,
+.zoomValue {
+  background: transparent;
+  border: 0;
+  padding: 6px 9px;
+  min-height: 32px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-muted);
+  transition: color var(--hover-fast);
+}
+
+.zoomValue {
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  min-width: 46px;
+  border-left: 1px solid var(--rule);
+  border-right: 1px solid var(--rule);
+}
+
+.zoomButton:hover,
+.zoomValue:hover {
+  color: var(--accent);
+}
+
+.zoomButton:disabled {
+  opacity: 0.4;
 }
 
 .lines {

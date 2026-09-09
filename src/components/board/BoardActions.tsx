@@ -9,7 +9,7 @@ import { useQuickEntry } from '@/components/editor/QuickEntryProvider';
 import { ConfirmDialog } from '@/components/editor/ConfirmDialog';
 import { createBoardNode, linkNodes } from '@/lib/actions/board';
 import { deleteNode } from '@/lib/actions/nodes';
-import { NODE_KIND_LABEL } from '@/lib/nodes';
+import { NODE_KIND_TITLE } from '@/lib/nodes';
 import type { NodeKind } from '@/lib/db/schema';
 import picker from '@/components/editor/Picker.module.css';
 import styles from './Board.module.css';
@@ -111,7 +111,7 @@ function AddNodeForm({ onDone }: { onDone: () => void }) {
         >
           {KINDS.map((item) => (
             <option key={item} value={item}>
-              {NODE_KIND_LABEL[item]}
+              {NODE_KIND_TITLE[item]}
             </option>
           ))}
         </select>
@@ -152,7 +152,7 @@ export function LinkNodeButton({
   if (!open) {
     return (
       <button type="button" className={styles.linkButton} onClick={() => setOpen(true)}>
-        СВЯЗАТЬ С УЗЛОМ…
+        СВЯЗАТЬ С УЗЛОМ
       </button>
     );
   }

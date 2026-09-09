@@ -12,6 +12,12 @@ import styles from './Board.module.css';
 /** Сдвиг больше этого — перетаскивание, меньше — клик по узлу. */
 const DRAG_THRESHOLD = 3;
 
+/* Масштаб доски. Координаты узлов хранятся в процентах, поэтому масштаб —
+ * чисто визуальная штука: он ничего не пересчитывает и никуда не сохраняется. */
+const ZOOM_STEPS = [0.6, 0.75, 0.9, 1, 1.25, 1.5, 2] as const;
+const ZOOM_DEFAULT = ZOOM_STEPS.indexOf(1);
+const CANVAS_HEIGHT = 560;
+
 type Drag = {
   id: string;
   pointerId: number;
@@ -32,6 +38,8 @@ export function BoardCanvas({
   const { canWrite } = useQuickEntry();
   const canvasRef = useRef<HTMLDivElement>(null);
   const [drag, setDrag] = useState<Drag | null>(null);
+  const [zoomStep, setZoomStep] = useState<number>(ZOOM_DEFAULT);
+  const zoom = ZOOM_STEPS[zoomStep];
   /* Локальные координаты на время перетаскивания — линии едут за узлом. */
   const [positions, setPositions] = useState<Record<string, { x: number; y: number }>>({});
 
@@ -52,121 +60,170 @@ export function BoardCanvas({
   }
 
   return (
-    <div className={styles.canvas} ref={canvasRef}>
-      <svg
-        className={styles.lines}
-        viewBox="0 0 100 100"
-        preserveAspectRatio="none"
-        aria-hidden="true"
+    <div className={styles.zoomArea}>
+      {/* Масштаб живёт над канвой: подпись показывает текущий, клик по ней
+          возвращает к 100%. */}
+      <div className={styles.zoomControls}>
+        <button
+          type="button"
+          className={styles.zoomButton}
+          aria-label="Уменьшить масштаб"
+          disabled={zoomStep === 0}
+          onClick={() => setZoomStep((step) => Math.max(0, step - 1))}
+        >
+          −
+        </button>
+        <button
+          type="button"
+          className={styles.zoomValue}
+          title="Вернуть 100%"
+          onClick={() => setZoomStep(ZOOM_DEFAULT)}
+        >
+          {`${Math.round(zoom * 100)}%`}
+        </button>
+        <button
+          type="button"
+          className={styles.zoomButton}
+          aria-label="Увеличить масштаб"
+          disabled={zoomStep === ZOOM_STEPS.length - 1}
+          onClick={() => setZoomStep((step) => Math.min(ZOOM_STEPS.length - 1, step + 1))}
+        >
+          +
+        </button>
+      </div>
+
+      {/* Распорка задаёт место под увеличенную канву, чтобы появились
+          полосы прокрутки: transform на размеры в потоке не влияет. */}
+      <div
+        className={styles.zoomSizer}
+        style={{ width: `${100 * zoom}%`, height: CANVAS_HEIGHT * zoom }}
       >
-        {edges.map((edge) => {
-          const from = byId.get(edge.from);
-          const to = byId.get(edge.to);
-          if (!from || !to) return null;
-          const a = positionOf(from);
-          const b = positionOf(to);
-          /* Выведенное ребро тоньше и светлее ручного: оно не утверждение
-           * автора, а следствие того, что узлы названы в одной записи. */
-          const derived = edge.kind === 'mention';
-          return (
-            <line
-              key={edge.id}
-              x1={a.x}
-              y1={a.y}
-              x2={b.x}
-              y2={b.y}
-              stroke="#a6825a"
-              strokeOpacity={derived ? 0.45 : 1}
-              strokeWidth={derived ? 0.2 : 0.3}
-              strokeDasharray={derived ? '1.5 2.5' : '3 2'}
-              vectorEffect="non-scaling-stroke"
-            >
-              <title>{derived ? 'Упомянуты в одной записи' : (edge.label ?? 'Связь')}</title>
-            </line>
-          );
-        })}
-      </svg>
-
-      {nodes.map((node) => {
-        const position = positionOf(node);
-        const selected = node.slug === selectedSlug;
-        const className = [
-          styles.node,
-          node.status === 'open' ? styles.open : undefined,
-          node.status === 'resolved' ? styles.resolved : undefined,
-          node.status === 'dead_end' ? styles.dead : undefined,
-          selected ? styles.selected : undefined,
-          drag?.id === node.id ? styles.dragging : undefined,
-        ]
-          .filter(Boolean)
-          .join(' ');
-
-        return (
-          <button
-            key={node.id}
-            type="button"
-            className={className}
-            style={{ left: `${position.x}%`, top: `${position.y}%` }}
-            aria-pressed={selected}
-            onPointerDown={(event) => {
-              if (!canWrite) return;
-              /* Захват указателя — оптимизация, чтобы курсор мог уйти за
-               * пределы узла. Если браузер его не даёт, перетаскивание всё
-               * равно должно работать. */
-              try {
-                event.currentTarget.setPointerCapture(event.pointerId);
-              } catch {
-                /* пусто */
-              }
-              setDrag({ id: node.id, pointerId: event.pointerId, movedFar: false });
-            }}
-            onPointerMove={(event) => {
-              if (drag?.id !== node.id) return;
-              const next = toPercent(event);
-              if (!next) return;
-
-              const start = positionOf(node);
-              const far =
-                drag.movedFar ||
-                Math.abs(next.x - start.x) > DRAG_THRESHOLD / 5 ||
-                Math.abs(next.y - start.y) > DRAG_THRESHOLD / 5;
-
-              setDrag({ ...drag, movedFar: far });
-              setPositions((current) => ({ ...current, [node.id]: next }));
-            }}
-            onPointerUp={(event) => {
-              if (drag?.id !== node.id) return;
-              try {
-                event.currentTarget.releasePointerCapture(event.pointerId);
-              } catch {
-                /* пусто */
-              }
-              const moved = drag.movedFar;
-              setDrag(null);
-
-              if (!moved) {
-                router.push(`/board?node=${node.slug}`, { scroll: false });
-                return;
-              }
-              const next = positions[node.id];
-              if (next) void saveNodePosition(node.id, next.x, next.y);
-            }}
+        <div
+          className={styles.canvas}
+          ref={canvasRef}
+          style={{
+            width: `${100 / zoom}%`,
+            height: CANVAS_HEIGHT,
+            transform: `scale(${zoom})`,
+            transformOrigin: 'top left',
+          }}
+        >
+          <svg
+            className={styles.lines}
+            viewBox="0 0 100 100"
+            preserveAspectRatio="none"
+            aria-hidden="true"
           >
-            {node.name}
-            <MonoLabel
-              size={9}
-              tracking="0.08em"
-              tone={selected ? 'onAccentDim' : node.status === 'open' ? 'accent' : 'faint'}
-              className={styles.kind}
-              block
-            >
-              {[NODE_KIND_LABEL[node.kind], node.status === 'dead_end' ? 'ТУПИК' : null]
-                .filter(Boolean)
-                .join(' · ')}
-            </MonoLabel>
-          </button>
-        );
-      })}
+            {edges.map((edge) => {
+              const from = byId.get(edge.from);
+              const to = byId.get(edge.to);
+              if (!from || !to) return null;
+              const a = positionOf(from);
+              const b = positionOf(to);
+              /* Выведенное ребро тоньше и светлее ручного: оно не утверждение
+               * автора, а следствие того, что узлы названы в одной записи. */
+              const derived = edge.kind === 'mention';
+              return (
+                <line
+                  key={edge.id}
+                  x1={a.x}
+                  y1={a.y}
+                  x2={b.x}
+                  y2={b.y}
+                  stroke="#a6825a"
+                  strokeOpacity={derived ? 0.45 : 1}
+                  strokeWidth={derived ? 0.2 : 0.3}
+                  strokeDasharray={derived ? '1.5 2.5' : '3 2'}
+                  vectorEffect="non-scaling-stroke"
+                >
+                  <title>{derived ? 'Упомянуты в одной записи' : (edge.label ?? 'Связь')}</title>
+                </line>
+              );
+            })}
+          </svg>
+
+          {nodes.map((node) => {
+            const position = positionOf(node);
+            const selected = node.slug === selectedSlug;
+            const className = [
+              styles.node,
+              node.status === 'open' ? styles.open : undefined,
+              node.status === 'resolved' ? styles.resolved : undefined,
+              node.status === 'dead_end' ? styles.dead : undefined,
+              selected ? styles.selected : undefined,
+              drag?.id === node.id ? styles.dragging : undefined,
+            ]
+              .filter(Boolean)
+              .join(' ');
+
+            return (
+              <button
+                key={node.id}
+                type="button"
+                className={className}
+                style={{ left: `${position.x}%`, top: `${position.y}%` }}
+                aria-pressed={selected}
+                onPointerDown={(event) => {
+                  if (!canWrite) return;
+                  /* Захват указателя — оптимизация, чтобы курсор мог уйти за
+                   * пределы узла. Если браузер его не даёт, перетаскивание всё
+                   * равно должно работать. */
+                  try {
+                    event.currentTarget.setPointerCapture(event.pointerId);
+                  } catch {
+                    /* пусто */
+                  }
+                  setDrag({ id: node.id, pointerId: event.pointerId, movedFar: false });
+                }}
+                onPointerMove={(event) => {
+                  if (drag?.id !== node.id) return;
+                  const next = toPercent(event);
+                  if (!next) return;
+
+                  const start = positionOf(node);
+                  const far =
+                    drag.movedFar ||
+                    Math.abs(next.x - start.x) > DRAG_THRESHOLD / 5 ||
+                    Math.abs(next.y - start.y) > DRAG_THRESHOLD / 5;
+
+                  setDrag({ ...drag, movedFar: far });
+                  setPositions((current) => ({ ...current, [node.id]: next }));
+                }}
+                onPointerUp={(event) => {
+                  if (drag?.id !== node.id) return;
+                  try {
+                    event.currentTarget.releasePointerCapture(event.pointerId);
+                  } catch {
+                    /* пусто */
+                  }
+                  const moved = drag.movedFar;
+                  setDrag(null);
+
+                  if (!moved) {
+                    router.push(`/board?node=${node.slug}`, { scroll: false });
+                    return;
+                  }
+                  const next = positions[node.id];
+                  if (next) void saveNodePosition(node.id, next.x, next.y);
+                }}
+              >
+                {node.name}
+                <MonoLabel
+                  size={9}
+                  tracking="0.08em"
+                  tone={selected ? 'onAccentDim' : node.status === 'open' ? 'accent' : 'faint'}
+                  className={styles.kind}
+                  block
+                >
+                  {[NODE_KIND_LABEL[node.kind], node.status === 'dead_end' ? 'ТУПИК' : null]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </MonoLabel>
+              </button>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
