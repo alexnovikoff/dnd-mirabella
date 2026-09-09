@@ -1,10 +1,144 @@
-import { Screen } from '@/components/shell/Screen';
-import { Stub } from '@/components/shell/Stub';
+import Link from 'next/link';
+import { LinkRow, MonoLabel } from '@/components/primitives';
+import { BoardCanvas } from '@/components/board/BoardCanvas';
+import { AddNodeButton, LinkNodeButton } from '@/components/board/BoardActions';
+import { getBoard, getNodeDetail } from '@/lib/queries/board';
+import { NODE_KIND_LABEL } from '@/lib/nodes';
+import { plural } from '@/lib/plural';
+import styles from '@/components/board/Board.module.css';
 
-export default function BoardPage() {
+const LEGEND = [
+  { color: 'var(--status-open)', label: 'ОТКРЫТА' },
+  { color: 'var(--status-done)', label: 'РАСКРЫТА' },
+  { color: 'var(--status-dead)', label: 'ТУПИК' },
+];
+
+export default async function BoardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ node?: string }>;
+}) {
+  const { node } = await searchParams;
+  const board = await getBoard();
+
+  /* Без выбора показываем первый узел — панель не должна быть пустой. */
+  const selectedSlug = node ?? board.nodes[0]?.slug ?? null;
+  const detail = selectedSlug ? await getNodeDetail(selectedSlug) : null;
+
   return (
-    <Screen title="Доска связей" note="Граф всех сущностей кампании и работа с выбранным узлом.">
-      <Stub stage="Этап 8">SVG-рёбра под узлами, перетаскивание, панель выбранного узла</Stub>
-    </Screen>
+    <div className={styles.layout}>
+      <div className={styles.main}>
+        <div className={styles.toolbar}>
+          <h1 className={styles.title}>Доска связей</h1>
+          <div className={styles.tools}>
+            {LEGEND.map((item) => (
+              <span key={item.label} className={styles.legendItem}>
+                <span className={styles.swatch} style={{ background: item.color }} />
+                {item.label}
+              </span>
+            ))}
+            <AddNodeButton />
+          </div>
+        </div>
+
+        <div className={styles.scroller}>
+          <BoardCanvas nodes={board.nodes} edges={board.edges} selectedSlug={selectedSlug} />
+        </div>
+
+        {/* <768px граф заменяется списком — README «Доска связей». */}
+        <div className={styles.list}>
+          {board.nodes.map((item) => (
+            <LinkRow
+              key={item.id}
+              name={item.name}
+              label={NODE_KIND_LABEL[item.kind]}
+              href={`/board?node=${item.slug}`}
+            />
+          ))}
+        </div>
+      </div>
+
+      <aside className={styles.panel}>
+        {detail ? (
+          <>
+            <div className={styles.block}>
+              <MonoLabel size={10} tracking="0.14em" block>
+                Выбранный узел
+              </MonoLabel>
+              <h2 className={styles.nodeName}>{detail.name}</h2>
+              {detail.description ? (
+                <p className={styles.description}>{detail.description}</p>
+              ) : null}
+            </div>
+
+            <div className={styles.block}>
+              <MonoLabel size={10} tracking="0.14em" block>
+                {`Связи · ${detail.relations.length}`}
+              </MonoLabel>
+              <div className={styles.rows}>
+                {detail.relations.length === 0 ? (
+                  <MonoLabel size={9} tracking="0.08em" tone="faint">
+                    Связей пока нет
+                  </MonoLabel>
+                ) : (
+                  detail.relations.map((relation) => (
+                    <LinkRow
+                      key={`${relation.id}-${relation.label ?? ''}`}
+                      arrow
+                      name={relation.name}
+                      label={relation.label?.toUpperCase()}
+                      href={`/board?node=${relation.slug}`}
+                    />
+                  ))
+                )}
+              </div>
+            </div>
+
+            <div className={styles.block}>
+              <MonoLabel size={10} tracking="0.14em" block>
+                Упоминания
+              </MonoLabel>
+              <p className={styles.mentions}>
+                {detail.mentions.moments.length === 0 &&
+                detail.mentions.notes === 0 &&
+                detail.mentions.images === 0
+                  ? 'Узел ещё нигде не упомянут.'
+                  : [
+                      detail.mentions.moments.length > 0
+                        ? `Моменты: ${detail.mentions.moments
+                            .map((moment) =>
+                              moment.sessionNumber
+                                ? `С${moment.sessionNumber} «${moment.title ?? 'без заголовка'}»`
+                                : `«${moment.title ?? 'без заголовка'}»`,
+                            )
+                            .join(', ')}.`
+                        : null,
+                      detail.mentions.notes > 0 ? `Заметки: ${detail.mentions.notes}.` : null,
+                      detail.mentions.images > 0 ? `Изображения: ${detail.mentions.images}.` : null,
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+              </p>
+              <Link href={`/entities/${detail.slug}`}>
+                <MonoLabel size={9} tracking="0.08em" tone="accent">
+                  Открыть страницу сущности →
+                </MonoLabel>
+              </Link>
+            </div>
+
+            <LinkNodeButton
+              fromNodeId={detail.id}
+              candidates={board.nodes
+                .filter((item) => item.id !== detail.id)
+                .map((item) => ({ id: item.id, name: item.name }))}
+            />
+          </>
+        ) : (
+          <MonoLabel size={10} tracking="0.08em" tone="faint" block>
+            {`На доске ${board.nodes.length} ${plural(board.nodes.length, 'узел', 'узла', 'узлов')}. Выберите один.`}
+          </MonoLabel>
+        )}
+      </aside>
+    </div>
   );
 }

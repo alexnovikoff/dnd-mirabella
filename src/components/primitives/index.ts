@@ -15,3 +15,10 @@ export type { ImagePlaceholderProps } from './ImagePlaceholder';
 
 export { DropZone } from './DropZone';
 export type { DropZoneProps } from './DropZone';
+
+export { FilterChips } from './FilterChips';
+export type { FilterChip } from './FilterChips';
+
+export { LinkRow } from './LinkRow';
+
+export { Metric } from './Metric';

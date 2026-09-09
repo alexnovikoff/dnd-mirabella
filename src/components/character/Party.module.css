@@ -1,0 +1,42 @@
+/* Список партии. В хендоффе отдельного макета для этого экрана нет —
+ * собран из тех же примитивов, что и остальные карточки. */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.card {
+  height: 100%;
+}
+
+.portrait {
+  height: 180px;
+}
+
+.name {
+  font-family: var(--font-display);
+  font-size: 26px;
+  line-height: 1.1;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.bio {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink-body);
+}
+
+@media (max-width: 1023px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767px) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

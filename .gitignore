@@ -42,3 +42,6 @@ yarn-error.log*
 
 # локальная база PGlite
 .pglite/
+
+# загруженные картинки (локальный драйвер хранилища)
+public/uploads/

@@ -1,0 +1,72 @@
+/* Ряд фильтров-чипов. Два размера из макета: в ленте «Хроники» они мельче
+ * (4px 8px, gap 8), на экранах «Галерея» и «Цитаты» крупнее (5px 9px, gap 7). */
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+
+.sm {
+  gap: 8px;
+}
+
+.md {
+  gap: 7px;
+}
+
+.chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--ink-faint);
+  white-space: nowrap;
+  transition:
+    color var(--hover-fast),
+    border-color var(--hover-fast);
+}
+
+.sm .chip {
+  padding: 4px 8px;
+}
+
+.md .chip {
+  padding: 5px 9px;
+  color: var(--ink-muted-2);
+}
+
+.chip:hover {
+  color: var(--ink-muted);
+}
+
+.active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.active:hover {
+  color: var(--accent);
+}
+
+/* Тумблер: включённый — залит акцентом, слева квадрат-индикатор 7×7. */
+.toggleOn {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-on-warm);
+}
+
+.toggleOn:hover {
+  color: var(--accent-on-warm);
+}
+
+.marker {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  background: currentColor;
+}

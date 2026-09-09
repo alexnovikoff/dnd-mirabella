@@ -1,0 +1,75 @@
+/* Карточки «Базы знаний». README §4: карточка наводки — как в сайдбаре
+ * «Хроники» (полоса 3px, статус, счётчик связей) плюс ряд чипов связей;
+ * карточка свободной заметки — мета mono 9px и текст с [[ссылками]]. */
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rumor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--note-bg);
+  border-left: 3px solid var(--note-color);
+  border-radius: var(--radius);
+  padding: 13px 14px;
+  color: var(--note-ink);
+  transition: background var(--hover-fast);
+}
+
+.rumor:hover {
+  background: #fdf8ea;
+}
+
+.name {
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.struck {
+  text-decoration: line-through;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chip {
+  background: var(--tag);
+  padding: 4px 8px;
+}
+
+.note {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 13px 14px;
+}
+
+.noteBody {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink-body-2);
+}
+
+.add {
+  border: 1px dashed var(--dash);
+  border-radius: var(--radius);
+  padding: 13px 14px;
+  text-align: center;
+  background: transparent;
+  width: 100%;
+  transition: border-color var(--hover-fast);
+}
+
+.add:hover {
+  border-color: var(--accent);
+}

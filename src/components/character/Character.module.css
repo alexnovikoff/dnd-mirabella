@@ -1,0 +1,160 @@
+/* Страница персонажа. README §6. */
+
+.header {
+  display: flex;
+  gap: 28px;
+  padding: 30px 32px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.portrait {
+  width: 190px;
+  height: 240px;
+  flex: none;
+  --hatch-step: 8px;
+}
+
+.headText {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.name {
+  font-family: var(--font-display);
+  font-size: 52px;
+  line-height: 0.95;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.bio {
+  max-width: 620px;
+  font-size: 15px;
+  line-height: 1.7;
+  font-style: italic;
+  color: var(--ink-italic);
+}
+
+.metrics {
+  display: flex;
+  gap: 22px;
+  flex-wrap: wrap;
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid var(--rule-soft);
+}
+
+.body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--aside-w);
+}
+
+.entries {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 26px 32px;
+  border-right: 1px solid var(--rule);
+  min-width: 0;
+}
+
+.sectionTitle {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.momentTitle {
+  font-family: var(--font-display);
+  font-size: 23px;
+  line-height: 1.15;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.momentBody {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink-body);
+}
+
+.aside {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  padding: 26px 24px;
+  background: var(--aside-bg);
+}
+
+.block {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.privateNote {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 12px;
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--ink-body-2);
+}
+
+.grid3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.cell {
+  aspect-ratio: 1;
+}
+
+@media (max-width: 1023px) {
+  .body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .entries {
+    border-right: 0;
+  }
+
+  .aside {
+    border-top: 1px solid var(--rule);
+  }
+}
+
+@media (max-width: 767px) {
+  .header {
+    flex-direction: column;
+    padding: 22px 16px;
+    gap: 18px;
+  }
+
+  .name {
+    font-size: 38px;
+  }
+
+  .entries {
+    padding: 22px 16px;
+  }
+
+  .aside {
+    padding: 22px 16px;
+  }
+}

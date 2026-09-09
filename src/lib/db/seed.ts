@@ -45,36 +45,149 @@ type NodeSeed = {
 };
 
 /* Партия — данные из README хендоффа. */
-const PARTY: (NodeSeed & { race: string; classes: string })[] = [
-  { id: 'n-aelis', kind: 'character', name: 'Аэлис', race: 'Дженази', classes: 'Плут · Монах' },
-  { id: 'n-jadu', kind: 'character', name: 'Джаду', race: 'Табакси', classes: 'Волшебник' },
-  { id: 'n-metel', kind: 'character', name: 'Метель', race: 'Тифлинг', classes: 'Плут' },
-  { id: 'n-ogen', kind: 'character', name: 'Оген', race: 'Дженази', classes: 'Плут · Чародей' },
+const PARTY: (NodeSeed & { race: string; classes: string; bio: string })[] = [
+  {
+    id: 'n-aelis',
+    kind: 'character',
+    name: 'Аэлис',
+    race: 'Дженази',
+    classes: 'Плут · Монах',
+    x: 30,
+    y: 62,
+    bio: 'Держит дистанцию со всеми, кроме партии, и не любит разговоров про свою семью.',
+  },
+  {
+    id: 'n-jadu',
+    kind: 'character',
+    name: 'Джаду',
+    race: 'Табакси',
+    classes: 'Волшебник',
+    x: 28,
+    y: 20,
+    bio: 'Считает, что любой предмет считается за один, если его правильно упаковать.',
+  },
+  {
+    id: 'n-metel',
+    kind: 'character',
+    name: 'Метель',
+    race: 'Тифлинг',
+    classes: 'Плут',
+    x: 60,
+    y: 40,
+    bio: 'Ведёт переговоры как бой и обычно выходит из них с чужим имуществом.',
+  },
+  {
+    id: 'n-ogen',
+    kind: 'character',
+    name: 'Оген',
+    race: 'Дженази',
+    classes: 'Плут · Чародей',
+    x: 84,
+    y: 46,
+    bio: 'Задаёт вопросы, ответы на которые никому не нравятся, и всё равно оказывается прав.',
+  },
 ];
 
 /* Девять сущностей Алекса. Тип и статус — догадки, поправь. */
 const ENTITIES: NodeSeed[] = [
-  { id: 'n-tavern', kind: 'location', name: 'Та Самая Таверна', status: 'resolved', x: 46, y: 44 },
-  { id: 'n-stonefellow', kind: 'npc', name: 'Стоунфеллоу', status: 'open', x: 74, y: 20 },
-  { id: 'n-tears', kind: 'artifact', name: 'Слёзы Мирабеллы', status: 'open', x: 44, y: 14 },
-  { id: 'n-jaddu', kind: 'location', name: 'Город Джадду', status: 'resolved', x: 16, y: 30 },
-  { id: 'n-sugar', kind: 'npc', name: 'Шугар-дэдди Метели', status: 'open', x: 72, y: 62 },
-  { id: 'n-father', kind: 'npc', name: 'Отец Аэлиса', status: 'open', x: 20, y: 76 },
-  { id: 'n-anderksot', kind: 'location', name: 'Горы Андерксот', status: 'open', x: 12, y: 56 },
-  { id: 'n-pearl', kind: 'event', name: 'Экспедиция за жемчужиной', status: 'open', x: 60, y: 84 },
-  { id: 'n-damaya', kind: 'npc', name: 'Дамайя', status: 'dead_end', x: 40, y: 70 },
+  {
+    id: 'n-tavern',
+    kind: 'location',
+    name: 'Та Самая Таверна',
+    status: 'resolved',
+    x: 46,
+    y: 44,
+    description: 'Место, где партия собирается между вылазками и куда стекаются слухи.',
+  },
+  {
+    id: 'n-stonefellow',
+    kind: 'npc',
+    name: 'Стоунфеллоу',
+    status: 'open',
+    x: 74,
+    y: 20,
+    description: 'Знает о партии больше, чем должен. Чем именно занят — пока не выяснено.',
+  },
+  {
+    id: 'n-tears',
+    kind: 'artifact',
+    name: 'Слёзы Мирабеллы',
+    status: 'open',
+    x: 44,
+    y: 14,
+    description: 'Семь артефактов, исполняющих желания. Шесть ещё не найдены.',
+  },
+  {
+    id: 'n-jaddu',
+    kind: 'location',
+    name: 'Город Джадду',
+    status: 'resolved',
+    x: 16,
+    y: 30,
+    description: 'Город, откуда тянется след Дамайи и куда ведёт часть старых связей.',
+  },
+  {
+    id: 'n-sugar',
+    kind: 'npc',
+    name: 'Шугар-дэдди Метели',
+    status: 'open',
+    x: 72,
+    y: 62,
+    description: 'Покровитель Метели. Ведёт учёт всему, что за ней числится.',
+  },
+  {
+    id: 'n-father',
+    kind: 'npc',
+    name: 'Отец Аэлиса',
+    status: 'open',
+    x: 20,
+    y: 76,
+    description: 'О нём известно немного, и Аэлис не спешит рассказывать.',
+  },
+  {
+    id: 'n-anderksot',
+    kind: 'location',
+    name: 'Горы Андерксот',
+    status: 'open',
+    x: 12,
+    y: 56,
+    description: 'Горная гряда, откуда партия вынесла содержимое сундука.',
+  },
+  {
+    id: 'n-pearl',
+    kind: 'event',
+    name: 'Экспедиция за жемчужиной',
+    status: 'open',
+    x: 60,
+    y: 84,
+    description: 'Незакрытое предприятие, к которому так или иначе сходится половина зацепок.',
+  },
+  {
+    id: 'n-damaya',
+    kind: 'npc',
+    name: 'Дамайя',
+    status: 'dead_end',
+    x: 40,
+    y: 70,
+    description: 'След оборвался в Городе Джадду. Ждём нового имени.',
+  },
 ];
 
 /* Ручные связи. Ярлыки — заглушки. */
 const MANUAL_LINKS: [from: string, to: string, label: string][] = [
   ['n-pearl', 'n-tears', 'Цель'],
   ['n-pearl', 'n-anderksot', 'Маршрут'],
-  ['n-metel', 'n-sugar', 'Покровитель'],
+  ['n-metel', 'n-sugar', 'Долг'],
+  ['n-metel', 'n-stonefellow', 'Вражда'],
+  ['n-metel', 'n-ogen', 'Напарник'],
+  ['n-metel', 'n-tears', 'Тайна'],
   ['n-aelis', 'n-father', 'Родство'],
   ['n-tavern', 'n-stonefellow', 'Завсегдатай'],
   ['n-damaya', 'n-jaddu', 'След'],
   ['n-jadu', 'n-jaddu', 'Родина'],
   ['n-tears', 'n-damaya', 'Подозрение'],
+  ['n-ogen', 'n-pearl', 'Участник'],
+  ['n-aelis', 'n-tavern', 'Завсегдатай'],
 ];
 
 /* Лента. Тексты придуманы — заменить настоящими. */
@@ -90,6 +203,8 @@ type EntrySeed = {
   isCrit?: boolean;
   isFail?: boolean;
   tags?: string[];
+  /** По умолчанию public; 'private' — личная заметка персонажа. */
+  visibility?: t.Visibility;
 };
 
 const ENTRIES: EntrySeed[] = [
@@ -142,6 +257,52 @@ const ENTRIES: EntrySeed[] = [
     body: 'Мой отец говорил: не бери в долг у того, кто улыбается. Я взяла у двоих.',
     author: 'u-aelis',
     subject: 'n-aelis',
+  },
+  {
+    id: 'e-26-3',
+    kind: 'quote',
+    session: 26,
+    body: 'Он назвал меня по имени. Значит, кто-то уже назвал ему моё.',
+    author: 'u-metel',
+    subject: 'n-metel',
+  },
+  {
+    id: 'e-25-3',
+    kind: 'quote',
+    session: 25,
+    body: 'Это не мародёрство, это инвентаризация.',
+    author: 'u-jadu',
+    subject: 'n-jadu',
+  },
+  {
+    id: 'e-24-3',
+    kind: 'quote',
+    session: 24,
+    body: 'У меня нет плана. У меня есть последовательность решений.',
+    author: 'u-dm',
+  },
+  {
+    id: 'e-26-note',
+    kind: 'note',
+    session: 26,
+    body: 'Проверить, кто мог назвать [[Стоунфеллоу]] имя Метели. Начать с [[Та Самая Таверна]].',
+    author: 'u-jadu',
+  },
+  {
+    id: 'e-25-note',
+    kind: 'note',
+    session: 25,
+    body: 'Опись из [[Горы Андерксот]] сверить с тем, что числится за [[Шугар-дэдди Метели]].',
+    author: 'u-jadu',
+  },
+  {
+    id: 'e-26-private',
+    kind: 'note',
+    session: 26,
+    body: 'Не рассказывать партии про счёт от покровителя, пока не пойму, чем он обеспечен.',
+    author: 'u-metel',
+    subject: 'n-metel',
+    visibility: 'private',
   },
   {
     id: 'e-24-2',
@@ -255,19 +416,20 @@ export async function seed(db: Db) {
       nodeId: c.id,
       race: c.race,
       classes: c.classes,
+      bio: c.bio,
       isPc: true,
       playerId: `u-${c.id.slice(2)}`,
       sinceSession: 1,
     })),
   );
 
-  await db.insert(t.boardPositions).values(
-    ENTITIES.filter((e) => e.x !== undefined).map((e) => ({
-      nodeId: e.id,
-      x: e.x as number,
-      y: e.y as number,
-    })),
-  );
+  await db
+    .insert(t.boardPositions)
+    .values(
+      allNodes
+        .filter((n) => n.x !== undefined)
+        .map((n) => ({ nodeId: n.id, x: n.x as number, y: n.y as number })),
+    );
 
   await db.insert(t.entries).values(
     ENTRIES.map((e) => ({
@@ -283,7 +445,7 @@ export async function seed(db: Db) {
       isCrit: e.isCrit ?? false,
       isFail: e.isFail ?? false,
       tags: e.tags ?? [],
-      visibility: 'public' as const,
+      visibility: e.visibility ?? ('public' as const),
       createdAt: sessionDate(e.session),
     })),
   );
@@ -343,7 +505,11 @@ export async function seed(db: Db) {
     { entryId: 'e-26-2', userId: 'u-aelis' },
     { entryId: 'e-26-2', userId: 'u-jadu' },
     { entryId: 'e-26-2', userId: 'u-metel' },
+    { entryId: 'e-26-2', userId: 'u-dm' },
+    { entryId: 'e-26-3', userId: 'u-ogen' },
+    { entryId: 'e-26-3', userId: 'u-jadu' },
     { entryId: 'e-24-1', userId: 'u-ogen' },
+    { entryId: 'e-25-3', userId: 'u-metel' },
   ]);
 
   await db.execute(sql`select 1`);
