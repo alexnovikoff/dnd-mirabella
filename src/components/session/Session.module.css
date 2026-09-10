@@ -137,6 +137,48 @@
   color: var(--accent);
 }
 
+.danger {
+  background: transparent;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  color: var(--accent);
+  padding: 11px 16px;
+  min-height: 44px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  transition:
+    background var(--hover-fast),
+    color var(--hover-fast);
+}
+
+.danger:hover {
+  background: var(--accent);
+  color: var(--accent-on-warm);
+}
+
+.submit:disabled,
+.cancel:disabled,
+.action:disabled,
+.danger:disabled {
+  opacity: 0.55;
+}
+
+/* — Описание сессии — */
+.description {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.descriptionBody {
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--ink-body);
+  white-space: pre-wrap;
+}
+
 @media (max-width: 767px) {
   .grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));

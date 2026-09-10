@@ -68,3 +68,38 @@ export async function updateSession(
   revalidatePath(`/sessions/${number}`);
   return { ok: true, number };
 }
+
+/**
+ * Описание сессии — пересказ игры своими словами.
+ *
+ * Правит его любой вошедший: и игрок, и мастер. Сессия за столом общая, и
+ * помнит её каждый по-своему — запирать пересказ за ролью не за что.
+ *
+ * Пустой текст стирает описание, поэтому «удалить» — тот же запрос, а не
+ * отдельная ветка в базе.
+ */
+export async function saveSessionDescription(
+  number: number,
+  description: string,
+): Promise<SessionResult> {
+  await requireViewer();
+
+  const ok = await runDb(async (db) => {
+    const result = await db
+      .update(t.sessions)
+      .set({ description: description.trim() || null })
+      .where(and(eq(t.sessions.campaignId, CAMPAIGN_ID), eq(t.sessions.number, number)))
+      .returning({ number: t.sessions.number });
+    return result.length > 0;
+  });
+
+  if (!ok) return { ok: false, error: 'Сессия не найдена' };
+
+  revalidatePath('/sessions');
+  revalidatePath(`/sessions/${number}`);
+  return { ok: true, number };
+}
+
+export async function deleteSessionDescription(number: number): Promise<SessionResult> {
+  return saveSessionDescription(number, '');
+}

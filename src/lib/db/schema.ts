@@ -88,6 +88,8 @@ export const sessions = pgTable(
     date: date('date'),
     title: text('title'),
     location: text('location'),
+    /** Пересказ игры своими словами: пишут и правят все за столом. */
+    description: text('description'),
   },
   (t) => [unique('sessions_campaign_number').on(t.campaignId, t.number)],
 );
