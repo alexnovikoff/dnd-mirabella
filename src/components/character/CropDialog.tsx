@@ -22,15 +22,8 @@ const HANDLES: Handle[] = ['nw', 'ne', 'sw', 'se'];
 const NUDGE = 0.01;
 const NUDGE_FAST = 0.05;
 
-type Drag = {
-  /** 'move' — тянут саму рамку, угол — тянут за маркер. */
-  grip: Handle | 'move';
-  fromX: number;
-  fromY: number;
-  /** Рамка на момент нажатия: все сдвиги считаются от неё, а не по шагам —
-   *  иначе округления накапливаются и рамка «плывёт». */
-  start: CropRect;
-};
+/** За что тянут: 'move' — за саму рамку, угол — за маркер. */
+type Grip = Handle | 'move';
 
 /** Кадрирование портрета. Режем в браузере и отправляем готовый файл:
  *  на сервере нет ни sharp, ни canvas, а исходник и так уже у клиента. */
@@ -51,8 +44,8 @@ export function CropDialog({
   const router = useRouter();
   const imageRef = useRef<HTMLImageElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
+  const frameRef = useRef<HTMLDivElement>(null);
   const [rect, setRect] = useState<CropRect>(crop ?? FULL_CROP);
-  const [drag, setDrag] = useState<Drag | null>(null);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -68,43 +61,46 @@ export function CropDialog({
     return () => document.removeEventListener('keydown', onKey, true);
   }, [onClose]);
 
-  /* Слушаем документ, а не саму рамку: курсор регулярно выносит за неё
-   * и за картинку, а тянуть при этом надо продолжать. */
-  useEffect(() => {
-    if (!drag) return;
-
-    function onMove(event: PointerEvent) {
-      const box = stageRef.current?.getBoundingClientRect();
-      if (!box || !drag) return;
-
-      const dx = (event.clientX - drag.fromX) / box.width;
-      const dy = (event.clientY - drag.fromY) / box.height;
-      setRect(
-        drag.grip === 'move'
-          ? moveCrop(drag.start, dx, dy)
-          : resizeCrop(drag.start, drag.grip, dx, dy),
-      );
-    }
-
-    function stop() {
-      setDrag(null);
-    }
-
-    document.addEventListener('pointermove', onMove);
-    document.addEventListener('pointerup', stop);
-    document.addEventListener('pointercancel', stop);
-    return () => {
-      document.removeEventListener('pointermove', onMove);
-      document.removeEventListener('pointerup', stop);
-      document.removeEventListener('pointercancel', stop);
-    };
-  }, [drag]);
-
+  /* Слушатели вешаем прямо в обработчике нажатия и на документ.
+   *
+   * На документ — потому что курсор регулярно выносит за рамку и за
+   * картинку, а тянуть при этом надо продолжать. Сразу, а не эффектом от
+   * состояния, — потому что между нажатием и первым движением у React есть
+   * коммит, и быстрый рывок мышью успевает в него провалиться. */
   const grab = useCallback(
-    (event: React.PointerEvent, grip: Handle | 'move') => {
+    (event: React.PointerEvent, grip: Grip) => {
       event.preventDefault();
       event.stopPropagation();
-      setDrag({ grip, fromX: event.clientX, fromY: event.clientY, start: rect });
+
+      const stage = stageRef.current;
+      if (!stage) return;
+
+      /* preventDefault снимает и фокус заодно — возвращаем его руками:
+       * дотянув рамку мышью, доводить её стрелками удобнее без Tab. */
+      frameRef.current?.focus();
+
+      /* Отсчёт от рамки на момент нажатия, а не по шагам: иначе округления
+       * накапливаются и рамка «плывёт» за курсором. */
+      const start = rect;
+      const fromX = event.clientX;
+      const fromY = event.clientY;
+
+      function onMove(move: PointerEvent) {
+        const box = stage!.getBoundingClientRect();
+        const dx = (move.clientX - fromX) / box.width;
+        const dy = (move.clientY - fromY) / box.height;
+        setRect(grip === 'move' ? moveCrop(start, dx, dy) : resizeCrop(start, grip, dx, dy));
+      }
+
+      function stop() {
+        document.removeEventListener('pointermove', onMove);
+        document.removeEventListener('pointerup', stop);
+        document.removeEventListener('pointercancel', stop);
+      }
+
+      document.addEventListener('pointermove', onMove);
+      document.addEventListener('pointerup', stop);
+      document.addEventListener('pointercancel', stop);
     },
     [rect],
   );
@@ -205,6 +201,7 @@ export function CropDialog({
             />
 
             <div
+              ref={frameRef}
               className={styles.window}
               style={{
                 left: `${rect.x * 100}%`,
