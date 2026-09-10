@@ -9,10 +9,12 @@ import {
   ParchmentCard,
 } from '@/components/primitives';
 import { EntryActions } from '@/components/entry/EntryActions';
+import { SessionDescription } from '@/components/session/SessionDescription';
 import { SessionEditor } from '@/components/session/SessionEditor';
 import { WikiText } from '@/components/wiki/WikiText';
 import { getSession } from '@/lib/queries/sessions';
 import { getNodeIndex } from '@/lib/queries/chronicle';
+import { getPickerNodes } from '@/lib/queries/nodes';
 import { getViewer } from '@/lib/viewer';
 import { numericDate } from '@/lib/dates';
 import { plural } from '@/lib/plural';
@@ -24,7 +26,11 @@ export default async function SessionPage({ params }: { params: Promise<{ number
   if (!Number.isInteger(parsed) || parsed < 1) notFound();
 
   const viewer = await getViewer();
-  const [session, index] = await Promise.all([getSession(parsed, viewer), getNodeIndex()]);
+  const [session, index, nodes] = await Promise.all([
+    getSession(parsed, viewer),
+    getNodeIndex(),
+    getPickerNodes(),
+  ]);
   if (!session) notFound();
 
   const canEdit = (authorId: string | null) =>
@@ -48,6 +54,10 @@ export default async function SessionPage({ params }: { params: Promise<{ number
       }
       aside={
         <div className={styles.nav}>
+          {/* Соседние сессии листают хронику вбок, эта ссылка — вверх, к списку. */}
+          <Link href="/sessions" className={styles.navLink} title="Вернуться к списку сессий">
+            К списку сессий
+          </Link>
           {session.previous ? (
             <Link href={`/sessions/${session.previous}`} className={styles.navLink}>
               ← С{session.previous}
@@ -75,6 +85,10 @@ export default async function SessionPage({ params }: { params: Promise<{ number
           location={session.location}
         />
       </div>
+
+      <SessionDescription number={session.number} description={session.description} nodes={nodes}>
+        {session.description ? <WikiText body={session.description} index={index} /> : null}
+      </SessionDescription>
 
       {session.entries.length === 0 ? (
         <MonoLabel size={10} tracking="0.08em" tone="faint" block>
