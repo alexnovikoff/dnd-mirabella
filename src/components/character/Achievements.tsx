@@ -11,8 +11,13 @@ import { useRouter } from 'next/navigation';
 import { DropZone, Lightbox, MonoLabel } from '@/components/primitives';
 import { ConfirmDialog } from '@/components/editor/ConfirmDialog';
 import { useQuickEntry } from '@/components/editor/QuickEntryProvider';
-import { deleteAchievement, uploadAchievements } from '@/lib/actions/achievements';
+import {
+  deleteAchievement,
+  renameAchievement,
+  uploadAchievements,
+} from '@/lib/actions/achievements';
 import { plural } from '@/lib/plural';
+import picker from '@/components/editor/Picker.module.css';
 import styles from './Character.module.css';
 
 export type Achievement = {
@@ -20,8 +25,8 @@ export type Achievement = {
   url: string | null;
   caption: string | null;
   uploaderName: string | null;
-  /** Своё достижение убирает автор загрузки, любое — мастер. */
-  canRemove: boolean;
+  /** Своё достижение правит и убирает автор загрузки, любое — мастер. */
+  canManage: boolean;
 };
 
 export function Achievements({
@@ -41,6 +46,11 @@ export function Achievements({
   const [error, setError] = useState<string | null>(null);
   const [opened, setOpened] = useState<number | null>(null);
   const [removing, setRemoving] = useState<Achievement | null>(null);
+  const [editing, setEditing] = useState<string | null>(null);
+  const [draft, setDraft] = useState('');
+  /* Escape закрывает поле, а закрытие уносит фокус — и onBlur сохранил бы
+   * ровно то, от чего человек отказался. */
+  const cancelled = useRef(false);
   const [pending, startTransition] = useTransition();
 
   const upload = useCallback(
@@ -59,6 +69,25 @@ export function Achievements({
       });
     },
     [nodeId, router],
+  );
+
+  const rename = useCallback(
+    (achievement: Achievement, value: string) => {
+      setEditing(null);
+      const next = value.trim();
+      /* Ничего не поменялось — не тревожим сервер и не мигаем страницей. */
+      if (next === (achievement.caption ?? '')) return;
+
+      startTransition(async () => {
+        const result = await renameAchievement(achievement.id, next);
+        if (!result.ok) setError(result.error);
+        else {
+          setError(null);
+          router.refresh();
+        }
+      });
+    },
+    [router],
   );
 
   const step = useCallback(
@@ -123,12 +152,12 @@ export function Achievements({
                     alt={achievement.caption ?? 'Достижение'}
                     fill
                     className={styles.achievementPhoto}
-                    sizes="(max-width: 767px) 50vw, (max-width: 1023px) 25vw, 16vw"
+                    sizes="(max-width: 767px) 50vw, (max-width: 1023px) 33vw, 25vw"
                   />
                 ) : null}
               </button>
 
-              {canWrite && achievement.canRemove ? (
+              {canWrite && achievement.canManage ? (
                 <button
                   type="button"
                   className={styles.achievementRemove}
@@ -140,9 +169,61 @@ export function Achievements({
                 </button>
               ) : null}
 
-              <MonoLabel size={9} tracking="0.06em" tone="faint" block>
-                {achievement.caption ?? 'Без подписи'}
-              </MonoLabel>
+              {canWrite && achievement.canManage ? (
+                editing === achievement.id ? (
+                  <input
+                    className={`${picker.field} ${styles.achievementCaptionInput}`}
+                    value={draft}
+                    autoFocus
+                    maxLength={120}
+                    placeholder="Подпись"
+                    aria-label="Подпись достижения"
+                    onChange={(event) => setDraft(event.currentTarget.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter') {
+                        event.preventDefault();
+                        event.currentTarget.blur();
+                      }
+                      if (event.key === 'Escape') {
+                        cancelled.current = true;
+                        setEditing(null);
+                      }
+                    }}
+                    onBlur={(event) => {
+                      if (cancelled.current) {
+                        cancelled.current = false;
+                        return;
+                      }
+                      rename(achievement, event.currentTarget.value);
+                    }}
+                  />
+                ) : (
+                  <button
+                    type="button"
+                    className={styles.achievementCaption}
+                    title="Изменить подпись"
+                    disabled={pending}
+                    onClick={() => {
+                      cancelled.current = false;
+                      setDraft(achievement.caption ?? '');
+                      setEditing(achievement.id);
+                    }}
+                  >
+                    <MonoLabel
+                      size={9}
+                      tracking="0.06em"
+                      tone={achievement.caption ? 'faint' : 'disabled'}
+                      block
+                    >
+                      {achievement.caption ?? 'Добавить подпись'}
+                    </MonoLabel>
+                  </button>
+                )
+              ) : (
+                <MonoLabel size={9} tracking="0.06em" tone="faint" block>
+                  {achievement.caption ?? 'Без подписи'}
+                </MonoLabel>
+              )}
             </div>
           ))}
         </div>
