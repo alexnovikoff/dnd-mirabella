@@ -4,12 +4,14 @@ import { WikiText } from '@/components/wiki/WikiText';
 import type { FreeNote, RumorCard } from '@/lib/queries/kb';
 import styles from './NoteCards.module.css';
 
-export function RumorNote({ card }: { card: RumorCard }) {
+/* `tab` — открытый раздел списка: карточка уносит его с собой, чтобы ссылка
+ * «← К базе знаний» вернула ровно в тот раздел, откуда её открыли. */
+export function RumorNote({ card, tab }: { card: RumorCard; tab?: string }) {
   const meta = card.status ? STATUS_META[card.status] : null;
 
   return (
     <Link
-      href={`/entities/${card.slug}`}
+      href={tab && tab !== 'all' ? `/entities/${card.slug}?tab=${tab}` : `/entities/${card.slug}`}
       className={styles.rumor}
       style={
         {

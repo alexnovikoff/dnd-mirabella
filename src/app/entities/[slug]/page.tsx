@@ -5,21 +5,34 @@ import { EntityEditor } from '@/components/entity/EntityEditor';
 import { RelationsEditor } from '@/components/entity/RelationsEditor';
 import { getBoard, getNodeDetail } from '@/lib/queries/board';
 import { getLinkLabels } from '@/lib/queries/labels';
+import { isKbTab } from '@/lib/queries/kb';
 import { NODE_KIND_LABEL } from '@/lib/nodes';
 import styles from '@/components/board/Board.module.css';
 
 /** Куда ведут [[wiki-ссылки]] и узлы доски. */
-export default async function EntityPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
+export default async function EntityPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ tab?: string }>;
+}) {
+  const [{ slug }, { tab }] = await Promise.all([params, searchParams]);
   const detail = await getNodeDetail(slug);
   if (!detail) notFound();
 
   const [board, labels] = await Promise.all([getBoard(), getLinkLabels()]);
 
+  /* Карточку открывают из «Базы знаний» — вернём читателя в тот же раздел
+   * списка. Таб сверяем со списком: в ссылку попадает только известное
+   * значение, а с доски и из [[ссылок]] его просто нет. */
+  const backTab = isKbTab(tab) && tab !== 'all' ? tab : null;
+
   return (
     <Screen
       title={detail.name}
       note={detail.description ?? undefined}
+      back={{ href: backTab ? `/kb?tab=${backTab}` : '/kb', label: 'К базе знаний' }}
       aside={
         <div className={styles.tools}>
           <MonoLabel size={10} tracking="0.08em">
