@@ -96,23 +96,22 @@ export function BoardPreview({
     setDropTarget(null);
   }
 
-  const dragged = drag?.movedFar ? byId.get(drag.id) : undefined;
-
   return (
     <section className={styles.section}>
       <div className={styles.head}>
         <h2 className={styles.title}>Доска связей</h2>
-        {canWrite ? (
-          <MonoLabel size={10} tracking="0.1em">
-            Перетащите карточку на карточку, чтобы связать
-          </MonoLabel>
-        ) : (
+        <div className={styles.headTools}>
+          {canWrite ? (
+            <MonoLabel size={10} tracking="0.1em">
+              Перетащите карточку на карточку, чтобы связать
+            </MonoLabel>
+          ) : null}
           <Link href="/board">
             <MonoLabel size={10} tracking="0.1em" tone="accent">
               Открыть доску →
             </MonoLabel>
           </Link>
-        )}
+        </div>
       </div>
 
       <div className={styles.canvas} ref={canvasRef}>
@@ -137,26 +136,12 @@ export function BoardPreview({
                 x2={b.x}
                 y2={b.y}
                 stroke="var(--accent)"
-                strokeWidth={0.35}
+                strokeWidth={0.7}
                 strokeDasharray="3 2"
                 vectorEffect="non-scaling-stroke"
               />
             );
           })}
-
-          {/* Хвост от места, откуда карточку утащили: видно, что связь тянут,
-              а не двигают узел. */}
-          {dragged && drag?.point ? (
-            <line
-              x1={dragged.x}
-              y1={dragged.y}
-              x2={drag.point.x}
-              y2={drag.point.y}
-              stroke="var(--accent)"
-              strokeWidth={0.4}
-              vectorEffect="non-scaling-stroke"
-            />
-          ) : null}
         </svg>
 
         {nodes.map((node) => {

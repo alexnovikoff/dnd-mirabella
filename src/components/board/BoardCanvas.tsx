@@ -282,7 +282,7 @@ export function BoardCanvas({
                     y2={b.y}
                     stroke="#a6825a"
                     strokeOpacity={derived ? 0.45 : 1}
-                    strokeWidth={derived ? 0.2 : 0.3}
+                    strokeWidth={derived ? 0.4 : 0.6}
                     strokeDasharray={derived ? '1.5 2.5' : '3 2'}
                     vectorEffect="non-scaling-stroke"
                   >
@@ -298,7 +298,7 @@ export function BoardCanvas({
                   x2={pendingLine.b.x}
                   y2={pendingLine.b.y}
                   stroke="var(--accent)"
-                  strokeWidth={0.4}
+                  strokeWidth={0.7}
                   vectorEffect="non-scaling-stroke"
                 />
               ) : null}

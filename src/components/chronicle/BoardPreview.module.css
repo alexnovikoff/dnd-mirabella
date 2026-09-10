@@ -16,6 +16,15 @@
   flex-wrap: wrap;
 }
 
+/* Подсказка про жест и ссылка на доску стоят рядом: ссылка нужна всем,
+ * подсказка — только тем, кто может тащить. */
+.headTools {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
 .title {
   font-family: var(--font-display);
   font-size: 26px;
