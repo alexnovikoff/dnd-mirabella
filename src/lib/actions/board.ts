@@ -32,6 +32,8 @@ export async function saveNodePosition(nodeId: string, x: number, y: number) {
   });
 
   revalidatePath('/board');
+  /* Тот же граф показывает превью на «Хронике». */
+  revalidatePath('/');
 }
 
 /** Кнопка «+ УЗЕЛ» на тулбаре доски и «+ Добавить» в базе знаний. Тип
@@ -87,6 +89,7 @@ export async function updateLink(linkId: string, label: string) {
   revalidatePath('/board');
   revalidatePath('/kb');
   revalidatePath('/entities/[slug]', 'page');
+  revalidatePath('/');
   return { ok: true as const };
 }
 
@@ -102,6 +105,7 @@ export async function deleteLink(linkId: string) {
   revalidatePath('/board');
   revalidatePath('/kb');
   revalidatePath('/entities/[slug]', 'page');
+  revalidatePath('/');
   return { ok: true as const };
 }
 
@@ -137,5 +141,6 @@ export async function linkNodes(fromNodeId: string, toNodeId: string, label: str
 
   revalidatePath('/board');
   revalidatePath('/entities/[slug]', 'page');
+  revalidatePath('/');
   return { ok: true as const };
 }

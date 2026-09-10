@@ -17,6 +17,7 @@ import {
   getStatusNodes,
   isFeedFilter,
 } from '@/lib/queries/chronicle';
+import { getLinkLabels } from '@/lib/queries/labels';
 import { getRandomQuote } from '@/lib/queries/quotes';
 import { getViewer } from '@/lib/viewer';
 import styles from './chronicle.module.css';
@@ -30,7 +31,7 @@ export default async function ChroniclePage({
   const active = isFeedFilter(filter) ? filter : 'all';
   const viewer = await getViewer();
 
-  const [campaign, party, feed, index, sessions, notes, gallery, board, activeSession] =
+  const [campaign, party, feed, index, sessions, notes, gallery, board, activeSession, linkLabels] =
     await Promise.all([
       getCampaign(),
       getParty(),
@@ -41,6 +42,7 @@ export default async function ChroniclePage({
       getGalleryPreview(5),
       getBoardPreview(),
       getActiveSession(),
+      getLinkLabels(),
     ]);
 
   /* Случайная цитата над лентой: в цитатнике все равноценны, а здесь одна
@@ -125,7 +127,7 @@ export default async function ChroniclePage({
         />
       </div>
 
-      <BoardPreview nodes={board.nodes} edges={board.edges} />
+      <BoardPreview nodes={board.nodes} edges={board.edges} labels={linkLabels} />
     </>
   );
 }
