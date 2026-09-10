@@ -100,7 +100,12 @@ export function BoardCanvas({
   }
 
   return (
-    <div className={styles.viewport}>
+    /* Окно доски высотой ровно в полотно на 100%: масштаб меняет размер канвы
+     * внутри, но не самого окна — иначе он тянул бы за собой высоту страницы. */
+    <div
+      className={styles.viewport}
+      style={{ '--board-viewport-height': `${BOARD_HEIGHT}px` } as React.CSSProperties}
+    >
       {/* Кнопки масштаба лежат вне прокручиваемой области и вне канвы,
           поэтому изменение масштаба их не двигает. */}
       <div className={styles.zoomControls}>
