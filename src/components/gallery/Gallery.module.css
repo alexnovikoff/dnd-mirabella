@@ -141,11 +141,58 @@
   overflow: hidden;
 }
 
+/* Полоса и переключатель группы над ней. */
+.dropBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+/* Куда лягут брошенные файлы: активная сессия или ничья группа. Вид взят
+   у FilterChips — на экране это тот же ряд чипов, только он переключает
+   состояние, а не адрес, поэтому и живёт здесь кнопками. */
+.target {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.chip {
+  padding: 5px 9px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--ink-muted-2);
+  white-space: nowrap;
+  transition:
+    color var(--hover-fast),
+    border-color var(--hover-fast),
+    background var(--hover-fast);
+}
+
+.chip:hover {
+  color: var(--ink-muted);
+}
+
+.chipOn {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-on-warm);
+}
+
+.chipOn:hover {
+  color: var(--accent-on-warm);
+}
+
 /* Полоса кликабельна: клик открывает быструю запись с типом «ФОТО». */
 .drop {
   display: block;
   width: 100%;
-  margin-top: 6px;
   padding: 0;
   background: transparent;
   border: 0;
@@ -178,6 +225,12 @@
 }
 
 @media (max-width: 767px) {
+  /* README «Адаптив»: минимальная зона касания 44px — как у чипов фильтров. */
+  .chip {
+    min-height: 44px;
+    padding: 0 12px;
+  }
+
   .grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }

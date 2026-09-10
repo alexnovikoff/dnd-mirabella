@@ -10,6 +10,7 @@ import { useQuickEntry } from '@/components/editor/QuickEntryProvider';
 import { numericDate } from '@/lib/dates';
 import { plural } from '@/lib/plural';
 import type { GalleryGroup, GalleryImage } from '@/lib/queries/gallery';
+import { NO_SESSION } from '@/lib/sessions-shared';
 import styles from './Gallery.module.css';
 
 const KIND_LABEL: Record<GalleryImage['kind'], string> = {
@@ -60,7 +61,9 @@ function Tile({
 
         {image.isKey ? (
           <span className={styles.overlay}>
-            <span className={styles.overlayTitle}>{image.caption}</span>
+            {/* Кадр без подписи оставляет плашке только мету — пустой строки
+                над ней быть не должно. */}
+            {image.caption ? <span className={styles.overlayTitle}>{image.caption}</span> : null}
             <MonoLabel size={9} tracking="0.08em" tone="onAccentDim">
               {meta(image)}
             </MonoLabel>
@@ -96,12 +99,17 @@ export function GalleryBoard({
   grouped,
 }: {
   groups: GalleryGroup[];
-  sessionLabel: string;
+  /** Активная сессия — куда файлы уходят по умолчанию. null — сессий нет
+   *  вовсе, тогда и выбирать не из чего. */
+  sessionLabel: string | null;
   grouped: boolean;
 }) {
   const router = useRouter();
   const { canWrite, open } = useQuickEntry();
   const [dragging, setDragging] = useState(false);
+  /* Куда лягут брошенные файлы. Не всякий кадр относится к вечеру за столом:
+   * арты и карты мира живут в галерее сами по себе. */
+  const [toSession, setToSession] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lightbox, setLightbox] = useState<{ group: number; index: number } | null>(null);
   const [removing, setRemoving] = useState<GalleryImage | null>(null);
@@ -114,6 +122,9 @@ export function GalleryBoard({
     (files: FileList) => {
       const form = new FormData();
       for (const file of Array.from(files)) form.append('files', file);
+      /* Пустое значение означало бы «на усмотрение сервера» — то есть
+       * активную сессию; вне сессий кадр кладут только явным NO_SESSION. */
+      if (!toSession) form.append('sessionId', NO_SESSION);
 
       startTransition(async () => {
         const result = await uploadImages(form);
@@ -124,7 +135,7 @@ export function GalleryBoard({
         }
       });
     },
-    [router],
+    [router, toSession],
   );
 
   const remove = useCallback(
@@ -211,21 +222,51 @@ export function GalleryBoard({
       ))}
 
       {/* Полоса работает и на бросок файлов, и на клик: клик открывает ту же
-          быструю запись с типом «ФОТО», что и кнопка «+ ФОТО» в шапке. */}
+          быструю запись с типом «ФОТО», что и кнопка «+ ФОТО» в шапке.
+          Переключатель группы стоит над ней отдельно — кнопке внутри кнопки
+          в разметке места нет. */}
       {canWrite ? (
-        <button
-          type="button"
-          className={styles.drop}
-          title="Открыть быструю запись с типом «ФОТО»"
-          onClick={() => open('image')}
-        >
-          <DropZone
-            active={dragging}
-            label={
-              pending ? 'Загружаем…' : `Бросьте файлы сюда или нажмите · группа «${sessionLabel}»`
-            }
-          />
-        </button>
+        <div className={styles.dropBlock}>
+          {sessionLabel ? (
+            <div className={styles.target} role="group" aria-label="Куда положить кадры">
+              <MonoLabel size={9} tracking="0.08em" tone="faint">
+                Группа
+              </MonoLabel>
+              <button
+                type="button"
+                className={toSession ? `${styles.chip} ${styles.chipOn}` : styles.chip}
+                aria-pressed={toSession}
+                onClick={() => setToSession(true)}
+              >
+                {sessionLabel.toUpperCase()}
+              </button>
+              <button
+                type="button"
+                className={!toSession ? `${styles.chip} ${styles.chipOn}` : styles.chip}
+                aria-pressed={!toSession}
+                onClick={() => setToSession(false)}
+              >
+                БЕЗ СЕССИИ
+              </button>
+            </div>
+          ) : null}
+
+          <button
+            type="button"
+            className={styles.drop}
+            title="Открыть быструю запись с типом «ФОТО»"
+            onClick={() => open('image', toSession ? undefined : NO_SESSION)}
+          >
+            <DropZone
+              active={dragging}
+              label={
+                pending
+                  ? 'Загружаем…'
+                  : `Бросьте файлы сюда или нажмите · группа «${sessionLabel && toSession ? sessionLabel : 'Без сессии'}»`
+              }
+            />
+          </button>
+        </div>
       ) : null}
 
       {error ? (
