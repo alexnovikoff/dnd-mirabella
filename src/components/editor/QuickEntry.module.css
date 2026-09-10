@@ -33,14 +33,28 @@
   background: rgba(226, 211, 176, 0.7);
 }
 
+/* Крестик стоит первым в шапке. Отрицательный отступ возвращает его глиф
+ * на ту же вертикаль, по которой идёт текст тела шита. */
 .close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 22px;
+  height: 22px;
+  margin-left: -5px;
   background: transparent;
   border: 0;
   padding: 0;
   font-family: var(--font-mono);
-  font-size: 13px;
+  font-size: 15px;
   color: var(--ink-muted-2);
   line-height: 1;
+  transition: color var(--hover-fast);
+}
+
+.close:hover {
+  color: var(--accent);
 }
 
 .title {

@@ -208,11 +208,12 @@ export function QuickEntry({
         aria-label="Быстрая запись"
       >
         <div className={styles.head}>
-          <span className={styles.title}>{editing ? 'Правка записи' : 'Быстрая запись'}</span>
-          <span className={styles.session}>{openedAt}</span>
+          {/* Крестик в левом верхнем углу — привычное место закрытия окна. */}
           <button type="button" className={styles.close} onClick={onClose} aria-label="Закрыть">
             ×
           </button>
+          <span className={styles.title}>{editing ? 'Правка записи' : 'Быстрая запись'}</span>
+          <span className={styles.session}>{openedAt}</span>
         </div>
 
         {unresolved ? (
