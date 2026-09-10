@@ -10,7 +10,7 @@ export default defineConfig({
      * укладывается и в дефолтные 10 с, но запаса они не оставляют, и под
      * нагрузкой прогон рассыпается. Падал не тест, а beforeEach
      * на createTestDb, поэтому запас нужен именно на хуках. */
-    hookTimeout: 30_000,
+    hookTimeout: 30000,
   },
   resolve: {
     alias: { '@': path.join(import.meta.dirname, 'src') },
