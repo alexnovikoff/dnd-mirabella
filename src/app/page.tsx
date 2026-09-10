@@ -5,6 +5,7 @@ import { Hero } from '@/components/chronicle/Hero';
 import { CompactMomentCard, MomentCard } from '@/components/chronicle/MomentCard';
 import { QuoteEntry } from '@/components/chronicle/QuoteEntry';
 import { Sidebar } from '@/components/chronicle/Sidebar';
+import { GALLERY_PREVIEW_LIMIT } from '@/components/chronicle/SidebarGallery';
 import {
   getActiveSession,
   getBoardPreview,
@@ -40,7 +41,7 @@ export default async function ChroniclePage({
       getNodeIndex(),
       getRecentSessions(5),
       getStatusNodes(4),
-      getGalleryPreview(5),
+      getGalleryPreview(GALLERY_PREVIEW_LIMIT),
       getBoardPreview(),
       getActiveSession(),
       getLinkLabels(),
