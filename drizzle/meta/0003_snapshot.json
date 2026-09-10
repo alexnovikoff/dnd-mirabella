@@ -33,12 +33,8 @@
           "name": "board_positions_node_id_nodes_id_fk",
           "tableFrom": "board_positions",
           "tableTo": "nodes",
-          "columnsFrom": [
-            "node_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["node_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -165,12 +161,8 @@
           "name": "characters_node_id_nodes_id_fk",
           "tableFrom": "characters",
           "tableTo": "nodes",
-          "columnsFrom": [
-            "node_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["node_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -178,12 +170,8 @@
           "name": "characters_player_id_users_id_fk",
           "tableFrom": "characters",
           "tableTo": "users",
-          "columnsFrom": [
-            "player_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["player_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -333,12 +321,8 @@
           "name": "entries_campaign_id_campaigns_id_fk",
           "tableFrom": "entries",
           "tableTo": "campaigns",
-          "columnsFrom": [
-            "campaign_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["campaign_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -346,12 +330,8 @@
           "name": "entries_session_id_sessions_id_fk",
           "tableFrom": "entries",
           "tableTo": "sessions",
-          "columnsFrom": [
-            "session_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["session_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -359,12 +339,8 @@
           "name": "entries_author_id_users_id_fk",
           "tableFrom": "entries",
           "tableTo": "users",
-          "columnsFrom": [
-            "author_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["author_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -372,12 +348,8 @@
           "name": "entries_subject_id_nodes_id_fk",
           "tableFrom": "entries",
           "tableTo": "nodes",
-          "columnsFrom": [
-            "subject_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["subject_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -500,12 +472,8 @@
           "name": "images_campaign_id_campaigns_id_fk",
           "tableFrom": "images",
           "tableTo": "campaigns",
-          "columnsFrom": [
-            "campaign_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["campaign_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -513,12 +481,8 @@
           "name": "images_session_id_sessions_id_fk",
           "tableFrom": "images",
           "tableTo": "sessions",
-          "columnsFrom": [
-            "session_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["session_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -526,12 +490,8 @@
           "name": "images_entry_id_entries_id_fk",
           "tableFrom": "images",
           "tableTo": "entries",
-          "columnsFrom": [
-            "entry_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["entry_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -539,12 +499,8 @@
           "name": "images_node_id_nodes_id_fk",
           "tableFrom": "images",
           "tableTo": "nodes",
-          "columnsFrom": [
-            "node_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["node_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -552,12 +508,8 @@
           "name": "images_uploader_id_users_id_fk",
           "tableFrom": "images",
           "tableTo": "users",
-          "columnsFrom": [
-            "uploader_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["uploader_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -675,12 +627,8 @@
           "name": "links_campaign_id_campaigns_id_fk",
           "tableFrom": "links",
           "tableTo": "campaigns",
-          "columnsFrom": [
-            "campaign_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["campaign_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -688,12 +636,8 @@
           "name": "links_from_node_id_nodes_id_fk",
           "tableFrom": "links",
           "tableTo": "nodes",
-          "columnsFrom": [
-            "from_node_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["from_node_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -701,12 +645,8 @@
           "name": "links_from_entry_id_entries_id_fk",
           "tableFrom": "links",
           "tableTo": "entries",
-          "columnsFrom": [
-            "from_entry_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["from_entry_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -714,12 +654,8 @@
           "name": "links_to_node_id_nodes_id_fk",
           "tableFrom": "links",
           "tableTo": "nodes",
-          "columnsFrom": [
-            "to_node_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["to_node_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -832,12 +768,8 @@
           "name": "nodes_campaign_id_campaigns_id_fk",
           "tableFrom": "nodes",
           "tableTo": "campaigns",
-          "columnsFrom": [
-            "campaign_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["campaign_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -845,12 +777,8 @@
           "name": "nodes_first_session_id_sessions_id_fk",
           "tableFrom": "nodes",
           "tableTo": "sessions",
-          "columnsFrom": [
-            "first_session_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["first_session_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -860,10 +788,7 @@
         "nodes_campaign_slug": {
           "name": "nodes_campaign_slug",
           "nullsNotDistinct": false,
-          "columns": [
-            "campaign_id",
-            "slug"
-          ]
+          "columns": ["campaign_id", "slug"]
         }
       },
       "policies": {},
@@ -923,12 +848,8 @@
           "name": "sessions_campaign_id_campaigns_id_fk",
           "tableFrom": "sessions",
           "tableTo": "campaigns",
-          "columnsFrom": [
-            "campaign_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["campaign_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -938,10 +859,7 @@
         "sessions_campaign_number": {
           "name": "sessions_campaign_number",
           "nullsNotDistinct": false,
-          "columns": [
-            "campaign_id",
-            "number"
-          ]
+          "columns": ["campaign_id", "number"]
         }
       },
       "policies": {},
@@ -1023,12 +941,8 @@
           "name": "votes_entry_id_entries_id_fk",
           "tableFrom": "votes",
           "tableTo": "entries",
-          "columnsFrom": [
-            "entry_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["entry_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1036,12 +950,8 @@
           "name": "votes_user_id_users_id_fk",
           "tableFrom": "votes",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1049,10 +959,7 @@
       "compositePrimaryKeys": {
         "votes_entry_id_user_id_pk": {
           "name": "votes_entry_id_user_id_pk",
-          "columns": [
-            "entry_id",
-            "user_id"
-          ]
+          "columns": ["entry_id", "user_id"]
         }
       },
       "uniqueConstraints": {},
@@ -1065,71 +972,37 @@
     "public.entry_kind": {
       "name": "entry_kind",
       "schema": "public",
-      "values": [
-        "moment",
-        "quote",
-        "note",
-        "image"
-      ]
+      "values": ["moment", "quote", "note", "image"]
     },
     "public.image_kind": {
       "name": "image_kind",
       "schema": "public",
-      "values": [
-        "art",
-        "map",
-        "screenshot",
-        "achievement"
-      ]
+      "values": ["art", "map", "screenshot", "achievement"]
     },
     "public.link_kind": {
       "name": "link_kind",
       "schema": "public",
-      "values": [
-        "mention",
-        "manual"
-      ]
+      "values": ["mention", "manual"]
     },
     "public.node_kind": {
       "name": "node_kind",
       "schema": "public",
-      "values": [
-        "character",
-        "npc",
-        "faction",
-        "location",
-        "artifact",
-        "event",
-        "rumor",
-        "unknown"
-      ]
+      "values": ["character", "npc", "faction", "location", "artifact", "event", "rumor", "unknown"]
     },
     "public.node_status": {
       "name": "node_status",
       "schema": "public",
-      "values": [
-        "open",
-        "resolved",
-        "dead_end"
-      ]
+      "values": ["open", "resolved", "dead_end"]
     },
     "public.role": {
       "name": "role",
       "schema": "public",
-      "values": [
-        "player",
-        "dm"
-      ]
+      "values": ["player", "dm"]
     },
     "public.visibility": {
       "name": "visibility",
       "schema": "public",
-      "values": [
-        "public",
-        "draft",
-        "private",
-        "dm_only"
-      ]
+      "values": ["public", "draft", "private", "dm_only"]
     }
   },
   "schemas": {},
