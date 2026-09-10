@@ -1,0 +1,1 @@
+ALTER TABLE "characters" ADD COLUMN "portrait_crop_url" text;

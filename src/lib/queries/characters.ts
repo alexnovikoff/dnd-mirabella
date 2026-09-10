@@ -196,8 +196,8 @@ export function getCharacters() {
         classes: t.characters.classes,
         bio: t.characters.bio,
         portrait: t.characters.portrait,
-        /* Исходник и рамка нужны диалогу кадрирования на /party. */
-        portraitSource: t.characters.portraitSource,
+        /* Кадр показывает карточка, портрет и рамка нужны диалогу. */
+        portraitCropUrl: t.characters.portraitCropUrl,
         portraitCrop: t.characters.portraitCrop,
       })
       .from(t.characters)

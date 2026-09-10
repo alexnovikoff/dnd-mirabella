@@ -2,38 +2,63 @@
  *
  * ЧТО ЗДЕСЬ НАСТОЯЩЕЕ (дал Алекс / README хендоффа):
  *   — партия: Аэлис, Джаду, Метель, Оген, их расы и классы;
- *   — 26 сессий;
+ *   — 26 сессий и их заголовки;
  *   — девять сущностей: Та Самая Таверна, Стоунфеллоу, Слёзы Мирабеллы,
  *     Город Джадду, Шугар-дэдди Метели, Отец Аэлиса, Горы Андерксот,
  *     Экспедиция за жемчужиной, Дамайя;
+ *   — цитатник;
  *   — название, сеттинг и лид кампании.
  *
  * ЧТО ЗАГЛУШКИ (придумано, чтобы экран было на чём собрать, — заменить):
  *   — СТАТУСЫ всех сущностей и ТИПЫ всех, кроме Стоунфеллоу (он NPC — подтверждено);
- *   — тексты моментов и цитат целиком;
- *   — названия сессий (Алекс их не давал — оставлены пустыми);
- *   — подписи изображений, ярлыки ручных связей, координаты узлов доски.
+ *   — координаты узлов доски и ярлыки ручных связей.
+ *
+ * ЧЕГО ЗДЕСЬ НЕТ НАМЕРЕННО: моментов, заметок и изображений. Придуманные
+ * тексты убраны — сессии стоят пустыми, пока в них не запишут настоящее.
+ * Дат сессий Алекс не давал: прежние были посчитаны формулой «по неделе на
+ * сессию», поэтому тоже убраны. Дату ставит мастер на странице сессии.
  */
 
 import { hash } from '@node-rs/argon2';
-import { sql } from 'drizzle-orm';
 import type { Db } from './client';
 import * as t from './schema';
 import { slugify } from '../slug';
-import { parseWikiLinks } from '../wiki/parse';
 
 const CAMPAIGN_ID = 'campaign-mirabella';
 
-/** Дата последней сессии; предыдущие — на неделю раньше каждая. */
-const LAST_SESSION_DATE = new Date('2026-09-06T19:00:00Z');
 const SESSION_COUNT = 26;
 
-const iso = (d: Date) => d.toISOString().slice(0, 10);
+/** Общая отметка времени для засеянных записей: порядок в ленте
+ *  должен быть предсказуемым, а к сессиям цитаты не привязаны. */
+const SEEDED_AT = new Date('2026-09-06T19:00:00Z');
 
-function sessionDate(number: number): Date {
-  const weeksBack = SESSION_COUNT - number;
-  return new Date(LAST_SESSION_DATE.getTime() - weeksBack * 7 * 24 * 3600 * 1000);
-}
+/* Заголовки сессий — со слов Алекса, слово в слово. Номер в заголовке не
+ * повторяем: и список, и страница сессии печатают его сами. Сессии 14, 17,
+ * 20 и 23 остались без названия — их Алекс не назвал. */
+const SESSION_TITLES: Record<number, string> = {
+  1: 'Мы хотели ограбить Фариду, но вместо этого нанялись к ней на работу)',
+  2: 'Мы стали опытнее, подготовились, разнюхали немного информации о Фариде и караван отправился в путь',
+  3: 'День и ночь в переходе по пустыне. Домик гиен и засада в ущелье',
+  4: 'Переход по пустыне. Ауф. (без голоса Джаду 🥲). Таверна, знакомство с Сальмой, строим планы',
+  5: 'Исследуем город и готовимся к конкурсам. Не участвуем в конкурсах, к которым подготовились, а вместо этого спасаем Сальму, которая ничего не крала. И это даже правда',
+  6: 'Расследование и бой с мусорным монстром',
+  7: 'Слеза Мирабеллы: Сайдквест. Любовные похождения Аэлиса смотреть без регистрации, заказ на магический предмет и пещера торговцев',
+  8: 'Слеза Мирабеллы: Город в бутылке. Часть 2. Бой с Триадой. Ночёвка в пустыне. Сбор информации. Оген пропал!',
+  9: 'М сайдквест, часть 3. Попадаем на остров в бутылке. Дребезги витрин и тарелок, маяк',
+  10: 'Остров в бутылке - финал',
+  11: 'Тайны «Серебряной стрелы»',
+  12: 'Слеза Мирабеллы, сессия 8. Лучик отправился с нами. Мы рассказывали истории и спорили, какое желание загадаем',
+  13: 'Получили телепортационный кувшин, познакомились с Леомарисом, спасли дураков-студентов, вызвали «торговцев» на стрелку, они оказались лучшими торговцами, чем мы, Аэлис пал, но ещё вернётся... враг силён, но мы ещё отомстим',
+  15: 'Рыболюды, очень безопасная рыба и две девули на корабле',
+  16: 'Морское путешествие и возвращение в Шайнинг Вейв',
+  18: 'Путешествие на остров',
+  19: 'Приквел, ограбили золотое хранилище, подменили статуэтку, вынесли много монет и свалили с помощью кувшина',
+  21: 'Во имя любви',
+  22: 'Сражение в подводном городе перий',
+  24: 'Награды, покупки, поиски информации, сквер потерянных вещей',
+  25: 'Магические лабиринты',
+  26: 'Допрошли переулок и собираемся в экспедицию',
+};
 
 type NodeSeed = {
   id: string;
@@ -186,93 +211,6 @@ const MANUAL_LINKS: [from: string, to: string, label: string][] = [
   ['n-vodorosl', 'n-tavern', 'Завсегдатай'],
 ];
 
-/* Лента. Тексты придуманы — заменить настоящими. */
-type EntrySeed = {
-  id: string;
-  kind: t.EntryKind;
-  session: number;
-  title?: string;
-  body: string;
-  author: string;
-  subject?: string;
-  roll?: number;
-  isCrit?: boolean;
-  isFail?: boolean;
-  tags?: string[];
-  /** По умолчанию public; 'private' — личная заметка персонажа. */
-  visibility?: t.Visibility;
-};
-
-const ENTRIES: EntrySeed[] = [
-  {
-    id: 'e-26-1',
-    kind: 'moment',
-    session: 26,
-    title: 'Стоунфеллоу узнал Метель раньше, чем она его',
-    body: 'Разговор в Та Самая Таверна начался с того, что Стоунфеллоу назвал Метель по имени, которого она здесь не называла. К концу вечера мы знали про Экспедиция за жемчужиной больше, чем собирались спрашивать.',
-    author: 'u-metel',
-    subject: 'n-metel',
-    roll: 20,
-    isCrit: true,
-    tags: ['#метель', '#стоунфеллоу', '#таверна'],
-  },
-  {
-    id: 'e-25-1',
-    kind: 'moment',
-    session: 25,
-    title: 'Опись сундука заняла больше времени, чем сам сундук',
-    body: 'Из Горы Андерксот мы вынесли ровно столько, сколько смогли унести, и ещё немного сверху — Джаду считает, что вторая половина ящика тоже считается за один предмет.',
-    author: 'u-jadu',
-    subject: 'n-jadu',
-    tags: ['#лут', '#андерксот'],
-  },
-  {
-    id: 'e-25-2',
-    kind: 'moment',
-    session: 25,
-    title: 'След Дамайи оборвался на третьем перекрёстке',
-    body: 'Всё, что вело к Дамайя, закончилось в Город Джадду пустым домом и хозяином, который о ней не слышал. Пишем в тупики, пока не появится новое имя.',
-    author: 'u-aelis',
-    subject: 'n-aelis',
-    roll: 1,
-    isFail: true,
-    tags: ['#дамайя', '#тупик'],
-  },
-  {
-    id: 'e-26-note',
-    kind: 'note',
-    session: 26,
-    body: 'Проверить, кто мог назвать Стоунфеллоу имя Метели. Начать с Та Самая Таверна.',
-    author: 'u-jadu',
-  },
-  {
-    id: 'e-25-note',
-    kind: 'note',
-    session: 25,
-    body: 'Опись из Горы Андерксот сверить с тем, что числится за Шугар-дэдди Метели.',
-    author: 'u-jadu',
-  },
-  {
-    id: 'e-26-private',
-    kind: 'note',
-    session: 26,
-    body: 'Не рассказывать партии про счёт от покровителя, пока не пойму, чем он обеспечен.',
-    author: 'u-metel',
-    subject: 'n-metel',
-    visibility: 'private',
-  },
-  {
-    id: 'e-24-2',
-    kind: 'moment',
-    session: 24,
-    title: 'Шугар-дэдди прислал счёт',
-    body: 'Оказалось, что Шугар-дэдди Метели ведёт учёт. Слёзы Мирабеллы в списке значатся отдельной строкой, и это первый раз, когда мы видим их написанными чужой рукой.',
-    author: 'u-metel',
-    subject: 'n-metel',
-    tags: ['#метель', '#слёзы'],
-  },
-];
-
 /* Цитатник — настоящий, со слов Алекса. Сессии он не называл, поэтому
  * цитаты не привязаны ни к одной: в карточке просто не будет метки «С14».
  * Диалог хранится одной цитатой в две строки — реплика без подводки теряет
@@ -332,55 +270,6 @@ const QUOTES: QuoteSeed[] = [
   },
 ];
 
-/* Подписи изображений — заглушки, файлов ещё нет. */
-const IMAGES: {
-  id: string;
-  session: number;
-  caption: string;
-  kind: 'art' | 'map' | 'screenshot';
-  uploader: string;
-  isKey?: boolean;
-  entry?: string;
-}[] = [
-  {
-    id: 'i-1',
-    session: 26,
-    caption: 'Та Самая Таверна · интерьер',
-    kind: 'art',
-    uploader: 'u-metel',
-    isKey: true,
-    entry: 'e-26-1',
-  },
-  { id: 'i-2', session: 26, caption: 'Стоунфеллоу · портрет', kind: 'art', uploader: 'u-dm' },
-  { id: 'i-3', session: 26, caption: 'Карта квартала', kind: 'map', uploader: 'u-dm' },
-  {
-    id: 'i-4',
-    session: 25,
-    caption: 'Горы Андерксот · панорама',
-    kind: 'art',
-    uploader: 'u-jadu',
-    isKey: true,
-    entry: 'e-25-1',
-  },
-  { id: 'i-5', session: 25, caption: 'Опись сундука', kind: 'screenshot', uploader: 'u-jadu' },
-  { id: 'i-6', session: 25, caption: 'Перевал · карта', kind: 'map', uploader: 'u-dm' },
-  {
-    id: 'i-7',
-    session: 24,
-    caption: 'Город Джадду · улица',
-    kind: 'art',
-    uploader: 'u-aelis',
-    isKey: true,
-  },
-  {
-    id: 'i-8',
-    session: 24,
-    caption: 'Счёт от покровителя',
-    kind: 'screenshot',
-    uploader: 'u-metel',
-  },
-];
-
 /** Пароль для всех учёток сида. Задаётся через SEED_PASSWORD;
  *  значение по умолчанию — только для локальной разработки. */
 const SEED_PASSWORD = process.env.SEED_PASSWORD ?? 'мирабелла';
@@ -412,8 +301,8 @@ export async function seed(db: Db) {
       id: `s-${number}`,
       campaignId: CAMPAIGN_ID,
       number,
-      date: iso(sessionDate(number)),
-      title: null,
+      date: null,
+      title: SESSION_TITLES[number] ?? null,
       location: null,
     };
   });
@@ -454,25 +343,6 @@ export async function seed(db: Db) {
     );
 
   await db.insert(t.entries).values(
-    ENTRIES.map((e) => ({
-      id: e.id,
-      campaignId: CAMPAIGN_ID,
-      sessionId: `s-${e.session}`,
-      kind: e.kind,
-      title: e.title ?? null,
-      body: e.body,
-      authorId: e.author,
-      subjectId: e.subject ?? null,
-      roll: e.roll ?? null,
-      isCrit: e.isCrit ?? false,
-      isFail: e.isFail ?? false,
-      tags: e.tags ?? [],
-      visibility: e.visibility ?? ('public' as const),
-      createdAt: sessionDate(e.session),
-    })),
-  );
-
-  await db.insert(t.entries).values(
     QUOTES.map((quote) => ({
       id: quote.id,
       campaignId: CAMPAIGN_ID,
@@ -484,22 +354,7 @@ export async function seed(db: Db) {
       subjectId: quote.subject,
       tags: [],
       visibility: 'public' as const,
-      createdAt: LAST_SESSION_DATE,
-    })),
-  );
-
-  await db.insert(t.images).values(
-    IMAGES.map((im) => ({
-      id: im.id,
-      campaignId: CAMPAIGN_ID,
-      sessionId: `s-${im.session}`,
-      entryId: im.entry ?? null,
-      url: null,
-      caption: im.caption,
-      uploaderId: im.uploader,
-      kind: im.kind,
-      isKey: im.isKey ?? false,
-      createdAt: sessionDate(im.session),
+      createdAt: SEEDED_AT,
     })),
   );
 
@@ -517,30 +372,9 @@ export async function seed(db: Db) {
     })),
   );
 
-  /* Рёбра-упоминания: ровно то, что этап 4 будет пересчитывать при сохранении
-   * записи. Здесь считаем один раз по тем же правилам. */
-  const byName = new Map(allNodes.map((n) => [n.name.toLowerCase(), n.id]));
-  const mentions: (typeof t.links.$inferInsert)[] = [];
-  for (const entry of ENTRIES) {
-    const seen = new Set<string>();
-    for (const name of parseWikiLinks(entry.body)) {
-      const nodeId = byName.get(name.toLowerCase());
-      if (!nodeId || seen.has(nodeId)) continue;
-      seen.add(nodeId);
-      mentions.push({
-        id: `l-mention-${entry.id}-${nodeId}`,
-        campaignId: CAMPAIGN_ID,
-        kind: 'mention',
-        fromNodeId: null,
-        fromEntryId: entry.id,
-        toNodeId: nodeId,
-      });
-    }
-  }
-  if (mentions.length > 0) await db.insert(t.links).values(mentions);
-
-  /* Голоса за цитаты — чтобы «♦ N» было не нулём. */
-  await db.execute(sql`select 1`);
+  /* Рёбра-упоминания сид не заводит: записей, из которых их считать, здесь
+   * больше нет. Настоящие появятся при первом сохранении записи — их
+   * пересчитывает lib/wiki/sync-links. */
 }
 
-export { CAMPAIGN_ID, SESSION_COUNT };
+export { CAMPAIGN_ID, SESSION_COUNT, SESSION_TITLES };

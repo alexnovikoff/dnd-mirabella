@@ -15,18 +15,18 @@ export default async function PartyPage() {
     <Screen title="Партия" note="Кто ведёт эту хронику">
       <div className={styles.grid}>
         {party.map((character) => {
-          /* Кадрируем оригинал. У портретов, загруженных до появления
-           * колонки, его нет — тогда оригиналом служит сам портрет. */
-          const source = character.portraitSource ?? character.portrait;
+          /* Единственное место, где показывают кадр. Не кадрировали —
+           * карточка берёт портрет, как и все остальные экраны. */
+          const shown = character.portraitCropUrl ?? character.portrait;
 
           return (
             <div key={character.id} className={styles.cell}>
               <Link href={`/characters/${character.slug}`} className={styles.cardLink}>
                 <ParchmentCard interactive className={styles.card}>
-                  {character.portrait ? (
+                  {shown ? (
                     <div className={styles.portrait}>
                       <Image
-                        src={character.portrait}
+                        src={shown}
                         alt=""
                         fill
                         className={styles.portraitImage}
@@ -44,11 +44,11 @@ export default async function PartyPage() {
                 </ParchmentCard>
               </Link>
 
-              {viewer && source ? (
+              {viewer && character.portrait ? (
                 <CropPortraitButton
                   nodeId={character.id}
                   name={character.name}
-                  source={source}
+                  source={character.portrait}
                   crop={parseCrop(character.portraitCrop)}
                 />
               ) : null}
