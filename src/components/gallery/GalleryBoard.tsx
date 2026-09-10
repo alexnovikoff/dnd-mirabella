@@ -65,12 +65,15 @@ function Tile({
               {meta(image)}
             </MonoLabel>
           </span>
-        ) : (
-          <MonoLabel size={9} tracking="0.06em" tone="faint" className={styles.caption}>
-            {image.caption}
-          </MonoLabel>
-        )}
+        ) : null}
       </button>
+
+      {/* Подпись обычного кадра лежит под изображением: поверх фотографии её
+          было почти не разобрать. У ключевого кадра она остаётся плашкой —
+          там под ней тёмная подложка. */}
+      {!image.isKey && image.caption ? (
+        <span className={styles.caption}>{image.caption}</span>
+      ) : null}
 
       {canRemove ? (
         <button

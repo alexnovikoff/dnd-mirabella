@@ -56,10 +56,9 @@
   color: var(--accent);
 }
 
-/* Кнопка правки рядом с метриками: узкая, по содержимому. */
+/* Кнопка правки в верхней строке шапки: узкая, по содержимому. */
 .compactAction {
   flex: none;
-  align-self: flex-end;
   background: transparent;
   border: 1px solid var(--rule);
   border-radius: var(--radius);
@@ -92,6 +91,20 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+}
+
+/* Верхняя строка шапки: мета слева, «Править» справа. Раскрытая форма правки
+ * переносится на свою строку и занимает всю ширину. */
+.headTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.headTop .form {
+  flex: 1 1 100%;
 }
 
 .form {

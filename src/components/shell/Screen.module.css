@@ -22,6 +22,22 @@
   gap: 6px;
 }
 
+/* Ссылка возврата к списку — строкой над заголовком карточки. */
+.back {
+  align-self: flex-start;
+  padding: 2px 0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  transition: color var(--hover-fast);
+}
+
+.back:hover {
+  color: var(--accent);
+}
+
 .title {
   font-family: var(--font-display);
   font-size: 42px;
@@ -39,6 +55,13 @@
 @media (max-width: 767px) {
   .screen {
     padding: 20px 16px 28px;
+  }
+
+  /* Зона касания на узком экране — 44px, как у прочих мелких кнопок. */
+  .back {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
   }
 
   .title {
