@@ -49,9 +49,24 @@ export default async function CharacterPage({ params }: { params: Promise<{ slug
         <PortraitEditor nodeId={character.id} name={character.name} portrait={character.portrait} />
 
         <div className={styles.headText}>
-          <MonoLabel size={11} tracking="0.16em" block>
-            {meta}
-          </MonoLabel>
+          {/* «Править» стоит в самой верхней строке шапки, рядом с мета-строкой:
+              внизу, у метрик, её приходилось искать глазами. Раскрытая форма
+              переносится под строку на всю ширину. */}
+          <div className={styles.headTop}>
+            <MonoLabel size={11} tracking="0.16em" block>
+              {meta}
+            </MonoLabel>
+            <CharacterEditor
+              nodeId={character.id}
+              name={character.name}
+              race={character.race}
+              classes={character.classes}
+              level={character.level}
+              bio={character.bio}
+              sinceSession={character.sinceSession}
+            />
+          </div>
+
           <h1 className={styles.name}>{character.name}</h1>
           {character.bio ? <p className={styles.bio}>{character.bio}</p> : null}
 
@@ -62,15 +77,6 @@ export default async function CharacterPage({ params }: { params: Promise<{ slug
               <Metric value={character.metrics.links} label="СВЯЗЕЙ" />
               <Metric value={character.metrics.crits} label="КРИТА" accent />
             </div>
-            <CharacterEditor
-              nodeId={character.id}
-              name={character.name}
-              race={character.race}
-              classes={character.classes}
-              level={character.level}
-              bio={character.bio}
-              sinceSession={character.sinceSession}
-            />
           </div>
         </div>
       </header>
