@@ -196,6 +196,9 @@ export function getCharacters() {
         classes: t.characters.classes,
         bio: t.characters.bio,
         portrait: t.characters.portrait,
+        /* Исходник и рамка нужны диалогу кадрирования на /party. */
+        portraitSource: t.characters.portraitSource,
+        portraitCrop: t.characters.portraitCrop,
       })
       .from(t.characters)
       .innerJoin(t.nodes, eq(t.nodes.id, t.characters.nodeId))

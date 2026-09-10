@@ -1,0 +1,146 @@
+/* Диалог кадрирования портрета. Поверхность и кнопки — те же, что
+ * у ConfirmDialog: другого модального окна в системе нет. */
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--scrim);
+}
+
+.sheet {
+  width: 520px;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 22px 24px;
+  background: var(--sheet);
+  border: 1px solid var(--rule-sheet);
+  border-radius: var(--radius);
+  box-shadow: var(--modal-shadow);
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 26px;
+  line-height: 1.15;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* Картинка сама задаёт размер сцены: рамка считается долями её сторон,
+ * и любое расхождение сцены с картинкой уводило бы кадр. */
+.stageWrap {
+  display: flex;
+  justify-content: center;
+  margin: 4px 0;
+}
+
+.stage {
+  position: relative;
+  display: inline-block;
+  overflow: hidden;
+  line-height: 0;
+  border: 1px solid var(--rule);
+  background: var(--card);
+  touch-action: none;
+}
+
+.image {
+  display: block;
+  max-width: 100%;
+  max-height: 46vh;
+  width: auto;
+  height: auto;
+  user-select: none;
+}
+
+/* Затемнение снаружи рамки — тенью в 9999px, чтобы не городить четыре
+ * шторки и не пересчитывать их на каждом кадре перетаскивания. */
+.window {
+  position: absolute;
+  box-sizing: border-box;
+  border: 1px solid var(--sheet);
+  box-shadow: 0 0 0 9999px rgba(58, 42, 24, 0.55);
+  cursor: move;
+  touch-action: none;
+}
+
+.window:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.handle {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  background: var(--sheet);
+  border: 1px solid var(--ink-muted);
+}
+
+.nw {
+  top: -8px;
+  left: -8px;
+  cursor: nwse-resize;
+}
+
+.ne {
+  top: -8px;
+  right: -8px;
+  cursor: nesw-resize;
+}
+
+.sw {
+  bottom: -8px;
+  left: -8px;
+  cursor: nesw-resize;
+}
+
+.se {
+  bottom: -8px;
+  right: -8px;
+  cursor: nwse-resize;
+}
+
+.buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.button {
+  flex: 1;
+  text-align: center;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: transparent;
+  padding: 13px 8px;
+  min-height: 44px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--ink-muted);
+  transition:
+    background var(--hover-fast),
+    color var(--hover-fast);
+}
+
+.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-on-warm);
+}
+
+.primary:hover {
+  background: var(--accent-hover);
+}
+
+.button:disabled {
+  opacity: 0.55;
+}

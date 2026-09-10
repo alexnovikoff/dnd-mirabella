@@ -7,8 +7,45 @@
   gap: 16px;
 }
 
+/* Ячейка сетки: карточка-ссылка плюс кнопка кадрирования поверх неё.
+ * Кнопка снаружи ссылки, поэтому позиционируется от ячейки. */
+.cell {
+  position: relative;
+  height: 100%;
+}
+
+.cardLink {
+  display: block;
+  height: 100%;
+}
+
 .card {
   height: 100%;
+}
+
+/* Поверх правого верхнего угла портрета: карточка кладёт его на
+ * padding 20px 22px, кнопка встаёт внутрь этого поля. */
+.cropButton {
+  position: absolute;
+  top: 28px;
+  right: 30px;
+  padding: 6px 9px;
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--ink-muted);
+  opacity: 0.85;
+  transition:
+    opacity var(--hover-fast),
+    background var(--hover-fast);
+}
+
+.cropButton:hover {
+  opacity: 1;
+  background: var(--card);
 }
 
 .portrait {
