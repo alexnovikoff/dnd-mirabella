@@ -103,3 +103,38 @@ export async function saveSessionDescription(
 export async function deleteSessionDescription(number: number): Promise<SessionResult> {
   return saveSessionDescription(number, '');
 }
+
+/**
+ * Удаление сессии — обычно только что заведённой по ошибке.
+ *
+ * Содержимое игры не пропадает: `entries.session_id`, `images.session_id` и
+ * `nodes.first_session_id` объявлены `on delete set null`, поэтому записи,
+ * цитаты и кадры остаются в хронике и галерее — просто вне сессий. Стирать
+ * чужие моменты заодно с шапкой игры было бы слишком.
+ *
+ * Номера соседей не пересчитываются: на них ссылаются адреса `/sessions/12`
+ * и «играет с сессии» у персонажей. Дыра в нумерации честнее сдвига.
+ */
+export async function deleteSession(number: number): Promise<SessionResult> {
+  await requireViewer();
+
+  const ok = await runDb(async (db) => {
+    const result = await db
+      .delete(t.sessions)
+      .where(and(eq(t.sessions.campaignId, CAMPAIGN_ID), eq(t.sessions.number, number)))
+      .returning({ number: t.sessions.number });
+    return result.length > 0;
+  });
+
+  if (!ok) return { ok: false, error: 'Сессия не найдена' };
+
+  revalidatePath('/');
+  revalidatePath('/sessions');
+  revalidatePath('/gallery');
+  revalidatePath('/quotes');
+  revalidatePath('/board');
+  revalidatePath('/kb');
+  revalidatePath('/characters/[slug]', 'page');
+  revalidatePath(`/sessions/${number}`);
+  return { ok: true, number };
+}

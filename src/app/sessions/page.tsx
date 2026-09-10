@@ -4,7 +4,7 @@ import { MonoLabel } from '@/components/primitives';
 import { NewSessionButton } from '@/components/session/NewSessionButton';
 import { getSessions } from '@/lib/queries/sessions';
 import { getViewer } from '@/lib/viewer';
-import { numericDate } from '@/lib/dates';
+import { fullRuDate } from '@/lib/dates';
 import { plural } from '@/lib/plural';
 import styles from '@/components/session/Session.module.css';
 
@@ -25,7 +25,7 @@ export default async function SessionsPage() {
           /* Дата и счётчик показываются, только когда есть что показать:
            * у большинства сессий заполнен один номер и заголовок. */
           const meta = [
-            session.date ? numericDate(session.date) : null,
+            session.date ? fullRuDate(session.date) : null,
             session.location,
             session.entries > 0
               ? `${session.entries} ${plural(session.entries, 'запись', 'записи', 'записей')}`

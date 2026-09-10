@@ -3,7 +3,9 @@
 
 .header {
   display: flex;
-  align-items: flex-end;
+  /* Кнопка правки держится за верхнюю строку метрик — за числа, а не за
+   * подписи под ними; доводка по высоте — в `.header .action`. */
+  align-items: flex-start;
   justify-content: space-between;
   gap: 20px;
   flex-wrap: wrap;
@@ -105,6 +107,11 @@ a.cell:hover {
   gap: 8px;
 }
 
+/* Удаление отодвинуто в конец ряда: рядом с «Сохранить» его нажимают не глядя. */
+.buttonEnd {
+  margin-left: auto;
+}
+
 .submit {
   background: var(--accent);
   border: 1px solid var(--accent);
@@ -152,6 +159,13 @@ a.cell:hover {
 .action:hover {
   border-color: var(--accent);
   color: var(--accent);
+}
+
+/* Надпись кнопки встаёт вровень с числами метрик. Сама кнопка выше строки
+ * числа — в ней 44 пикселя тач-зоны, — поэтому её приподнимает половина
+ * разницы: иначе «Править сессию» висит на уровне подписей под цифрами. */
+.header .action {
+  margin-top: -6px;
 }
 
 .danger {

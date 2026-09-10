@@ -12,7 +12,7 @@ import { getNodeIndex } from '@/lib/queries/chronicle';
 import { getPickerNodes } from '@/lib/queries/nodes';
 import { getViewer } from '@/lib/viewer';
 import { canEditEntry } from '@/lib/auth-shared';
-import { numericDate } from '@/lib/dates';
+import { fullRuDate } from '@/lib/dates';
 import { plural } from '@/lib/plural';
 import styles from '@/components/session/Session.module.css';
 
@@ -39,9 +39,9 @@ export default async function SessionPage({ params }: { params: Promise<{ number
         session.title ? `Сессия ${session.number} — ${session.title}` : `Сессия ${session.number}`
       }
       /* Даты может не быть — тогда подписи под заголовком нет вовсе,
-         а не прочерк, которым numericDate заполняет пустую ячейку списка. */
+         а не прочерк, которым numericDate заполняет пустую ячейку сайдбара. */
       note={
-        [session.date ? numericDate(session.date) : null, session.location]
+        [session.date ? fullRuDate(session.date) : null, session.location]
           .filter(Boolean)
           .join(' · ') || undefined
       }

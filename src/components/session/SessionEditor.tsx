@@ -3,8 +3,9 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { MonoLabel } from '@/components/primitives';
+import { ConfirmDialog } from '@/components/editor/ConfirmDialog';
 import { useQuickEntry } from '@/components/editor/QuickEntryProvider';
-import { updateSession } from '@/lib/actions/sessions';
+import { deleteSession, updateSession } from '@/lib/actions/sessions';
 import picker from '@/components/editor/Picker.module.css';
 import styles from './Session.module.css';
 
@@ -28,6 +29,7 @@ export function SessionEditor({
     location: location ?? '',
   });
   const [error, setError] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState(false);
   const [pending, startTransition] = useTransition();
 
   if (!canWrite) return null;
@@ -111,12 +113,48 @@ export function SessionEditor({
           disabled={pending}
           onClick={() => {
             setOpen(false);
+            setError(null);
             setForm({ title: title ?? '', date: date ?? '', location: location ?? '' });
           }}
         >
           ОТМЕНА
         </button>
+        {/* Удаление всей игры прячется за «Править сессию»: случайно нажать
+            его из шапки нельзя, а тот, кто открыл шапку на правку, ищет его
+            именно здесь. */}
+        <button
+          type="button"
+          className={`${styles.danger} ${styles.buttonEnd}`}
+          disabled={pending}
+          onClick={() => setConfirming(true)}
+        >
+          УДАЛИТЬ СЕССИЮ
+        </button>
       </div>
+
+      {confirming ? (
+        <ConfirmDialog
+          title="Удалить сессию?"
+          body="Игра исчезнет из списка, номера соседних сессий не сдвинутся. Записи, цитаты и кадры этого вечера останутся в хронике и галерее — но окажутся вне сессий."
+          quoted={title ? `Сессия ${number} — ${title}` : `Сессия ${number}`}
+          confirmLabel="УДАЛИТЬ"
+          pending={pending}
+          onConfirm={() =>
+            startTransition(async () => {
+              const result = await deleteSession(number);
+              if (!result.ok) {
+                setConfirming(false);
+                setError(result.error);
+                return;
+              }
+              /* Страницы удалённой сессии больше нет — уходим к списку. */
+              router.push('/sessions');
+              router.refresh();
+            })
+          }
+          onCancel={() => setConfirming(false)}
+        />
+      ) : null}
     </form>
   );
 }
