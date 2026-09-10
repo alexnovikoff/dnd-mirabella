@@ -7,7 +7,7 @@
  * разложит их по одному.
  */
 
-import { and, asc, desc, eq, inArray, isNotNull, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, isNotNull, ne, sql } from 'drizzle-orm';
 import { runDb } from '@/lib/db/client';
 import * as t from '@/lib/db/schema';
 import { CAMPAIGN_ID } from '@/lib/db/seed';
@@ -192,18 +192,23 @@ export function getStatusNodes(limit = 4) {
   );
 }
 
-/** Превью галереи в сайдбаре: последние кадры и общий счётчик. */
+/** Превью галереи в сайдбаре: последние кадры и общий счётчик.
+ *
+ * Достижения отсечены так же, как на экране «Галерея»: заголовок виджета
+ * ведёт туда, и счётчик с плитками не должны обещать больше, чем там лежит. */
 export function getGalleryPreview(limit = 5) {
   return runDb(async (db) => {
+    const scope = and(eq(t.images.campaignId, CAMPAIGN_ID), ne(t.images.kind, 'achievement'));
+
     const [{ total }] = await db
       .select({ total: sql<number>`count(*)::int` })
       .from(t.images)
-      .where(eq(t.images.campaignId, CAMPAIGN_ID));
+      .where(scope);
 
     const recent = await db
       .select({ id: t.images.id, caption: t.images.caption, url: t.images.url })
       .from(t.images)
-      .where(eq(t.images.campaignId, CAMPAIGN_ID))
+      .where(scope)
       .orderBy(desc(t.images.createdAt), desc(t.images.id))
       .limit(limit);
 

@@ -55,8 +55,25 @@
   gap: 8px;
 }
 
+/* Плитка кадра — рамка и штриховка плейсхолдера, кадр ложится поверх. */
 .cell {
+  position: relative;
+  display: block;
   aspect-ratio: 1;
+  overflow: hidden;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--hatch);
+  --hatch-step: 6px;
+  transition: box-shadow var(--hover-slow);
+}
+
+a.cell:hover {
+  box-shadow: var(--node-shadow-sm);
+}
+
+.photo {
+  object-fit: cover;
 }
 
 .form {

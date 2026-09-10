@@ -94,8 +94,60 @@ a.sessionRow:hover {
   gap: 6px;
 }
 
+/* Плитка превью — рамка и штриховка того же вида, что у плейсхолдера:
+ * кадр ложится поверх, а без файла ячейка остаётся заштрихованной. */
 .cell {
+  position: relative;
+  display: block;
   aspect-ratio: 1;
+  overflow: hidden;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--hatch);
+  --hatch-step: 6px;
+  transition: box-shadow var(--hover-slow);
+}
+
+a.cell:hover {
+  box-shadow: var(--node-shadow-sm);
+}
+
+.photo {
+  object-fit: cover;
+}
+
+/* Стрелки листания стоят в шапке блока, рядом со счётчиком кадров. */
+.pager {
+  display: flex;
+  gap: 4px;
+  flex: none;
+}
+
+.pagerButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1;
+  transition:
+    border-color var(--hover-fast),
+    color var(--hover-fast);
+}
+
+.pagerButton:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.pagerButton:disabled {
+  opacity: 0.4;
 }
 
 @media (max-width: 1023px) {

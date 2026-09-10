@@ -1,12 +1,7 @@
 import Link from 'next/link';
 import { NewSessionButton } from '@/components/session/NewSessionButton';
-import {
-  DropZone,
-  ImagePlaceholder,
-  MonoLabel,
-  STATUS_META,
-  StatusPill,
-} from '@/components/primitives';
+import { MonoLabel, STATUS_META, StatusPill } from '@/components/primitives';
+import { SidebarGallery, type GalleryPreviewImage } from './SidebarGallery';
 import type { NodeStatus } from '@/lib/db/schema';
 import { numericDate } from '@/lib/dates';
 import styles from './Sidebar.module.css';
@@ -19,7 +14,7 @@ type StatusNode = {
   status: NodeStatus | null;
   links: number;
 };
-type GalleryPreview = { total: number; recent: { id: string; caption: string | null }[] };
+type GalleryPreview = { total: number; recent: GalleryPreviewImage[] };
 
 export function Sidebar({
   sessions,
@@ -67,9 +62,12 @@ export function Sidebar({
       </section>
 
       <section className={styles.block}>
-        <MonoLabel size={10} tracking="0.14em" block>
-          Заметки
-        </MonoLabel>
+        {/* Заголовок ведёт в базу знаний: сайдбар показывает верхушку. */}
+        <Link href="/kb" className={styles.blockTitle}>
+          <MonoLabel size={10} tracking="0.14em" block>
+            Заметки
+          </MonoLabel>
+        </Link>
         <div className={styles.notes}>
           {notes.map((note) => {
             const meta = note.status ? STATUS_META[note.status] : null;
@@ -100,17 +98,7 @@ export function Sidebar({
         </div>
       </section>
 
-      <section className={styles.block}>
-        <MonoLabel size={10} tracking="0.14em" block>
-          {`Галерея · ${gallery.total}`}
-        </MonoLabel>
-        <div className={styles.grid}>
-          {gallery.recent.map((image) => (
-            <ImagePlaceholder key={image.id} hatchStep={6} className={styles.cell} />
-          ))}
-          <DropZone variant="cell" label="Drop img" />
-        </div>
-      </section>
+      <SidebarGallery total={gallery.total} images={gallery.recent} />
     </aside>
   );
 }

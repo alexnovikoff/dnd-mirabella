@@ -1,13 +1,8 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Screen } from '@/components/shell/Screen';
-import {
-  AccentQuoteCard,
-  ImagePlaceholder,
-  Metric,
-  MonoLabel,
-  ParchmentCard,
-} from '@/components/primitives';
+import { AccentQuoteCard, Metric, MonoLabel, ParchmentCard } from '@/components/primitives';
 import { EntryActions } from '@/components/entry/EntryActions';
 import { SessionDescription } from '@/components/session/SessionDescription';
 import { SessionEditor } from '@/components/session/SessionEditor';
@@ -180,7 +175,23 @@ export default async function SessionPage({ params }: { params: Promise<{ number
           </MonoLabel>
           <div className={styles.grid}>
             {session.images.map((image) => (
-              <ImagePlaceholder key={image.id} hatchStep={6} className={styles.cell} />
+              <Link
+                key={image.id}
+                href="/gallery"
+                className={styles.cell}
+                title={image.caption ?? undefined}
+              >
+                {/* Кадр без файла оставляет ячейке штриховку плейсхолдера. */}
+                {image.url ? (
+                  <Image
+                    src={image.url}
+                    alt={image.caption ?? ''}
+                    fill
+                    sizes="(max-width: 767px) 33vw, 160px"
+                    className={styles.photo}
+                  />
+                ) : null}
+              </Link>
             ))}
           </div>
         </>
