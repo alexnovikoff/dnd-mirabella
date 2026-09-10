@@ -327,7 +327,7 @@
  * ровно то, ради чего кадр несли. Пустые поля закрывает штриховка. */
 .achievementTile {
   position: relative;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 16 / 9;
   width: 100%;
   border: 1px solid var(--rule);
   border-radius: var(--radius);
