@@ -20,6 +20,7 @@ export function LabelInput({
   placeholder,
   ariaLabel,
   className,
+  autoFocus = false,
 }: {
   value: string;
   labels: string[];
@@ -27,11 +28,16 @@ export function LabelInput({
   placeholder?: string;
   ariaLabel?: string;
   className?: string;
+  /** В окне типа связи поле — единственное, и курсор должен стоять в нём. */
+  autoFocus?: boolean;
 }) {
   const [text, setText] = useState(value);
   const [open, setOpen] = useState(false);
   const [typed, setTyped] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  /* При автофокусе список не раскрываем: он бы сразу накрыл кнопки окна.
+   * Дальше фокус ведёт себя как обычно — по клику список открывается. */
+  const listOnFocus = useRef(!autoFocus);
 
   const needle = text.trim().toLowerCase();
   const options = (
@@ -57,9 +63,14 @@ export function LabelInput({
           placeholder={placeholder}
           aria-label={ariaLabel}
           autoComplete="off"
+          autoFocus={autoFocus}
           onFocus={() => {
-            setOpen(true);
             setTyped(false);
+            if (!listOnFocus.current) {
+              listOnFocus.current = true;
+              return;
+            }
+            setOpen(true);
           }}
           onChange={(event) => {
             setText(event.currentTarget.value);

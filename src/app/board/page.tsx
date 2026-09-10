@@ -28,7 +28,12 @@ export default async function BoardPage({
         <BoardToolbar />
 
         {/* Прокрутка и масштаб живут внутри самой канвы. */}
-        <BoardCanvas nodes={board.nodes} edges={board.edges} selectedSlug={selectedSlug} />
+        <BoardCanvas
+          nodes={board.nodes}
+          edges={board.edges}
+          labels={labels}
+          selectedSlug={selectedSlug}
+        />
 
         {/* <768px граф заменяется списком — README «Доска связей». */}
         <div className={styles.list}>

@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { MonoLabel } from '@/components/primitives';
 import { saveNodePosition } from '@/lib/actions/board';
 import { useQuickEntry } from '@/components/editor/QuickEntryProvider';
+import { LinkTypeDialog } from './LinkTypeDialog';
+import { nodeAt, type NodeBox } from '@/lib/board-drag';
 import { NODE_KIND_LABEL } from '@/lib/nodes';
 import type { BoardEdge, BoardNode } from '@/lib/queries/board';
 import styles from './Board.module.css';
@@ -25,6 +27,14 @@ const BOARD_WIDTH = 1500;
 const BOARD_HEIGHT = 900;
 
 type NodeDrag = { id: string; movedFar: boolean };
+/** Пара, которую связываем: открыто окно типа связи. */
+type Linking = {
+  from: BoardNode;
+  to: BoardNode;
+  /** Ручная связь этой пары уже есть — меняем её тип, а не плодим вторую. */
+  linkId: string | null;
+  label: string | null;
+};
 type Pan = {
   pointerId: number;
   x: number;
@@ -37,19 +47,26 @@ type Pan = {
 export function BoardCanvas({
   nodes,
   edges,
+  labels,
   selectedSlug,
 }: {
   nodes: BoardNode[];
   edges: BoardEdge[];
+  /** Уже использованные типы связи — подсказки в окне после дропа. */
+  labels: string[];
   selectedSlug: string | null;
 }) {
   const router = useRouter();
   const { canWrite } = useQuickEntry();
   const scrollerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
+  /* Живые узлы: по их прямоугольникам ищем, на кого бросили. */
+  const nodeRefs = useRef(new Map<string, HTMLElement>());
 
   const [zoomStep, setZoomStep] = useState<number>(ZOOM_DEFAULT);
   const [drag, setDrag] = useState<NodeDrag | null>(null);
+  const [dropTarget, setDropTarget] = useState<string | null>(null);
+  const [linking, setLinking] = useState<Linking | null>(null);
   const [pan, setPan] = useState<Pan | null>(null);
   /* Локальные координаты на время перетаскивания — линии едут за узлом. */
   const [positions, setPositions] = useState<Record<string, { x: number; y: number }>>({});
@@ -86,6 +103,43 @@ export function BoardCanvas({
     [positions],
   );
 
+  /** Узел под курсором, кроме самого перетаскиваемого: он под ним всегда. */
+  const targetUnder = useCallback((dragged: string, clientX: number, clientY: number) => {
+    const boxes: NodeBox[] = [];
+    for (const [id, element] of nodeRefs.current) {
+      if (id === dragged) continue;
+      boxes.push({ id, rect: element.getBoundingClientRect() });
+    }
+    return nodeAt(boxes, clientX, clientY);
+  }, []);
+
+  /** Ручное ребро этой пары, если оно уже есть. Направление не важно. */
+  function manualLinkOf(a: string, b: string) {
+    return (
+      edges.find(
+        (edge) =>
+          edge.kind === 'manual' &&
+          ((edge.from === a && edge.to === b) || (edge.from === b && edge.to === a)),
+      ) ?? null
+    );
+  }
+
+  function endNodeDrag() {
+    setDrag(null);
+    setDropTarget(null);
+  }
+
+  /** Жест прервали (системное меню, второй палец): координаты никуда не
+   *  ушли, поэтому узел возвращается на место. */
+  function cancelNodeDrag(id: string) {
+    setPositions((current) => {
+      const next = { ...current };
+      delete next[id];
+      return next;
+    });
+    endNodeDrag();
+  }
+
   function toPercent(event: React.PointerEvent) {
     const rect = canvasRef.current?.getBoundingClientRect();
     if (!rect) return null;
@@ -98,6 +152,13 @@ export function BoardCanvas({
   function deselect() {
     if (selectedSlug) router.push('/board', { scroll: false });
   }
+
+  /* Линия к цели, пока держим кнопку: без неё непонятно, что узел не просто
+   * наехал на соседа, а сейчас с ним свяжется. */
+  const draggedNode = drag ? byId.get(drag.id) : undefined;
+  const targetNode = dropTarget ? byId.get(dropTarget) : undefined;
+  const pendingLine =
+    draggedNode && targetNode ? { a: positionOf(draggedNode), b: positionOf(targetNode) } : null;
 
   return (
     /* Окно доски высотой ровно в полотно на 100%: масштаб меняет размер канвы
@@ -229,6 +290,18 @@ export function BoardCanvas({
                   </line>
                 );
               })}
+
+              {pendingLine ? (
+                <line
+                  x1={pendingLine.a.x}
+                  y1={pendingLine.a.y}
+                  x2={pendingLine.b.x}
+                  y2={pendingLine.b.y}
+                  stroke="var(--accent)"
+                  strokeWidth={0.4}
+                  vectorEffect="non-scaling-stroke"
+                />
+              ) : null}
             </svg>
 
             {nodes.map((node) => {
@@ -241,6 +314,7 @@ export function BoardCanvas({
                 node.status === 'dead_end' ? styles.dead : undefined,
                 selected ? styles.selected : undefined,
                 drag?.id === node.id ? styles.dragging : undefined,
+                dropTarget === node.id ? styles.dropTarget : undefined,
               ]
                 .filter(Boolean)
                 .join(' ');
@@ -255,6 +329,10 @@ export function BoardCanvas({
                     type="button"
                     className={className}
                     aria-pressed={selected}
+                    ref={(element) => {
+                      if (element) nodeRefs.current.set(node.id, element);
+                      else nodeRefs.current.delete(node.id);
+                    }}
                     onPointerDown={(event) => {
                       /* Узел свой жест: доску за него не тянем. */
                       event.stopPropagation();
@@ -279,6 +357,9 @@ export function BoardCanvas({
 
                       setDrag({ ...drag, movedFar: far });
                       setPositions((current) => ({ ...current, [node.id]: next }));
+                      setDropTarget(
+                        far ? targetUnder(node.id, event.clientX, event.clientY) : null,
+                      );
                     }}
                     onPointerUp={(event) => {
                       event.stopPropagation();
@@ -292,15 +373,41 @@ export function BoardCanvas({
                         /* пусто */
                       }
                       const moved = drag.movedFar;
-                      setDrag(null);
+                      /* Считаем цель заново: подсветка — состояние прошлого
+                       * движения, а связывать нужно по месту отпускания. */
+                      const target = moved
+                        ? targetUnder(node.id, event.clientX, event.clientY)
+                        : null;
+                      endNodeDrag();
 
                       if (!moved) {
                         router.push(`/board?node=${node.slug}`, { scroll: false });
                         return;
                       }
+
+                      /* Бросили на другой узел — это связь, а не переезд:
+                       * узел возвращается на место, координаты не пишем. */
+                      const to = target ? byId.get(target) : undefined;
+                      if (to) {
+                        setPositions((current) => {
+                          const next = { ...current };
+                          delete next[node.id];
+                          return next;
+                        });
+                        const existing = manualLinkOf(node.id, to.id);
+                        setLinking({
+                          from: node,
+                          to,
+                          linkId: existing?.id ?? null,
+                          label: existing?.label ?? null,
+                        });
+                        return;
+                      }
+
                       const next = positions[node.id];
                       if (next) void saveNodePosition(node.id, next.x, next.y);
                     }}
+                    onPointerCancel={() => cancelNodeDrag(node.id)}
                   >
                     {node.name}
                     <MonoLabel
@@ -338,6 +445,17 @@ export function BoardCanvas({
           </div>
         </div>
       </div>
+
+      {linking ? (
+        <LinkTypeDialog
+          from={{ id: linking.from.id, name: linking.from.name }}
+          to={{ id: linking.to.id, name: linking.to.name }}
+          existingLinkId={linking.linkId}
+          existingLabel={linking.label}
+          labels={labels}
+          onClose={() => setLinking(null)}
+        />
+      ) : null}
     </div>
   );
 }

@@ -230,15 +230,22 @@ export function getBoardPreview() {
 
     const positioned = new Set(nodes.map((n) => n.id));
 
+    /* id и тип ребра нужны превью: если пару перетащили друг на друга
+     * повторно, окно правит существующую связь, а не заводит вторую. */
     const edgeRows = await db
-      .select({ from: t.links.fromNodeId, to: t.links.toNodeId })
+      .select({
+        id: t.links.id,
+        from: t.links.fromNodeId,
+        to: t.links.toNodeId,
+        label: t.links.label,
+      })
       .from(t.links)
       .where(and(eq(t.links.campaignId, CAMPAIGN_ID), eq(t.links.kind, 'manual')));
 
     /* Рёбра рисуются только между узлами, у которых есть координаты:
      * связи персонажей появятся на полной доске (этап 8). */
     const edges = edgeRows.filter(
-      (e): e is { from: string; to: string } =>
+      (e): e is { id: string; from: string; to: string; label: string | null } =>
         e.from !== null && positioned.has(e.from) && positioned.has(e.to),
     );
 
