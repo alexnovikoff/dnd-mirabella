@@ -34,8 +34,9 @@ export async function saveNodePosition(nodeId: string, x: number, y: number) {
   revalidatePath('/board');
 }
 
-/** Кнопка «+ УЗЕЛ» на тулбаре доски. Тип выбирается сразу — иначе узлы
- *  копятся с типом «неизвестно», а исправить его в интерфейсе нечем. */
+/** Кнопка «+ УЗЕЛ» на тулбаре доски и «+ Добавить» в базе знаний. Тип
+ *  выбирается сразу — иначе узлы копятся с типом «неизвестно», а исправить
+ *  его в интерфейсе нечем. */
 export async function createBoardNode(name: string, kind: t.NodeKind = 'unknown') {
   await requireViewer();
   const trimmed = name.trim();
@@ -67,6 +68,7 @@ export async function createBoardNode(name: string, kind: t.NodeKind = 'unknown'
   });
 
   revalidatePath('/board');
+  revalidatePath('/kb');
   revalidatePath('/entities/[slug]', 'page');
   return { ok: true as const };
 }

@@ -1,8 +1,15 @@
 import { Screen } from '@/components/shell/Screen';
 import { FilterChips } from '@/components/primitives';
-import { AddNoteButton } from '@/components/kb/AddNoteButton';
+import { AddKbItemButton } from '@/components/kb/AddKbItemButton';
 import { FreeNoteCard, RumorNote } from '@/components/kb/NoteCards';
-import { getFreeNotes, getNodesByKind, getRumors, isKbTab, KB_TABS } from '@/lib/queries/kb';
+import {
+  getFreeNotes,
+  getNodesByKind,
+  getRumors,
+  isKbTab,
+  KB_TABS,
+  mergeKbCards,
+} from '@/lib/queries/kb';
 import { getNodeIndex } from '@/lib/queries/chronicle';
 import { getViewer } from '@/lib/viewer';
 import { plural } from '@/lib/plural';
@@ -14,7 +21,7 @@ export default async function KnowledgeBasePage({
   searchParams: Promise<{ tab?: string }>;
 }) {
   const { tab } = await searchParams;
-  const active = isKbTab(tab) ? tab : 'notes';
+  const active = isKbTab(tab) ? tab : 'all';
   const viewer = await getViewer();
 
   const [rumors, notes, npcs, locations, index] = await Promise.all([
@@ -25,8 +32,16 @@ export default async function KnowledgeBasePage({
     getNodeIndex(),
   ]);
 
-  const cards = active === 'npc' ? npcs : active === 'locations' ? locations : rumors;
-  const showNotes = active === 'notes';
+  const cards =
+    active === 'npc'
+      ? npcs
+      : active === 'locations'
+        ? locations
+        : active === 'all'
+          ? mergeKbCards(rumors, npcs, locations)
+          : rumors;
+  /* Свободные заметки живут только в «Заметках» и во «Всём». */
+  const showNotes = active === 'all' || active === 'notes';
   const count = cards.length + (showNotes ? notes.length : 0);
 
   const noun =
@@ -34,7 +49,12 @@ export default async function KnowledgeBasePage({
       ? plural(count, 'NPC', 'NPC', 'NPC')
       : active === 'locations'
         ? plural(count, 'локация', 'локации', 'локаций')
-        : plural(count, 'заметка', 'заметки', 'заметок');
+        : active === 'all'
+          ? plural(count, 'элемент', 'элемента', 'элементов')
+          : plural(count, 'заметка', 'заметки', 'заметок');
+
+  /* Кнопка «+» заводит по умолчанию то, что показывает открытый таб. */
+  const defaultType = active === 'npc' ? 'npc' : active === 'locations' ? 'location' : 'note';
 
   return (
     <Screen
@@ -48,7 +68,7 @@ export default async function KnowledgeBasePage({
           items={KB_TABS.map((item) => ({
             id: item.id,
             label: item.label,
-            href: item.id === 'notes' ? '/kb' : `/kb?tab=${item.id}`,
+            href: item.id === 'all' ? '/kb' : `/kb?tab=${item.id}`,
           }))}
         />
       }
@@ -60,7 +80,7 @@ export default async function KnowledgeBasePage({
         {showNotes
           ? notes.map((note) => <FreeNoteCard key={note.id} note={note} index={index} />)
           : null}
-        <AddNoteButton />
+        <AddKbItemButton defaultType={defaultType} />
       </div>
     </Screen>
   );
