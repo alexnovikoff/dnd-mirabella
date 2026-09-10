@@ -16,13 +16,14 @@ import {
 import type { EntryKind, Visibility } from '@/lib/db/schema';
 import type { PickerNode } from '@/lib/queries/nodes';
 import type { SessionOption } from '@/lib/queries/sessions';
+import { NO_SESSION } from '@/lib/sessions-shared';
 import { shortRuDate } from '@/lib/dates';
 import styles from './QuickEntry.module.css';
 
 const TYPES: { id: EntryKind; label: string; lands: string }[] = [
   { id: 'moment', label: 'МОМЕНТ', lands: 'Попадёт в ленту «Хроники»' },
   { id: 'quote', label: 'ЦИТАТА', lands: 'Попадёт в ленту и в цитатник' },
-  { id: 'image', label: 'ФОТО', lands: 'Попадёт в галерею текущей сессии' },
+  { id: 'image', label: 'ФОТО', lands: 'Попадёт в галерею выбранной сессии' },
   { id: 'note', label: 'ЗАМЕТКА', lands: 'Попадёт в базу знаний' },
 ];
 
@@ -54,6 +55,7 @@ export function QuickEntry({
   isDm,
   entry,
   defaultKind = 'moment',
+  defaultSessionId = null,
   onClose,
 }: {
   nodes: PickerNode[];
@@ -66,6 +68,9 @@ export function QuickEntry({
   entry?: EditableEntry | null;
   /** Тип, выбранный при открытии: кнопка экрана «Цитаты» открывает цитату. */
   defaultKind?: EntryKind;
+  /** Сессия, выбранная при открытии: полоса загрузки на «Галерее» открывает
+   *  шит той же группой, что показывает сама. */
+  defaultSessionId?: string | null;
   onClose: () => void;
 }) {
   const router = useRouter();
@@ -79,7 +84,7 @@ export function QuickEntry({
   /* При правке — сессия самой записи; при создании список отсортирован
    * по убыванию номера, поэтому первая в нём и есть активная. */
   const [sessionId, setSessionId] = useState(
-    editing ? (editing.sessionId ?? '') : (sessions[0]?.id ?? ''),
+    editing ? (editing.sessionId ?? NO_SESSION) : (defaultSessionId ?? sessions[0]?.id ?? ''),
   );
   const [dmOnly, setDmOnly] = useState(editing?.visibility === 'dm_only');
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -109,6 +114,9 @@ export function QuickEntry({
   }, [onClose]);
 
   const type = TYPES.find((t) => t.id === kind) ?? TYPES[0];
+  /* Кадру вне сессий место всё равно найдётся — в галерее он будет лежать
+   * отдельной группой «Без сессии». */
+  const lands = kind === 'image' && sessionId === NO_SESSION ? 'Попадёт в галерею' : type.lands;
 
   function submit(publish: boolean) {
     setError(null);
@@ -280,12 +288,14 @@ export function QuickEntry({
             </div>
 
             <MonoLabel size={9} tracking="0.08em" tone="faint" block>
-              {type.lands}
+              {lands}
             </MonoLabel>
 
             {/* Сессия записи. По умолчанию активная, но вечером после игры
                 запись нередко заводят задним числом — к прошлой; и уже
-                сохранённую запись из шита правки можно перенести в другую. */}
+                сохранённую запись из шита правки можно перенести в другую.
+                Поле можно и оставить пустым — первым пунктом идёт пустой
+                вариант. */}
             {sessions.length > 0 ? (
               <div className={styles.field}>
                 <MonoLabel size={9} tracking="0.08em" tone="faint" block>
@@ -297,11 +307,11 @@ export function QuickEntry({
                   onChange={(e) => setSessionId(e.currentTarget.value)}
                   aria-label="Сессия записи"
                 >
-                  {/* Запись, у которой сессии нет вовсе, не должна получать
-                      её молча — оставляем это отдельным выбором. */}
-                  {editing && editing.sessionId === null ? (
-                    <option value="">Без сессии</option>
-                  ) : null}
+                  {/* Пустой пункт: запись не обязана относиться к игре — арт
+                      персонажа, карта мира, заметка между сессиями. Подпись у
+                      него пустая (неразрывный пробел держит высоту строки:
+                      совсем пустой пункт в списке не во что нажать). */}
+                  <option value={NO_SESSION}>{'\u00a0'}</option>
                   {sessions.map((session) => (
                     <option key={session.id} value={session.id}>
                       {sessionLabel(session)}
@@ -377,7 +387,7 @@ export function QuickEntry({
                   className={styles.caption}
                   value={caption}
                   onChange={(e) => setCaption(e.currentTarget.value)}
-                  placeholder="Подпись к кадру…"
+                  placeholder="Подпись к кадру (необязательно)…"
                 />
               </>
             ) : (

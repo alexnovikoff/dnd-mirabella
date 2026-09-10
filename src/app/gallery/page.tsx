@@ -35,7 +35,7 @@ export default async function GalleryPage({
   return (
     <Screen
       title="Галерея"
-      note={`${gallery.total} ${plural(gallery.total, 'изображение', 'изображения', 'изображений')}.${viewer ? ' Перетащите файлы прямо на страницу — они попадут в текущую сессию.' : ''}`}
+      note={`${gallery.total} ${plural(gallery.total, 'изображение', 'изображения', 'изображений')}.${viewer ? ' Перетащите файлы прямо на страницу — группу выбирают над полосой загрузки.' : ''}`}
       aside={
         <FilterChips
           activeId={filter}
@@ -60,7 +60,7 @@ export default async function GalleryPage({
       <GalleryBoard
         groups={gallery.groups}
         grouped={grouped}
-        sessionLabel={session ? `Сессия ${session.number}` : 'без сессии'}
+        sessionLabel={session ? `Сессия ${session.number}` : null}
       />
     </Screen>
   );

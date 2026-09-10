@@ -8,8 +8,10 @@ import type { PickerNode } from '@/lib/queries/nodes';
 import type { SessionOption } from '@/lib/queries/sessions';
 
 type QuickEntryContext = {
-  /** Тип задаёт кнопка экрана: «Новая цитата» открывает шит сразу цитатой. */
-  open: (kind?: EntryKind) => void;
+  /** Тип задаёт кнопка экрана: «Новая цитата» открывает шит сразу цитатой.
+   *  Сессию — тот, кто уже выбрал её у себя: полоса загрузки на «Галерее»
+   *  открывает шит той же группой, что показывает сама. */
+  open: (kind?: EntryKind, sessionId?: string) => void;
   /** Открыть шит на правку уже существующей записи. */
   openForEdit: (entry: EditableEntry) => void;
   sessionShort: string;
@@ -47,12 +49,14 @@ export function QuickEntryProvider({
   const [isOpen, setIsOpen] = useState(false);
   const [editing, setEditing] = useState<EditableEntry | null>(null);
   const [kind, setKind] = useState<EntryKind>('moment');
+  const [sessionId, setSessionId] = useState<string | null>(null);
 
   const open = useCallback(
-    (next: EntryKind = 'moment') => {
+    (next: EntryKind = 'moment', session?: string) => {
       if (!canWrite) return;
       setEditing(null);
       setKind(next);
+      setSessionId(session ?? null);
       setIsOpen(true);
     },
     [canWrite],
@@ -103,6 +107,7 @@ export function QuickEntryProvider({
           key={editing?.id ?? 'new'}
           entry={editing}
           defaultKind={kind}
+          defaultSessionId={sessionId}
           nodes={nodes}
           characters={characters}
           sessions={sessions}

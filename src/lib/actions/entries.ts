@@ -11,7 +11,7 @@ import { canEditEntry } from '@/lib/auth-shared';
 import { slugify } from '@/lib/slug';
 import { syncEntryLinks } from '@/lib/wiki/sync-links';
 import type { PickerNode } from '@/lib/queries/nodes';
-import { findSessionId, resolveSessionId } from '@/lib/queries/sessions';
+import { findSessionMove, resolveSessionId } from '@/lib/queries/sessions';
 
 export type NewEntry = {
   kind: t.EntryKind;
@@ -127,11 +127,25 @@ export type EntryPatch = {
   body: string;
   caption?: string;
   subjectId?: string;
-  /** Сессия, выбранная в шите. Не задана — запись остаётся там, где была. */
+  /** Сессия, выбранная в шите. Не задана — запись остаётся там, где была;
+   *  NO_SESSION — её уносят из сессий вовсе. */
   sessionId?: string;
   publish: boolean;
   dmOnly?: boolean;
 };
+
+/** Есть ли у записи-фото загруженный кадр. Без него подпись — всё, что от
+ *  записи остаётся, и стереть её значит стереть саму запись. */
+function photoHasFile(entryId: string): Promise<boolean> {
+  return runDb(async (db) => {
+    const [row] = await db
+      .select({ url: t.images.url })
+      .from(t.images)
+      .where(eq(t.images.entryId, entryId))
+      .limit(1);
+    return Boolean(row?.url);
+  });
+}
 
 /** Право на правку считает canEditEntry: общую запись правит любой вошедший,
  *  личную заметку и чужой черновик — только автор либо мастер. */
@@ -162,25 +176,31 @@ export async function updateEntry(entryId: string, input: EntryPatch): Promise<C
 
   const body = input.body.trim();
   const title = input.title?.trim() || null;
+  const caption = input.caption?.trim() || null;
 
   if (entry.kind === 'image') {
-    if (!input.caption?.trim()) return { ok: false, error: 'Добавьте подпись к кадру' };
+    /* Подпись необязательна — но только пока кадр показывает себя сам. */
+    if (!caption && !(await photoHasFile(entryId))) {
+      return { ok: false, error: 'Приложите файл или добавьте подпись' };
+    }
   } else if (!body) {
     return { ok: false, error: 'Запись не может быть пустой' };
   }
 
   const result = await runDb(async (db) => {
     /* Сессию трогаем, только если её выбрали: пустое значение означает
-     * «оставить как было», а не «унести запись в активную». */
-    const sessionId = await findSessionId(db, input.sessionId ?? null);
+     * «оставить как было», а не «унести запись в активную». «Без сессии» —
+     * такой же осознанный выбор, и его выполняем. */
+    const move = await findSessionMove(db, input.sessionId);
 
     await db
       .update(t.entries)
       .set({
-        title,
+        /* Заголовок записи-фото — это её подпись: своего поля у неё нет. */
+        title: entry.kind === 'image' ? caption : title,
         body: entry.kind === 'image' ? null : body,
         subjectId: input.subjectId ?? null,
-        ...(sessionId ? { sessionId } : {}),
+        ...(move ? { sessionId: move.id } : {}),
         /* Личная заметка остаётся личной: кнопка «сохранить» не должна
          * втихую опубликовать то, что человек писал для себя. */
         visibility:
@@ -194,17 +214,14 @@ export async function updateEntry(entryId: string, input: EntryPatch): Promise<C
       })
       .where(eq(t.entries.id, entryId));
 
-    if (entry.kind === 'image' && input.caption) {
-      await db
-        .update(t.images)
-        .set({ caption: input.caption.trim() })
-        .where(eq(t.images.entryId, entryId));
+    if (entry.kind === 'image') {
+      await db.update(t.images).set({ caption }).where(eq(t.images.entryId, entryId));
     }
 
     /* Кадры едут за записью: иначе фото осталось бы в галерее прошлой игры,
      * а сама запись уехала бы в другую. */
-    if (sessionId) {
-      await db.update(t.images).set({ sessionId }).where(eq(t.images.entryId, entryId));
+    if (move) {
+      await db.update(t.images).set({ sessionId: move.id }).where(eq(t.images.entryId, entryId));
     }
 
     /* Ради этого правка и нужна: рёбра приводятся в соответствие новому

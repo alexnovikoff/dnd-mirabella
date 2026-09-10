@@ -22,13 +22,20 @@ export async function createPhotoEntry(
 ): Promise<{ ok: true; entryId: string } | { ok: false; error: string }> {
   const viewer = await requireViewer();
 
-  const caption = String(form.get('caption') ?? '').trim();
-  if (!caption) return { ok: false, error: 'Добавьте подпись к кадру' };
+  /* Подпись необязательна: кадр говорит сам за себя чаще, чем его подписывают.
+   * Пустую храним как null, а не пустой строкой, — «Галерея» и лайтбокс
+   * различают «без подписи» и «подпись есть, но пустая». */
+  const caption = String(form.get('caption') ?? '').trim() || null;
 
   const file = form.get('file');
   const hasFile = file instanceof File && file.size > 0;
   if (hasFile && !isSupportedImage(file.type)) {
     return { ok: false, error: `Не картинка: ${file.name}` };
+  }
+
+  /* Одно из двух быть обязано: иначе в хронику уходит пустая карточка. */
+  if (!hasFile && !caption) {
+    return { ok: false, error: 'Приложите файл или добавьте подпись' };
   }
 
   const publish = form.get('publish') === '1';
@@ -37,7 +44,9 @@ export async function createPhotoEntry(
   const url = hasFile ? await saveUpload(file) : null;
 
   const entryId = await runDb(async (db) => {
-    /* Кадр уходит в сессию, выбранную в шите; по умолчанию — в активную. */
+    /* Кадр уходит в сессию, выбранную в шите; по умолчанию — в активную.
+     * NO_SESSION в селекте оставляет кадр вне игр — арт персонажа или карта
+     * мира не относятся ни к одному вечеру за столом. */
     const sessionId = await resolveSessionId(db, String(form.get('sessionId') ?? '') || null);
 
     const id = randomUUID();
@@ -71,7 +80,8 @@ export async function createPhotoEntry(
   return { ok: true, entryId };
 }
 
-/** Drag-and-drop на страницу «Галерея»: файлы попадают в активную сессию. */
+/** Drag-and-drop на страницу «Галерея»: файлы попадают в активную сессию,
+ *  либо — если на полосе выбрали «Без сессии» — вне игр вообще. */
 export async function uploadImages(form: FormData): Promise<UploadResult> {
   const viewer = await requireViewer();
   const files = form.getAll('files').filter((item): item is File => item instanceof File);
@@ -87,8 +97,10 @@ export async function uploadImages(form: FormData): Promise<UploadResult> {
     urls.push({ url: await saveUpload(file), caption: file.name.replace(/\.[^.]+$/, '') });
   }
 
+  const target = String(form.get('sessionId') ?? '') || null;
+
   await runDb(async (db) => {
-    const sessionId = await resolveSessionId(db);
+    const sessionId = await resolveSessionId(db, target);
 
     await db.insert(t.images).values(
       urls.map((item) => ({

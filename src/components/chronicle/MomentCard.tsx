@@ -73,6 +73,9 @@ export function toEditable(entry: FeedEntry) {
     subjectId: entry.subjectId,
     sessionId: entry.sessionId,
     visibility: entry.visibility,
+    /* Подпись кадра — единственное, что правится у записи-фото. Без неё шит
+     * открывался бы с пустым полем и стирал подпись при сохранении. */
+    caption: entry.image?.caption ?? null,
   };
 }
 

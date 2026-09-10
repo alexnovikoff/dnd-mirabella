@@ -6,6 +6,7 @@ import * as t from '@/lib/db/schema';
 import { CAMPAIGN_ID } from '@/lib/db/seed';
 import type { Viewer } from '@/lib/auth-shared';
 import { visibleEntries } from '@/lib/visibility';
+import { NO_SESSION } from '@/lib/sessions-shared';
 
 /** Сессия в выпадающем списке шита быстрой записи. */
 export type SessionOption = {
@@ -57,9 +58,24 @@ export async function activeSessionId(db: Db): Promise<string | null> {
   return active?.id ?? null;
 }
 
-/** Сессия новой записи: выбранная в шите, иначе активная. */
+/** Сессия новой записи: выбранная в шите, иначе активная.
+ *  NO_SESSION — осознанный выбор «вне сессий»: подставлять активную нельзя. */
 export async function resolveSessionId(db: Db, requested?: string | null): Promise<string | null> {
+  if (requested === NO_SESSION) return null;
   return (await findSessionId(db, requested ?? null)) ?? activeSessionId(db);
+}
+
+/** Куда переносит запись выбор в шите правки: null — выбора не делали,
+ *  запись остаётся там, где была; { id: null } — выбрали «Без сессии». */
+export async function findSessionMove(
+  db: Db,
+  requested: string | null | undefined,
+): Promise<{ id: string | null } | null> {
+  if (!requested) return null;
+  if (requested === NO_SESSION) return { id: null };
+
+  const id = await findSessionId(db, requested);
+  return id ? { id } : null;
 }
 
 /** Полный список сессий: последняя сверху. Счётчик записей считается по тем,
