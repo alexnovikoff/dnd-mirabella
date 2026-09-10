@@ -25,8 +25,6 @@ export type Achievement = {
   url: string | null;
   caption: string | null;
   uploaderName: string | null;
-  /** Своё достижение правит и убирает автор загрузки, любое — мастер. */
-  canManage: boolean;
 };
 
 export function Achievements({
@@ -157,7 +155,7 @@ export function Achievements({
                 ) : null}
               </button>
 
-              {canWrite && achievement.canManage ? (
+              {canWrite ? (
                 <button
                   type="button"
                   className={styles.achievementRemove}
@@ -169,7 +167,7 @@ export function Achievements({
                 </button>
               ) : null}
 
-              {canWrite && achievement.canManage ? (
+              {canWrite ? (
                 editing === achievement.id ? (
                   <input
                     className={`${picker.field} ${styles.achievementCaptionInput}`}

@@ -77,23 +77,18 @@ export async function uploadAchievements(form: FormData): Promise<AchievementRes
   return { ok: true };
 }
 
-/** Убрать достижение. Чужое снимает только мастер — как и с записями. */
+/** Убрать достижение. Плитка общая: снять её может любой вошедший. */
 export async function deleteAchievement(imageId: string): Promise<AchievementResult> {
-  const viewer = await requireViewer();
+  await requireViewer();
 
   const outcome = await runDb(
-    async (
-      db,
-    ): Promise<
-      { status: 'gone' } | { status: 'denied' } | { status: 'removed'; url: string | null }
-    > => {
+    async (db): Promise<{ status: 'gone' } | { status: 'removed'; url: string | null }> => {
       const [row] = await db
-        .select({ url: t.images.url, uploaderId: t.images.uploaderId })
+        .select({ url: t.images.url })
         .from(t.images)
         .where(and(eq(t.images.id, imageId), eq(t.images.kind, 'achievement')))
         .limit(1);
       if (!row) return { status: 'gone' };
-      if (viewer.role !== 'dm' && row.uploaderId !== viewer.id) return { status: 'denied' };
 
       await db.delete(t.images).where(eq(t.images.id, imageId));
       return { status: 'removed', url: row.url };
@@ -101,7 +96,6 @@ export async function deleteAchievement(imageId: string): Promise<AchievementRes
   );
 
   if (outcome.status === 'gone') return { ok: false, error: 'Достижение уже убрали' };
-  if (outcome.status === 'denied') return { ok: false, error: 'Это достижение загружали не вы' };
 
   await removeUpload(outcome.url);
 
@@ -109,34 +103,32 @@ export async function deleteAchievement(imageId: string): Promise<AchievementRes
   return { ok: true };
 }
 
-/** Переименовать достижение. Права те же, что на снятие: своё правит автор
- *  загрузки, любое — мастер. Подпись при загрузке берётся из имени файла,
- *  а «IMG_2043» под плиткой не рассказывает ничего. */
+/** Переименовать достижение. Права те же, что на снятие: любой вошедший.
+ *  Подпись при загрузке берётся из имени файла, а «IMG_2043» под плиткой
+ *  не рассказывает ничего. */
 export async function renameAchievement(
   imageId: string,
   caption: string,
 ): Promise<AchievementResult> {
-  const viewer = await requireViewer();
+  await requireViewer();
 
   /* Пустая подпись — это «без подписи», а не пустая строка в базе:
    * плитка рисует прочерк по null. */
   const next = caption.trim().slice(0, CAPTION_LIMIT) || null;
 
-  const outcome = await runDb(async (db): Promise<'gone' | 'denied' | 'renamed'> => {
+  const outcome = await runDb(async (db): Promise<'gone' | 'renamed'> => {
     const [row] = await db
-      .select({ uploaderId: t.images.uploaderId })
+      .select({ id: t.images.id })
       .from(t.images)
       .where(and(eq(t.images.id, imageId), eq(t.images.kind, 'achievement')))
       .limit(1);
     if (!row) return 'gone';
-    if (viewer.role !== 'dm' && row.uploaderId !== viewer.id) return 'denied';
 
     await db.update(t.images).set({ caption: next }).where(eq(t.images.id, imageId));
     return 'renamed';
   });
 
   if (outcome === 'gone') return { ok: false, error: 'Достижение уже убрали' };
-  if (outcome === 'denied') return { ok: false, error: 'Это достижение загружали не вы' };
 
   revalidatePath('/characters/[slug]', 'page');
   return { ok: true };

@@ -14,6 +14,7 @@ import {
   date,
   index,
   integer,
+  jsonb,
   pgEnum,
   pgTable,
   primaryKey,
@@ -21,6 +22,7 @@ import {
   timestamp,
   unique,
 } from 'drizzle-orm/pg-core';
+import type { CropRect } from '../crop';
 
 /* ── Перечисления ────────────────────────────────────────────────── */
 
@@ -131,7 +133,15 @@ export const characters = pgTable('characters', {
   race: text('race'),
   classes: text('classes'),
   level: integer('level'),
+  /** Что показываем: либо загруженный файл, либо вырезанный из него кадр. */
   portrait: text('portrait'),
+  /** Исходник, из которого кадр вырезали. Держим отдельно, чтобы повторное
+   *  кадрирование резало оригинал, а не предыдущий кадр. Пока не кадрировали,
+   *  совпадает с portrait. */
+  portraitSource: text('portrait_source'),
+  /** Рамка кадра долями исходника (см. lib/crop): по ней диалог открывается
+   *  там, где его закрыли. null — портрет ни разу не кадрировали. */
+  portraitCrop: jsonb('portrait_crop').$type<CropRect>(),
   bio: text('bio'),
   isPc: boolean('is_pc').notNull().default(true),
   playerId: text('player_id').references(() => users.id, { onDelete: 'set null' }),

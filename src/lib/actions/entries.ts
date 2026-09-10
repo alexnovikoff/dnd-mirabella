@@ -7,6 +7,7 @@ import { runDb } from '@/lib/db/client';
 import * as t from '@/lib/db/schema';
 import { CAMPAIGN_ID } from '@/lib/db/seed';
 import { requireViewer } from './guard';
+import { canEditEntry } from '@/lib/auth-shared';
 import { slugify } from '@/lib/slug';
 import { syncEntryLinks } from '@/lib/wiki/sync-links';
 import type { PickerNode } from '@/lib/queries/nodes';
@@ -132,7 +133,8 @@ export type EntryPatch = {
   dmOnly?: boolean;
 };
 
-/** Править и удалять запись может её автор либо мастер. */
+/** Право на правку считает canEditEntry: общую запись правит любой вошедший,
+ *  личную заметку и чужой черновик — только автор либо мастер. */
 async function requireOwnership(entryId: string) {
   const viewer = await requireViewer();
 
@@ -151,9 +153,7 @@ async function requireOwnership(entryId: string) {
   });
 
   if (!entry) throw new Error('Запись не найдена');
-  if (viewer.role !== 'dm' && entry.authorId !== viewer.id) {
-    throw new Error('Эту запись писали не вы');
-  }
+  if (!canEditEntry(viewer, entry)) throw new Error('Эту запись писали не вы');
   return { viewer, entry };
 }
 

@@ -2,39 +2,59 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Screen } from '@/components/shell/Screen';
 import { ImagePlaceholder, MonoLabel, ParchmentCard } from '@/components/primitives';
+import { CropPortraitButton } from '@/components/character/CropPortraitButton';
 import { getCharacters } from '@/lib/queries/characters';
+import { parseCrop } from '@/lib/crop';
+import { getViewer } from '@/lib/viewer';
 import styles from '@/components/character/Party.module.css';
 
 export default async function PartyPage() {
-  const party = await getCharacters();
+  const [party, viewer] = await Promise.all([getCharacters(), getViewer()]);
 
   return (
-    <Screen title="Партия" note="Кто ведёт эту хронику.">
+    <Screen title="Партия" note="Кто ведёт эту хронику">
       <div className={styles.grid}>
-        {party.map((character) => (
-          <Link key={character.id} href={`/characters/${character.slug}`}>
-            <ParchmentCard interactive className={styles.card}>
-              {character.portrait ? (
-                <div className={styles.portrait}>
-                  <Image
-                    src={character.portrait}
-                    alt=""
-                    fill
-                    className={styles.portraitImage}
-                    sizes="(max-width: 767px) 100vw, (max-width: 1023px) 50vw, 25vw"
-                  />
-                </div>
-              ) : (
-                <ImagePlaceholder className={styles.portrait} align="bottom" hatchStep={8} />
-              )}
-              <h2 className={styles.name}>{character.name}</h2>
-              <MonoLabel size={9} tracking="0.1em" tone="faint" block>
-                {[character.race, character.classes].filter(Boolean).join(' · ')}
-              </MonoLabel>
-              {character.bio ? <p className={styles.bio}>{character.bio}</p> : null}
-            </ParchmentCard>
-          </Link>
-        ))}
+        {party.map((character) => {
+          /* Кадрируем оригинал. У портретов, загруженных до появления
+           * колонки, его нет — тогда оригиналом служит сам портрет. */
+          const source = character.portraitSource ?? character.portrait;
+
+          return (
+            <div key={character.id} className={styles.cell}>
+              <Link href={`/characters/${character.slug}`} className={styles.cardLink}>
+                <ParchmentCard interactive className={styles.card}>
+                  {character.portrait ? (
+                    <div className={styles.portrait}>
+                      <Image
+                        src={character.portrait}
+                        alt=""
+                        fill
+                        className={styles.portraitImage}
+                        sizes="(max-width: 767px) 100vw, (max-width: 1023px) 50vw, 25vw"
+                      />
+                    </div>
+                  ) : (
+                    <ImagePlaceholder className={styles.portrait} align="bottom" hatchStep={8} />
+                  )}
+                  <h2 className={styles.name}>{character.name}</h2>
+                  <MonoLabel size={9} tracking="0.1em" tone="faint" block>
+                    {[character.race, character.classes].filter(Boolean).join(' · ')}
+                  </MonoLabel>
+                  {character.bio ? <p className={styles.bio}>{character.bio}</p> : null}
+                </ParchmentCard>
+              </Link>
+
+              {viewer && source ? (
+                <CropPortraitButton
+                  nodeId={character.id}
+                  name={character.name}
+                  source={source}
+                  crop={parseCrop(character.portraitCrop)}
+                />
+              ) : null}
+            </div>
+          );
+        })}
       </div>
     </Screen>
   );

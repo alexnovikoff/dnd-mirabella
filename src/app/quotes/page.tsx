@@ -4,6 +4,7 @@ import { EntryActions } from '@/components/entry/EntryActions';
 import { NewQuoteButton } from '@/components/quotes/NewQuoteButton';
 import { getQuoteAuthors, getQuotes } from '@/lib/queries/quotes';
 import { getViewer } from '@/lib/viewer';
+import { canEditEntry } from '@/lib/auth-shared';
 import { plural } from '@/lib/plural';
 import styles from '@/components/quotes/Quotes.module.css';
 
@@ -16,10 +17,6 @@ export default async function QuotesPage({
   const viewer = await getViewer();
 
   const [authors, data] = await Promise.all([getQuoteAuthors(), getQuotes(author ?? null, viewer)]);
-
-  /* Правит свою цитату её автор; мастер — любую. Проверку повторяет сервер. */
-  const canEdit = (authorId: string | null) =>
-    viewer !== null && (viewer.role === 'dm' || authorId === viewer.id);
 
   return (
     <Screen
@@ -62,7 +59,7 @@ export default async function QuotesPage({
                   sessionId: quote.sessionId,
                   visibility: quote.visibility,
                 }}
-                canEdit={canEdit(quote.authorId)}
+                canEdit={canEditEntry(viewer, quote)}
               />
             </div>
           </ParchmentCard>

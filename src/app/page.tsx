@@ -20,6 +20,7 @@ import {
 import { getLinkLabels } from '@/lib/queries/labels';
 import { getRandomQuote } from '@/lib/queries/quotes';
 import { getViewer } from '@/lib/viewer';
+import { canEditEntry } from '@/lib/auth-shared';
 import styles from './chronicle.module.css';
 
 export default async function ChroniclePage({
@@ -52,10 +53,6 @@ export default async function ChroniclePage({
   /* Свежие записи идут полными карточками, ранние — компактными:
    * так лента держит ритм макета, а не превращается в стену. */
   const compactBelow = activeSession ? activeSession.number - 1 : 0;
-
-  /* Право на правку считает сервер: автор либо мастер. */
-  const canEdit = (authorId: string | null) =>
-    viewer !== null && (viewer.role === 'dm' || authorId === viewer.id);
 
   return (
     <>
@@ -97,7 +94,11 @@ export default async function ChroniclePage({
               .map((entry) => {
                 if (entry.kind === 'quote')
                   return (
-                    <QuoteEntry key={entry.id} entry={entry} canEdit={canEdit(entry.authorId)} />
+                    <QuoteEntry
+                      key={entry.id}
+                      entry={entry}
+                      canEdit={canEditEntry(viewer, entry)}
+                    />
                   );
                 const compact = (entry.sessionNumber ?? 0) < compactBelow;
                 return compact ? (
@@ -105,14 +106,14 @@ export default async function ChroniclePage({
                     key={entry.id}
                     entry={entry}
                     index={index}
-                    canEdit={canEdit(entry.authorId)}
+                    canEdit={canEditEntry(viewer, entry)}
                   />
                 ) : (
                   <MomentCard
                     key={entry.id}
                     entry={entry}
                     index={index}
-                    canEdit={canEdit(entry.authorId)}
+                    canEdit={canEditEntry(viewer, entry)}
                   />
                 );
               })
