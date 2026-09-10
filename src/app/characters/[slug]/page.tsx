@@ -183,7 +183,7 @@ export default async function CharacterPage({ params }: { params: Promise<{ slug
           url: achievement.url,
           caption: achievement.caption,
           uploaderName: achievement.uploaderName,
-          canRemove: canEdit(achievement.uploaderId),
+          canManage: canEdit(achievement.uploaderId),
         }))}
       />
     </>

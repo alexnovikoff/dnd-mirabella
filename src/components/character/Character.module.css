@@ -310,7 +310,7 @@
 
 .achievementsGrid {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
 }
 
@@ -322,9 +322,12 @@
   min-width: 0;
 }
 
+/* Плитка прямоугольная, а кадр вписан целиком: достижения приносят
+ * скриншотами и широкими картинками, и квадратная обрезка съедала
+ * ровно то, ради чего кадр несли. Пустые поля закрывает штриховка. */
 .achievementTile {
   position: relative;
-  aspect-ratio: 1;
+  aspect-ratio: 4 / 3;
   width: 100%;
   border: 1px solid var(--rule);
   border-radius: var(--radius);
@@ -342,7 +345,39 @@
 }
 
 .achievementPhoto {
-  object-fit: cover;
+  object-fit: contain;
+}
+
+/* Подпись под плиткой — кнопка: клик открывает поле правки на её месте,
+ * поэтому строка не должна прыгать по высоте. */
+.achievementCaption {
+  display: block;
+  width: 100%;
+  min-height: 26px;
+  padding: 4px 0;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px dashed transparent;
+  text-align: left;
+  transition: border-color var(--hover-fast);
+}
+
+.achievementCaption:hover {
+  border-bottom-color: var(--accent);
+}
+
+.achievementCaption:disabled {
+  cursor: default;
+}
+
+.achievementCaptionInput {
+  min-height: 26px;
+  padding: 4px 6px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink);
 }
 
 /* Крестик поверх плитки: видно всегда — на сенсорном экране ховера нет. */
@@ -393,7 +428,7 @@
   }
 
   .achievementsGrid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
@@ -421,7 +456,13 @@
   }
 
   .achievementsGrid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
+  }
+
+  /* На сенсорном экране подпись — такая же цель для пальца, как кнопки. */
+  .achievementCaption,
+  .achievementCaptionInput {
+    min-height: 44px;
   }
 }
