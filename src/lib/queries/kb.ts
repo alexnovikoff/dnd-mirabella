@@ -1,5 +1,5 @@
 /* Запросы экрана «База знаний»: наводки со статусами, свободные заметки,
- * а также подтабы NPC и Локации. */
+ * а также подтабы «Всё», NPC и Локации. */
 
 import { and, desc, eq, inArray, isNotNull, or, sql } from 'drizzle-orm';
 import { runDb } from '@/lib/db/client';
@@ -8,9 +8,11 @@ import { CAMPAIGN_ID } from '@/lib/db/seed';
 import type { Viewer } from '@/lib/auth-shared';
 import { visibleEntries } from '@/lib/visibility';
 
-export type KbTab = 'notes' | 'npc' | 'locations';
+export type KbTab = 'all' | 'notes' | 'npc' | 'locations';
 
+/** Первый таб — тот, что открывается без query-параметра. */
 export const KB_TABS: { id: KbTab; label: string }[] = [
+  { id: 'all', label: 'ВСЁ' },
   { id: 'notes', label: 'ЗАМЕТКИ' },
   { id: 'npc', label: 'NPC' },
   { id: 'locations', label: 'ЛОКАЦИИ' },
@@ -140,4 +142,17 @@ export function getNodesByKind(kind: t.NodeKind): Promise<RumorCard[]> {
 
     return rows.map((row) => ({ ...row, related: [] }));
   });
+}
+
+/** Таб «Всё»: наводки, NPC и локации одним списком. Узел со статусом попадает
+ *  и в наводки, и в свой тип — в объединении он остаётся один раз, в порядке
+ *  первой группы (наводки идут по статусу, остальные по имени). */
+export function mergeKbCards(...groups: RumorCard[][]): RumorCard[] {
+  const byId = new Map<string, RumorCard>();
+  for (const group of groups) {
+    for (const card of group) {
+      if (!byId.has(card.id)) byId.set(card.id, card);
+    }
+  }
+  return [...byId.values()];
 }

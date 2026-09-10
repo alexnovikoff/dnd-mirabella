@@ -53,14 +53,16 @@
   color: var(--accent);
 }
 
-/* Тумблер: включённый — залит акцентом, слева квадрат-индикатор 7×7. */
-.toggleOn {
+/* Тумблер и активный подтаб: залиты акцентом, у тумблера слева квадрат 7×7.
+ * Селектор идёт от .row: правило размера (.md .chip) специфичнее одного
+ * класса и иначе перебивает цвет — на акценте оставался тёмный текст. */
+.row .toggleOn {
   background: var(--accent);
   border-color: var(--accent);
   color: var(--accent-on-warm);
 }
 
-.toggleOn:hover {
+.row .toggleOn:hover {
   color: var(--accent-on-warm);
 }
 
