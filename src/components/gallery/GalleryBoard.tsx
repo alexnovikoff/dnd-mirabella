@@ -4,7 +4,8 @@ import { useCallback, useEffect, useRef, useState, useTransition } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { DropZone, Lightbox, MonoLabel } from '@/components/primitives';
-import { uploadImages } from '@/lib/actions/images';
+import { ConfirmDialog } from '@/components/editor/ConfirmDialog';
+import { deleteImage, uploadImages } from '@/lib/actions/images';
 import { useQuickEntry } from '@/components/editor/QuickEntryProvider';
 import { numericDate } from '@/lib/dates';
 import { plural } from '@/lib/plural';
@@ -30,34 +31,59 @@ function meta(image: GalleryImage): string {
     .join(' · ');
 }
 
-function Tile({ image, onOpen }: { image: GalleryImage; onOpen: () => void }) {
+function Tile({
+  image,
+  canRemove,
+  onOpen,
+  onRemove,
+}: {
+  image: GalleryImage;
+  /** Крестик показываем только вошедшим — галерею собирают вместе. */
+  canRemove: boolean;
+  onOpen: () => void;
+  onRemove: () => void;
+}) {
   const className = [styles.tile, image.isKey ? styles.key : undefined].filter(Boolean).join(' ');
 
   return (
-    <button type="button" className={className} onClick={onOpen}>
-      {image.url ? (
-        <Image
-          src={image.url}
-          alt={image.caption ?? ''}
-          fill
-          className={styles.photo}
-          sizes="(max-width: 767px) 50vw, (max-width: 1023px) 33vw, 25vw"
-        />
-      ) : null}
+    <div className={className}>
+      <button type="button" className={styles.frame} onClick={onOpen}>
+        {image.url ? (
+          <Image
+            src={image.url}
+            alt={image.caption ?? ''}
+            fill
+            className={styles.photo}
+            sizes="(max-width: 767px) 50vw, (max-width: 1023px) 33vw, 25vw"
+          />
+        ) : null}
 
-      {image.isKey ? (
-        <span className={styles.overlay}>
-          <span className={styles.overlayTitle}>{image.caption}</span>
-          <MonoLabel size={9} tracking="0.08em" tone="onAccentDim">
-            {meta(image)}
+        {image.isKey ? (
+          <span className={styles.overlay}>
+            <span className={styles.overlayTitle}>{image.caption}</span>
+            <MonoLabel size={9} tracking="0.08em" tone="onAccentDim">
+              {meta(image)}
+            </MonoLabel>
+          </span>
+        ) : (
+          <MonoLabel size={9} tracking="0.06em" tone="faint" className={styles.caption}>
+            {image.caption}
           </MonoLabel>
-        </span>
-      ) : (
-        <MonoLabel size={9} tracking="0.06em" tone="faint" className={styles.caption}>
-          {image.caption}
-        </MonoLabel>
-      )}
-    </button>
+        )}
+      </button>
+
+      {canRemove ? (
+        <button
+          type="button"
+          className={styles.remove}
+          title="Убрать кадр"
+          aria-label={`Убрать кадр${image.caption ? `: ${image.caption}` : ''}`}
+          onClick={onRemove}
+        >
+          ×
+        </button>
+      ) : null}
+    </div>
   );
 }
 
@@ -71,10 +97,11 @@ export function GalleryBoard({
   grouped: boolean;
 }) {
   const router = useRouter();
-  const { canWrite } = useQuickEntry();
+  const { canWrite, open } = useQuickEntry();
   const [dragging, setDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lightbox, setLightbox] = useState<{ group: number; index: number } | null>(null);
+  const [removing, setRemoving] = useState<GalleryImage | null>(null);
   const [pending, startTransition] = useTransition();
   const depth = useRef(0);
 
@@ -90,6 +117,23 @@ export function GalleryBoard({
         if (!result.ok) setError(result.error);
         else {
           setError(null);
+          router.refresh();
+        }
+      });
+    },
+    [router],
+  );
+
+  const remove = useCallback(
+    (image: GalleryImage) => {
+      startTransition(async () => {
+        const result = await deleteImage(image.id);
+        setRemoving(null);
+        if (!result.ok) setError(result.error);
+        else {
+          setError(null);
+          /* Кадр мог быть открыт в лайтбоксе — оттуда ему тоже пора. */
+          setLightbox(null);
           router.refresh();
         }
       });
@@ -154,20 +198,31 @@ export function GalleryBoard({
               <Tile
                 key={image.id}
                 image={image}
+                canRemove={canWrite}
                 onOpen={() => setLightbox({ group: groupIndex, index })}
+                onRemove={() => setRemoving(image)}
               />
             ))}
           </div>
         </section>
       ))}
 
+      {/* Полоса работает и на бросок файлов, и на клик: клик открывает ту же
+          быструю запись с типом «ФОТО», что и кнопка «+ ФОТО» в шапке. */}
       {canWrite ? (
-        <div className={styles.drop}>
+        <button
+          type="button"
+          className={styles.drop}
+          title="Открыть быструю запись с типом «ФОТО»"
+          onClick={() => open('image')}
+        >
           <DropZone
             active={dragging}
-            label={pending ? 'Загружаем…' : `Бросьте файлы сюда · группа «${sessionLabel}»`}
+            label={
+              pending ? 'Загружаем…' : `Бросьте файлы сюда или нажмите · группа «${sessionLabel}»`
+            }
           />
-        </div>
+        </button>
       ) : null}
 
       {error ? (
@@ -190,6 +245,18 @@ export function GalleryBoard({
           onPrev={() => setLightbox((s) => step(s, groups, -1))}
           onNext={() => setLightbox((s) => step(s, groups, 1))}
           onClose={() => setLightbox(null)}
+        />
+      ) : null}
+
+      {removing ? (
+        <ConfirmDialog
+          title="Убрать кадр?"
+          body="Кадр исчезнет из галереи и из сессии, файл будет удалён. Если его заводили быстрой записью, вместе с ним уйдёт и сама запись."
+          quoted={removing.caption}
+          confirmLabel="УБРАТЬ"
+          pending={pending}
+          onConfirm={() => remove(removing)}
+          onCancel={() => setRemoving(null)}
         />
       ) : null}
     </div>

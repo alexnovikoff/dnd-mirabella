@@ -13,7 +13,7 @@ export type NavItem = {
 export const NAV: readonly NavItem[] = [
   { href: '/', label: 'Хроника', action: '+ ЗАПИСЬ' },
   { href: '/party', label: 'Партия', action: '+ ЗАПИСЬ' },
-  { href: '/gallery', label: 'Галерея', action: '+ ФОТО' },
+  { href: '/gallery', label: 'Галерея', action: '+ ФОТО', kind: 'image' },
   { href: '/quotes', label: 'Цитаты', action: 'Новая цитата', kind: 'quote' },
   { href: '/kb', label: 'База знаний', action: '+ ЗАМЕТКА' },
   /* На доске узел заводится своей кнопкой в тулбаре, а кнопка в шапке

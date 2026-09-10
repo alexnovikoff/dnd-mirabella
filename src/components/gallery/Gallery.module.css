@@ -34,12 +34,21 @@
   gap: 14px;
 }
 
+/* Плитка портретная, 3:4 — кадры в галерее чаще вертикальные, и на
+ * квадратной обрезке у них срезало головы. Ячейка сетки держит пропорцию,
+ * а кадр и крестик лежат в ней слоями. */
 .tile {
   position: relative;
+  aspect-ratio: 3 / 4;
+  min-width: 0;
+}
+
+.frame {
+  position: absolute;
+  inset: 0;
   border: 1px solid var(--rule);
   border-radius: var(--radius);
   background: var(--hatch);
-  min-height: 152px;
   display: flex;
   align-items: flex-end;
   padding: 10px;
@@ -48,14 +57,43 @@
   --hatch-step: 8px;
 }
 
-.tile:hover {
+.frame:hover {
   box-shadow: var(--node-shadow-sm);
 }
 
+/* Крестик поверх плитки: видно всегда — на сенсорном экране ховера нет.
+ * Тот же вид, что у достижений на странице персонажа. */
+.remove {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  z-index: 1;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(43, 33, 24, 0.62);
+  border: 0;
+  border-radius: var(--radius);
+  color: #f3e9d4;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1;
+  transition: background var(--hover-fast);
+}
+
+.remove:hover {
+  background: var(--accent);
+}
+
+/* Ключевой кадр занимает 2×2 — пропорция остаётся портретной сама собой. */
 .key {
   grid-column: span 2;
   grid-row: span 2;
-  min-height: 320px;
+}
+
+.key .frame {
   padding: 14px;
 }
 
@@ -89,8 +127,15 @@
   position: relative;
 }
 
+/* Полоса кликабельна: клик открывает быструю запись с типом «ФОТО». */
 .drop {
+  display: block;
+  width: 100%;
   margin-top: 6px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  text-align: inherit;
 }
 
 /* Подсветка всей страницы, пока над ней тащат файлы. */
@@ -123,10 +168,12 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  /* В две колонки ключевой кадр занимает всю ширину: та же портретная
+     пропорция делает его ровно вдвое выше обычной плитки, как и на широком
+     экране, где он спанит две строки. */
   .key {
     grid-column: span 2;
     grid-row: auto;
-    min-height: 220px;
   }
 
   .groupTitle {
