@@ -18,6 +18,7 @@ import { getLinkLabels } from '@/lib/queries/labels';
 import { getCharacter } from '@/lib/queries/characters';
 import { getNodeIndex } from '@/lib/queries/chronicle';
 import { getViewer } from '@/lib/viewer';
+import { canEditEntry } from '@/lib/auth-shared';
 import styles from '@/components/character/Character.module.css';
 
 export default async function CharacterPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -31,9 +32,6 @@ export default async function CharacterPage({ params }: { params: Promise<{ slug
   ]);
 
   if (!character) notFound();
-
-  const canEdit = (authorId: string | null) =>
-    viewer !== null && (viewer.role === 'dm' || authorId === viewer.id);
 
   const meta = [
     character.race,
@@ -105,7 +103,7 @@ export default async function CharacterPage({ params }: { params: Promise<{ slug
                 </p>
               ) : null}
               <EntryActions
-                canEdit={canEdit(moment.authorId)}
+                canEdit={canEditEntry(viewer, moment)}
                 entry={{
                   id: moment.id,
                   kind: moment.kind,
@@ -127,7 +125,7 @@ export default async function CharacterPage({ params }: { params: Promise<{ slug
                 meta={quote.votes > 0 ? `♦ ${quote.votes}` : undefined}
               />
               <EntryActions
-                canEdit={canEdit(quote.authorId)}
+                canEdit={canEditEntry(viewer, quote)}
                 entry={{
                   id: quote.id,
                   kind: quote.kind,
@@ -183,7 +181,6 @@ export default async function CharacterPage({ params }: { params: Promise<{ slug
           url: achievement.url,
           caption: achievement.caption,
           uploaderName: achievement.uploaderName,
-          canManage: canEdit(achievement.uploaderId),
         }))}
       />
     </>

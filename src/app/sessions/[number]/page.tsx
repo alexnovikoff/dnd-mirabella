@@ -16,6 +16,7 @@ import { getSession } from '@/lib/queries/sessions';
 import { getNodeIndex } from '@/lib/queries/chronicle';
 import { getPickerNodes } from '@/lib/queries/nodes';
 import { getViewer } from '@/lib/viewer';
+import { canEditEntry } from '@/lib/auth-shared';
 import { numericDate } from '@/lib/dates';
 import { plural } from '@/lib/plural';
 import styles from '@/components/session/Session.module.css';
@@ -32,9 +33,6 @@ export default async function SessionPage({ params }: { params: Promise<{ number
     getPickerNodes(),
   ]);
   if (!session) notFound();
-
-  const canEdit = (authorId: string | null) =>
-    viewer !== null && (viewer.role === 'dm' || authorId === viewer.id);
 
   const moments = session.entries.filter((entry) => entry.kind === 'moment');
   const quotes = session.entries.filter((entry) => entry.kind === 'quote');
@@ -114,7 +112,7 @@ export default async function SessionPage({ params }: { params: Promise<{ number
             </p>
           ) : null}
           <EntryActions
-            canEdit={canEdit(entry.authorId)}
+            canEdit={canEditEntry(viewer, entry)}
             entry={{
               id: entry.id,
               kind: entry.kind,
@@ -132,7 +130,7 @@ export default async function SessionPage({ params }: { params: Promise<{ number
         <div key={entry.id}>
           <AccentQuoteCard quote={entry.body ?? ''} author={`— ${entry.authorName ?? ''}`} />
           <EntryActions
-            canEdit={canEdit(entry.authorId)}
+            canEdit={canEditEntry(viewer, entry)}
             entry={{
               id: entry.id,
               kind: entry.kind,
@@ -161,7 +159,7 @@ export default async function SessionPage({ params }: { params: Promise<{ number
             </p>
           ) : null}
           <EntryActions
-            canEdit={canEdit(entry.authorId)}
+            canEdit={canEditEntry(viewer, entry)}
             entry={{
               id: entry.id,
               kind: entry.kind,
