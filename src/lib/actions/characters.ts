@@ -18,14 +18,14 @@ function revalidateCharacter() {
   revalidatePath('/characters/[slug]', 'page');
 }
 
-/** Файлы портрета: что показываем и из чего это вырезано. */
-type PortraitFiles = { portrait: string | null; portraitSource: string | null };
+/** Файлы портрета: сам портрет и вырезанный из него кадр для «Партии». */
+type PortraitFiles = { portrait: string | null; portraitCropUrl: string | null };
 
 async function readPortrait(db: Db, nodeId: string): Promise<PortraitFiles | undefined> {
   const [row] = await db
     .select({
       portrait: t.characters.portrait,
-      portraitSource: t.characters.portraitSource,
+      portraitCropUrl: t.characters.portraitCropUrl,
     })
     .from(t.characters)
     .where(eq(t.characters.nodeId, nodeId))
@@ -33,13 +33,12 @@ async function readPortrait(db: Db, nodeId: string): Promise<PortraitFiles | und
   return row;
 }
 
-/** Убрать файлы, на которые после обновления никто не ссылается. Оригинал
- *  и кадр часто один и тот же адрес — тогда удаляем его один раз. */
+/** Убрать файлы, на которые после обновления никто не ссылается. */
 async function removeUnused(previous: PortraitFiles, keep: (string | null)[]) {
   const alive = new Set(keep.filter((url): url is string => Boolean(url)));
   const gone = new Set(
-    [previous.portrait, previous.portraitSource].filter(
-      (url): url is string => Boolean(url) && !alive.has(url as string),
+    [previous.portrait, previous.portraitCropUrl].filter(
+      (url): url is string => url !== null && !alive.has(url),
     ),
   );
   for (const url of gone) await removeUpload(url);
@@ -64,7 +63,7 @@ export async function uploadPortrait(form: FormData): Promise<PortraitResult> {
 
     await db
       .update(t.characters)
-      .set({ portrait: url, portraitSource: url, portraitCrop: null })
+      .set({ portrait: url, portraitCropUrl: null, portraitCrop: null })
       .where(eq(t.characters.nodeId, nodeId));
     return row;
   });
@@ -79,9 +78,12 @@ export async function uploadPortrait(form: FormData): Promise<PortraitResult> {
   return { ok: true };
 }
 
-/** Кадр портрета. Режет его браузер — сюда приходит готовый файл и рамка,
- *  по которой диалог откроется в следующий раз. Оригинал остаётся жить:
- *  иначе каждое следующее кадрирование резало бы предыдущий кадр. */
+/** Кадр для карточки в «Партии». Режет его браузер — сюда приходит готовый
+ *  файл и рамка, по которой диалог откроется в следующий раз.
+ *
+ *  Портрет остаётся нетронутым: страница персонажа и аватары Хроники
+ *  показывают его целиком, а кадрирование — дело одной карточки. Заодно
+ *  каждое следующее кадрирование режет портрет, а не предыдущий кадр. */
 export async function savePortraitCrop(form: FormData): Promise<PortraitResult> {
   await requireViewer();
 
@@ -105,21 +107,18 @@ export async function savePortraitCrop(form: FormData): Promise<PortraitResult> 
     const row = await readPortrait(db, nodeId);
     if (!row) return undefined;
 
-    /* У портретов, загруженных до появления колонки, исходника нет:
-     * оригиналом становится то, что кадрировали. */
-    const source = row.portraitSource ?? row.portrait;
     await db
       .update(t.characters)
-      .set({ portrait: url, portraitSource: source, portraitCrop: crop })
+      .set({ portraitCropUrl: url, portraitCrop: crop })
       .where(eq(t.characters.nodeId, nodeId));
-    return { row, source };
+    return row;
   });
 
   if (previous === undefined) {
     await removeUpload(url);
     return { ok: false, error: 'Персонаж не найден' };
   }
-  await removeUnused(previous.row, [url, previous.source]);
+  await removeUnused(previous, [url, previous.portrait]);
 
   revalidateCharacter();
   return { ok: true };
@@ -134,7 +133,7 @@ export async function deletePortrait(nodeId: string): Promise<PortraitResult> {
 
     await db
       .update(t.characters)
-      .set({ portrait: null, portraitSource: null, portraitCrop: null })
+      .set({ portrait: null, portraitCropUrl: null, portraitCrop: null })
       .where(eq(t.characters.nodeId, nodeId));
     return row;
   });

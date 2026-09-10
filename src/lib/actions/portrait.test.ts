@@ -52,7 +52,7 @@ function read() {
     const [row] = await db
       .select({
         portrait: t.characters.portrait,
-        portraitSource: t.characters.portraitSource,
+        portraitCropUrl: t.characters.portraitCropUrl,
         portraitCrop: t.characters.portraitCrop,
       })
       .from(t.characters)
@@ -73,18 +73,18 @@ beforeEach(async () => {
 afterEach(() => setDbForTesting(null));
 
 describe('uploadPortrait', () => {
-  it('кладёт файл и портретом, и оригиналом', async () => {
+  it('кладёт файл портретом, кадра ещё нет', async () => {
     await uploadPortrait(form({ nodeId: HERO, file: picture() }));
 
     expect(await read()).toEqual({
       portrait: '/uploads/1.png',
-      portraitSource: '/uploads/1.png',
+      portraitCropUrl: null,
       portraitCrop: null,
     });
     expect(fake.removed).toEqual([]);
   });
 
-  it('замена уносит и прошлый кадр, и прошлый оригинал', async () => {
+  it('замена уносит и прошлый портрет, и прошлый кадр', async () => {
     await uploadPortrait(form({ nodeId: HERO, file: picture() }));
     await savePortraitCrop(form({ nodeId: HERO, file: picture(), crop: JSON.stringify(CROP) }));
     fake.removed = [];
@@ -94,7 +94,7 @@ describe('uploadPortrait', () => {
     expect(fake.removed.sort()).toEqual(['/uploads/1.png', '/uploads/2.png']);
     expect(await read()).toEqual({
       portrait: '/uploads/3.png',
-      portraitSource: '/uploads/3.png',
+      portraitCropUrl: null,
       portraitCrop: null,
     });
   });
@@ -115,47 +115,32 @@ describe('savePortraitCrop', () => {
     fake.removed = [];
   });
 
-  it('меняет портрет на кадр, оригинал оставляет', async () => {
+  it('кладёт кадр в свою колонку, портрет не трогает', async () => {
     expect(
       await savePortraitCrop(form({ nodeId: HERO, file: picture(), crop: JSON.stringify(CROP) })),
     ).toEqual({ ok: true });
 
     expect(await read()).toEqual({
-      portrait: '/uploads/2.png',
-      portraitSource: '/uploads/1.png',
+      portrait: '/uploads/1.png',
+      portraitCropUrl: '/uploads/2.png',
       portraitCrop: CROP,
     });
     expect(fake.removed).toEqual([]);
   });
 
-  it('повторный кадр режет оригинал, а не прошлый кадр', async () => {
+  it('повторный кадр режет портрет, а не прошлый кадр', async () => {
     await savePortraitCrop(form({ nodeId: HERO, file: picture(), crop: JSON.stringify(CROP) }));
     await savePortraitCrop(
       form({ nodeId: HERO, file: picture(), crop: JSON.stringify({ x: 0, y: 0, w: 1, h: 1 }) }),
     );
 
     expect(await read()).toEqual({
-      portrait: '/uploads/3.png',
-      portraitSource: '/uploads/1.png',
+      portrait: '/uploads/1.png',
+      portraitCropUrl: '/uploads/3.png',
       portraitCrop: { x: 0, y: 0, w: 1, h: 1 },
     });
-    /* Ушёл только промежуточный кадр. */
+    /* Ушёл только промежуточный кадр — портрет на месте. */
     expect(fake.removed).toEqual(['/uploads/2.png']);
-  });
-
-  it('портрет из времён без колонки становится собственным оригиналом', async () => {
-    await runDb((db) =>
-      db.update(t.characters).set({ portraitSource: null }).where(eq(t.characters.nodeId, HERO)),
-    );
-
-    await savePortraitCrop(form({ nodeId: HERO, file: picture(), crop: JSON.stringify(CROP) }));
-
-    expect(await read()).toEqual({
-      portrait: '/uploads/2.png',
-      portraitSource: '/uploads/1.png',
-      portraitCrop: CROP,
-    });
-    expect(fake.removed).toEqual([]);
   });
 
   it('без внятной рамки не сохраняет и файл не пишет', async () => {
@@ -164,19 +149,27 @@ describe('savePortraitCrop', () => {
     ).toEqual({ ok: false, error: 'Рамка кадра не задана' });
 
     expect(fake.saved).toBe(1);
-    expect((await read())?.portrait).toBe('/uploads/1.png');
+    expect(await read()).toEqual({
+      portrait: '/uploads/1.png',
+      portraitCropUrl: null,
+      portraitCrop: null,
+    });
   });
 });
 
 describe('deletePortrait', () => {
-  it('уносит и кадр, и оригинал', async () => {
+  it('уносит и портрет, и кадр', async () => {
     await uploadPortrait(form({ nodeId: HERO, file: picture() }));
     await savePortraitCrop(form({ nodeId: HERO, file: picture(), crop: JSON.stringify(CROP) }));
     fake.removed = [];
 
     expect(await deletePortrait(HERO)).toEqual({ ok: true });
 
-    expect(await read()).toEqual({ portrait: null, portraitSource: null, portraitCrop: null });
+    expect(await read()).toEqual({
+      portrait: null,
+      portraitCropUrl: null,
+      portraitCrop: null,
+    });
     expect(fake.removed.sort()).toEqual(['/uploads/1.png', '/uploads/2.png']);
   });
 });

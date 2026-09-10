@@ -227,7 +227,7 @@ export function CropDialog({
         </div>
 
         <MonoLabel size={9} tracking="0.06em" tone="faint" block>
-          Оригинал остаётся: кадр всегда можно переснять
+          Кадр меняет только карточку в «Партии» — портрет остаётся целым
         </MonoLabel>
 
         {error ? (
