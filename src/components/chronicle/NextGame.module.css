@@ -1,0 +1,165 @@
+/* Анонс следующей игры. Выделен не цветной заливкой — она в макете
+ * занята карточкой цитаты, и две подряд спорили бы друг с другом, —
+ * а акцентным кантом слева и охряной подписью: карточка остаётся
+ * пергаментом, но взгляд цепляется за неё первой. */
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px 22px;
+  background: var(--card-bg);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius);
+  box-shadow: var(--card-shadow);
+}
+
+.row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+/* Дата набрана дисплейным шрифтом: строка короткая и должна читаться
+ * с другого конца комнаты, а не выглядеть ещё одной строкой меты. */
+.date {
+  font-family: var(--font-display);
+  font-size: 24px;
+  line-height: 1.2;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.buttons {
+  display: flex;
+  gap: 8px;
+}
+
+/* Очистка отодвинута в конец ряда: рядом с «Сохранить» её нажимают не глядя. */
+.buttonEnd {
+  margin-left: auto;
+}
+
+.field {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  min-height: 44px;
+  width: 100%;
+  font-family: var(--font-display);
+  font-size: 20px;
+  color: var(--ink);
+}
+
+.field::placeholder {
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--placeholder);
+}
+
+/* Кнопка мельче общей: анонс здесь читают, а правят его изредка — полная
+ * плашка на 44 пикселя перетягивала бы на себя саму дату. Тач-зону
+ * возвращает медиазапрос внизу — там палец, а не курсор. */
+.action {
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 4px 9px;
+  min-height: 26px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  transition:
+    border-color var(--hover-fast),
+    color var(--hover-fast);
+}
+
+.action:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.submit {
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  color: var(--accent-on-warm);
+  padding: 11px 16px;
+  min-height: 44px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+
+.submit:hover {
+  background: var(--accent-hover);
+}
+
+.cancel {
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  color: var(--ink-muted);
+  padding: 11px 16px;
+  min-height: 44px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+
+.danger {
+  background: transparent;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  color: var(--accent);
+  padding: 11px 16px;
+  min-height: 44px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  transition:
+    background var(--hover-fast),
+    color var(--hover-fast);
+}
+
+.danger:hover {
+  background: var(--accent);
+  color: var(--accent-on-warm);
+}
+
+.submit:disabled,
+.cancel:disabled,
+.action:disabled,
+.danger:disabled {
+  opacity: 0.55;
+}
+
+@media (max-width: 767px) {
+  .card {
+    padding: 16px 18px;
+  }
+
+  .date {
+    font-size: 21px;
+  }
+
+  /* На тач-экране кнопке нужна полная зона под палец. */
+  .action {
+    padding: 6px 10px;
+    min-height: 44px;
+    font-size: 10px;
+  }
+}

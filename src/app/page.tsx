@@ -3,6 +3,7 @@ import { BoardPreview } from '@/components/chronicle/BoardPreview';
 import { FeedFilters } from '@/components/chronicle/FeedFilters';
 import { Hero } from '@/components/chronicle/Hero';
 import { CompactMomentCard, MomentCard } from '@/components/chronicle/MomentCard';
+import { NextGame } from '@/components/chronicle/NextGame';
 import { QuoteEntry } from '@/components/chronicle/QuoteEntry';
 import { Sidebar } from '@/components/chronicle/Sidebar';
 import { GALLERY_PREVIEW_LIMIT } from '@/components/chronicle/SidebarGallery';
@@ -66,6 +67,8 @@ export default async function ChroniclePage({
 
       <div className={styles.grid}>
         <section className={styles.feed}>
+          <NextGame nextGame={campaign?.nextGame ?? null} />
+
           {randomQuote ? (
             <AccentQuoteCard
               eyebrow="Случайная цитата"

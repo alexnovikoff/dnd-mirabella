@@ -293,6 +293,7 @@ export async function seed(db: Db) {
     eyebrow: `Дневник партии · ${SESSION_COUNT} сессий`,
     tagline:
       'Семь артефактов, исполняющих желания. Шесть ещё не найдены, а первую мы, кажется, уже потратили не туда.',
+    nextGame: '16 сентября (среда), старт в 20.00',
   });
 
   const sessionRows = Array.from({ length: SESSION_COUNT }, (_, i) => {
