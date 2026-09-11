@@ -1,0 +1,98 @@
+/* ── Изображения карточки сущности ───────────────────────────────────
+ * Сетка плиток внутри блока карточки: заголовок со счётчиком рисует сама
+ * страница, здесь — только плитки, дроп-зона и ошибка. Мерки те же, что
+ * у «Достижений» персонажа: один и тот же кадр не должен выглядеть
+ * по-разному на двух страницах. */
+
+.images {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+/* Плитка прямоугольная, кадр вписан целиком: карточке несут и портреты,
+ * и широкие виды локаций, а квадратная обрезка съедала бы ровно то, ради
+ * чего кадр принесли. Пустые поля закрывает штриховка. */
+.tile {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  width: 100%;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--hatch);
+  overflow: hidden;
+  --hatch-step: 6px;
+  transition:
+    border-color var(--hover-fast),
+    box-shadow var(--hover-slow);
+}
+
+.tile:hover {
+  border-color: var(--accent);
+  box-shadow: var(--node-shadow-sm);
+}
+
+.photo {
+  object-fit: contain;
+}
+
+/* Крестик поверх плитки: видно всегда — на сенсорном экране ховера нет. */
+.remove {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(43, 33, 24, 0.62);
+  border: 0;
+  border-radius: var(--radius);
+  color: #f3e9d4;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1;
+  transition: background var(--hover-fast);
+}
+
+.remove:hover {
+  background: var(--accent);
+}
+
+/* Дроп-зона кликабельна — это кнопка выбора файлов. */
+.drop {
+  display: block;
+  width: 100%;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  text-align: inherit;
+}
+
+@media (max-width: 1023px) {
+  .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+}

@@ -49,8 +49,16 @@ export const entryKindEnum = pgEnum('entry_kind', ['moment', 'quote', 'note', 'i
 export const visibilityEnum = pgEnum('visibility', ['public', 'draft', 'private', 'dm_only']);
 
 /** 'achievement' — плашка достижения персонажа: такой кадр привязан к узлу,
- *  живёт только в блоке «Достижения» и в общую «Галерею» не попадает. */
-export const imageKindEnum = pgEnum('image_kind', ['art', 'map', 'screenshot', 'achievement']);
+ *  живёт только в блоке «Достижения» и в общую «Галерею» не попадает.
+ *  'entity' — кадр карточки сущности: NPC, локация, фракция. Тоже привязан
+ *  к узлу и тоже вне «Галереи»: он иллюстрирует карточку, а не вечер игры. */
+export const imageKindEnum = pgEnum('image_kind', [
+  'art',
+  'map',
+  'screenshot',
+  'achievement',
+  'entity',
+]);
 
 /** mention — ребро из текста по [[ссылке]]; manual — связь, поставленная руками. */
 export const linkKindEnum = pgEnum('link_kind', ['mention', 'manual']);
@@ -330,5 +338,8 @@ export type NodeKind = (typeof nodeKindEnum.enumValues)[number];
 export type NodeStatus = (typeof nodeStatusEnum.enumValues)[number];
 export type EntryKind = (typeof entryKindEnum.enumValues)[number];
 export type ImageKind = (typeof imageKindEnum.enumValues)[number];
+/** Кадры, привязанные к узлу: их место — страница узла, а не «Галерея». */
+export type NodeImageKind = Extract<ImageKind, 'achievement' | 'entity'>;
+export const NODE_IMAGE_KINDS: NodeImageKind[] = ['achievement', 'entity'];
 export type Visibility = (typeof visibilityEnum.enumValues)[number];
 export type LinkKind = (typeof linkKindEnum.enumValues)[number];

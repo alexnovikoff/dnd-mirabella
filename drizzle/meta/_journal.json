@@ -57,6 +57,13 @@
       "when": 1789085613325,
       "tag": "0007_wet_baron_zemo",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1789139812062,
+      "tag": "0008_illegal_the_leader",
+      "breakpoints": true
     }
   ]
 }
