@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { NewSessionButton } from '@/components/session/NewSessionButton';
 import { MonoLabel, STATUS_META, StatusPill } from '@/components/primitives';
+import { SidebarAdd } from './SidebarAdd';
 import { SidebarGallery, type GalleryPreviewImage } from './SidebarGallery';
 import type { NodeStatus } from '@/lib/db/schema';
 import { numericDate } from '@/lib/dates';
@@ -37,7 +38,7 @@ export function Sidebar({
               Сессии
             </MonoLabel>
           </Link>
-          <NewSessionButton />
+          <NewSessionButton className={styles.blockAdd} />
         </div>
         <div>
           {sessions.map((session) => {
@@ -62,12 +63,15 @@ export function Sidebar({
       </section>
 
       <section className={styles.block}>
-        {/* Заголовок ведёт в базу знаний: сайдбар показывает верхушку. */}
-        <Link href="/kb" className={styles.blockTitle}>
-          <MonoLabel size={10} tracking="0.14em" block>
-            Заметки
-          </MonoLabel>
-        </Link>
+        <div className={styles.blockHead}>
+          {/* Заголовок ведёт в базу знаний: сайдбар показывает верхушку. */}
+          <Link href="/kb" className={styles.blockTitle}>
+            <MonoLabel size={10} tracking="0.14em" block>
+              Заметки
+            </MonoLabel>
+          </Link>
+          <SidebarAdd kind="note" label="+ Заметка" />
+        </div>
         <div className={styles.notes}>
           {notes.map((note) => {
             const meta = note.status ? STATUS_META[note.status] : null;

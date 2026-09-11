@@ -1,18 +1,19 @@
 'use client';
 
-/* Виджет «Галерея» в сайдбаре «Хроники». Сетка из макета — 3×2, где последняя
- * ячейка занята дроп-зоной, то есть кадров на странице ровно пять. Свежих
- * кадров обычно больше, поэтому страницы листаются стрелками, не уводя со
- * страницы: за всей галереей ведёт заголовок. */
+/* Виджет «Галерея» в сайдбаре «Хроники». Сетка из макета — 3×2, то есть
+ * кадров на странице ровно шесть. Свежих кадров обычно больше, поэтому
+ * страницы листаются стрелками, не уводя со страницы: за всей галереей
+ * ведёт заголовок, а кадр добавляет кнопка рядом с ним. */
 
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { DropZone, MonoLabel } from '@/components/primitives';
+import { MonoLabel } from '@/components/primitives';
+import { SidebarAdd } from './SidebarAdd';
 import styles from './Sidebar.module.css';
 
-/** Кадров на странице: шестая ячейка сетки — дроп-зона. */
-export const GALLERY_PAGE = 5;
+/** Кадров на странице: сетка 3×2 заполняется целиком. */
+export const GALLERY_PAGE = 6;
 
 /** Сколько кадров тянем из базы: четыре страницы листания. Больше в сайдбаре
  *  никто не отлистывает — дальше открывают саму «Галерею». */
@@ -43,30 +44,34 @@ export function SidebarGallery({
           </MonoLabel>
         </Link>
 
-        {pages > 1 ? (
-          <div className={styles.pager}>
-            <button
-              type="button"
-              className={styles.pagerButton}
-              aria-label="Предыдущие кадры"
-              title="Предыдущие кадры"
-              disabled={page === 0}
-              onClick={() => setPage((current) => Math.max(0, current - 1))}
-            >
-              ←
-            </button>
-            <button
-              type="button"
-              className={styles.pagerButton}
-              aria-label="Следующие кадры"
-              title="Следующие кадры"
-              disabled={page >= pages - 1}
-              onClick={() => setPage((current) => Math.min(pages - 1, current + 1))}
-            >
-              →
-            </button>
-          </div>
-        ) : null}
+        <div className={styles.headTools}>
+          {pages > 1 ? (
+            <div className={styles.pager}>
+              <button
+                type="button"
+                className={styles.pagerButton}
+                aria-label="Предыдущие кадры"
+                title="Предыдущие кадры"
+                disabled={page === 0}
+                onClick={() => setPage((current) => Math.max(0, current - 1))}
+              >
+                ←
+              </button>
+              <button
+                type="button"
+                className={styles.pagerButton}
+                aria-label="Следующие кадры"
+                title="Следующие кадры"
+                disabled={page >= pages - 1}
+                onClick={() => setPage((current) => Math.min(pages - 1, current + 1))}
+              >
+                →
+              </button>
+            </div>
+          ) : null}
+
+          <SidebarAdd kind="image" label="+ Фото" />
+        </div>
       </div>
 
       <div className={styles.grid}>
@@ -90,7 +95,6 @@ export function SidebarGallery({
             ) : null}
           </Link>
         ))}
-        <DropZone variant="cell" label="Drop img" />
       </div>
     </section>
   );

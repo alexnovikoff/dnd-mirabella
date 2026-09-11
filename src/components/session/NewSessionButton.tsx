@@ -7,8 +7,10 @@ import { useQuickEntry } from '@/components/editor/QuickEntryProvider';
 import { createSession } from '@/lib/actions/sessions';
 import styles from './Session.module.css';
 
-/** Новая сессия сразу становится активной: к ней цепляются новые записи. */
-export function NewSessionButton() {
+/** Новая сессия сразу становится активной: к ней цепляются новые записи.
+ *  `className` подменяет вид кнопки: в сайдбаре «Хроники» она мельче,
+ *  чем на своём экране. */
+export function NewSessionButton({ className }: { className?: string }) {
   const router = useRouter();
   const { canWrite } = useQuickEntry();
   const [pending, startTransition] = useTransition();
@@ -18,7 +20,7 @@ export function NewSessionButton() {
   return (
     <button
       type="button"
-      className={styles.action}
+      className={className ?? styles.action}
       disabled={pending}
       onClick={() =>
         startTransition(async () => {

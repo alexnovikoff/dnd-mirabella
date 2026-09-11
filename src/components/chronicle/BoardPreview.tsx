@@ -99,151 +99,161 @@ export function BoardPreview({
   return (
     <section className={styles.section}>
       <div className={styles.head}>
-        <h2 className={styles.title}>Доска связей</h2>
-        <div className={styles.headTools}>
-          {canWrite ? (
-            <MonoLabel size={10} tracking="0.1em">
-              Перетащите карточку на карточку, чтобы связать
-            </MonoLabel>
-          ) : null}
-          <Link href="/board">
-            <MonoLabel size={10} tracking="0.1em" tone="accent">
-              Открыть доску →
-            </MonoLabel>
-          </Link>
+        {/* Заголовок ведёт на доску наравне со ссылкой справа: внизу «Хроники»
+            в него метят так же, как в заголовки блоков сайдбара. */}
+        <Link href="/board" className={styles.titleLink}>
+          <h2 className={styles.title}>Доска связей</h2>
+        </Link>
+        <Link href="/board">
+          <MonoLabel size={10} tracking="0.1em" tone="accent">
+            Открыть доску →
+          </MonoLabel>
+        </Link>
+      </div>
+
+      {/* Канва не ужимается ниже ширины, на которой карточки ещё не
+          наползают: узкий экран листает доску вбок. */}
+      <div className={styles.canvasScroll}>
+        <div className={styles.canvas} ref={canvasRef}>
+          {/* README: SVG в процентных координатах, штрих не масштабируется. */}
+          <svg
+            className={styles.lines}
+            viewBox="0 0 100 100"
+            preserveAspectRatio="none"
+            aria-hidden="true"
+          >
+            {edges.map((edge) => {
+              const from = byId.get(edge.from);
+              const to = byId.get(edge.to);
+              if (!from || !to) return null;
+              const a = positionOf(from);
+              const b = positionOf(to);
+              return (
+                <line
+                  key={edge.id}
+                  x1={a.x}
+                  y1={a.y}
+                  x2={b.x}
+                  y2={b.y}
+                  stroke="var(--accent)"
+                  strokeWidth={0.7}
+                  strokeDasharray="3 2"
+                  vectorEffect="non-scaling-stroke"
+                />
+              );
+            })}
+          </svg>
+
+          {nodes.map((node) => {
+            const position = positionOf(node);
+            const className = [
+              styles.node,
+              canWrite ? styles.draggable : undefined,
+              node.status === 'open' ? styles.nodeOpen : undefined,
+              node.status === 'dead_end' ? styles.nodeDead : undefined,
+              drag?.id === node.id && drag.movedFar ? styles.dragging : undefined,
+              dropTarget === node.id ? styles.dropTarget : undefined,
+            ]
+              .filter(Boolean)
+              .join(' ');
+
+            return (
+              <Link
+                key={node.id}
+                href={`/entities/${node.slug}`}
+                className={className}
+                style={{ left: `${position.x}%`, top: `${position.y}%` }}
+                ref={(element) => {
+                  if (element) nodeRefs.current.set(node.id, element);
+                  else nodeRefs.current.delete(node.id);
+                }}
+                /* Нативное перетаскивание ссылки перебило бы наш жест. */
+                draggable={false}
+                onDragStart={(event) => event.preventDefault()}
+                onClick={(event) => {
+                  if (!swallowClick.current) return;
+                  swallowClick.current = false;
+                  event.preventDefault();
+                }}
+                onPointerDown={(event) => {
+                  if (!canWrite || event.button !== 0) return;
+                  /* Флаг мог остаться от жеста, который кончился мимо карточки
+                   * и клика не породил, — иначе он съел бы следующий переход. */
+                  swallowClick.current = false;
+                  try {
+                    event.currentTarget.setPointerCapture(event.pointerId);
+                  } catch {
+                    /* пусто */
+                  }
+                  setDrag({
+                    id: node.id,
+                    pointerId: event.pointerId,
+                    startX: event.clientX,
+                    startY: event.clientY,
+                    movedFar: false,
+                    point: null,
+                  });
+                }}
+                onPointerMove={(event) => {
+                  if (drag?.id !== node.id || drag.pointerId !== event.pointerId) return;
+                  const point = toPercent(event);
+                  if (!point) return;
+
+                  const far =
+                    drag.movedFar ||
+                    Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY) >
+                      DRAG_THRESHOLD;
+
+                  setDrag({ ...drag, movedFar: far, point });
+                  setDropTarget(far ? targetUnder(node.id, event.clientX, event.clientY) : null);
+                }}
+                onPointerUp={(event) => {
+                  if (drag?.id !== node.id || drag.pointerId !== event.pointerId) return;
+                  const moved = drag.movedFar;
+                  const target = moved ? targetUnder(node.id, event.clientX, event.clientY) : null;
+                  endDrag();
+                  if (!moved) return;
+
+                  /* Тащили — значит переход по ссылке не нужен, чем бы дело
+                     ни кончилось: и при связывании, и при промахе. */
+                  swallowClick.current = true;
+
+                  const to = target ? byId.get(target) : undefined;
+                  if (!to) return;
+                  const existing = manualLinkOf(node.id, to.id);
+                  setLinking({
+                    from: node,
+                    to,
+                    linkId: existing?.id ?? null,
+                    label: existing?.label ?? null,
+                  });
+                }}
+                onPointerCancel={() => endDrag()}
+                title={node.name}
+              >
+                <span className={styles.name}>{node.name}</span>
+                <MonoLabel
+                  size={9}
+                  tracking="0.08em"
+                  tone={node.status === 'open' ? 'accent' : 'faint'}
+                  className={styles.kind}
+                  block
+                >
+                  {NODE_KIND_LABEL[node.kind]}
+                </MonoLabel>
+              </Link>
+            );
+          })}
         </div>
       </div>
 
-      <div className={styles.canvas} ref={canvasRef}>
-        {/* README: SVG в процентных координатах, штрих не масштабируется. */}
-        <svg
-          className={styles.lines}
-          viewBox="0 0 100 100"
-          preserveAspectRatio="none"
-          aria-hidden="true"
-        >
-          {edges.map((edge) => {
-            const from = byId.get(edge.from);
-            const to = byId.get(edge.to);
-            if (!from || !to) return null;
-            const a = positionOf(from);
-            const b = positionOf(to);
-            return (
-              <line
-                key={edge.id}
-                x1={a.x}
-                y1={a.y}
-                x2={b.x}
-                y2={b.y}
-                stroke="var(--accent)"
-                strokeWidth={0.7}
-                strokeDasharray="3 2"
-                vectorEffect="non-scaling-stroke"
-              />
-            );
-          })}
-        </svg>
-
-        {nodes.map((node) => {
-          const position = positionOf(node);
-          const className = [
-            styles.node,
-            canWrite ? styles.draggable : undefined,
-            node.status === 'open' ? styles.nodeOpen : undefined,
-            node.status === 'dead_end' ? styles.nodeDead : undefined,
-            drag?.id === node.id && drag.movedFar ? styles.dragging : undefined,
-            dropTarget === node.id ? styles.dropTarget : undefined,
-          ]
-            .filter(Boolean)
-            .join(' ');
-
-          return (
-            <Link
-              key={node.id}
-              href={`/entities/${node.slug}`}
-              className={className}
-              style={{ left: `${position.x}%`, top: `${position.y}%` }}
-              ref={(element) => {
-                if (element) nodeRefs.current.set(node.id, element);
-                else nodeRefs.current.delete(node.id);
-              }}
-              /* Нативное перетаскивание ссылки перебило бы наш жест. */
-              draggable={false}
-              onDragStart={(event) => event.preventDefault()}
-              onClick={(event) => {
-                if (!swallowClick.current) return;
-                swallowClick.current = false;
-                event.preventDefault();
-              }}
-              onPointerDown={(event) => {
-                if (!canWrite || event.button !== 0) return;
-                /* Флаг мог остаться от жеста, который кончился мимо карточки
-                 * и клика не породил, — иначе он съел бы следующий переход. */
-                swallowClick.current = false;
-                try {
-                  event.currentTarget.setPointerCapture(event.pointerId);
-                } catch {
-                  /* пусто */
-                }
-                setDrag({
-                  id: node.id,
-                  pointerId: event.pointerId,
-                  startX: event.clientX,
-                  startY: event.clientY,
-                  movedFar: false,
-                  point: null,
-                });
-              }}
-              onPointerMove={(event) => {
-                if (drag?.id !== node.id || drag.pointerId !== event.pointerId) return;
-                const point = toPercent(event);
-                if (!point) return;
-
-                const far =
-                  drag.movedFar ||
-                  Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY) >
-                    DRAG_THRESHOLD;
-
-                setDrag({ ...drag, movedFar: far, point });
-                setDropTarget(far ? targetUnder(node.id, event.clientX, event.clientY) : null);
-              }}
-              onPointerUp={(event) => {
-                if (drag?.id !== node.id || drag.pointerId !== event.pointerId) return;
-                const moved = drag.movedFar;
-                const target = moved ? targetUnder(node.id, event.clientX, event.clientY) : null;
-                endDrag();
-                if (!moved) return;
-
-                /* Тащили — значит переход по ссылке не нужен, чем бы дело
-                   ни кончилось: и при связывании, и при промахе. */
-                swallowClick.current = true;
-
-                const to = target ? byId.get(target) : undefined;
-                if (!to) return;
-                const existing = manualLinkOf(node.id, to.id);
-                setLinking({
-                  from: node,
-                  to,
-                  linkId: existing?.id ?? null,
-                  label: existing?.label ?? null,
-                });
-              }}
-              onPointerCancel={() => endDrag()}
-            >
-              {node.name}
-              <MonoLabel
-                size={9}
-                tracking="0.08em"
-                tone={node.status === 'open' ? 'accent' : 'faint'}
-                className={styles.kind}
-                block
-              >
-                {NODE_KIND_LABEL[node.kind]}
-              </MonoLabel>
-            </Link>
-          );
-        })}
-      </div>
+      {/* Подсказка про жест стоит под доской: она про то, что уже видно
+          выше, и в шапке отбивала заголовок от ссылки на доску. */}
+      {canWrite ? (
+        <MonoLabel size={10} tracking="0.1em" className={styles.hint} block>
+          Перетащите карточку на карточку, чтобы связать
+        </MonoLabel>
+      ) : null}
 
       {linking ? (
         <LinkTypeDialog
