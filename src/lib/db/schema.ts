@@ -77,6 +77,10 @@ export const campaigns = pgTable('campaigns', {
   eyebrow: text('eyebrow'),
   /** Лид под заголовком Хроники. */
   tagline: text('tagline'),
+  /** Анонс следующей игры над лентой: «16 сентября (среда), старт в 20.00».
+   *  Свободная строка, а не date: за столом договариваются словами — время,
+   *  день недели, «после майских», — и календарной датой это не выражается. */
+  nextGame: text('next_game'),
 });
 
 export const sessions = pgTable(
