@@ -27,6 +27,43 @@
   color: var(--accent);
 }
 
+/* Стрелки листания и кнопка «+…» стоят в шапке блока одной группой. */
+.headTools {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+}
+
+/* Кнопка «+…» в шапке блока: тот же вид, что у кнопок на своих экранах, но
+ * мельче — рядом с mono-заголовком в 10px кнопка с 44-пиксельной тач-зоной
+ * распирает строку. Высота как у стрелок листания, чтобы шапка «Галереи»
+ * держала одну линию. */
+.blockAdd {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  height: 24px;
+  padding: 0 8px;
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  color: var(--ink-muted);
+  white-space: nowrap;
+  transition:
+    border-color var(--hover-fast),
+    color var(--hover-fast);
+}
+
+.blockAdd:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.blockAdd:disabled {
+  opacity: 0.4;
+}
+
 /* — Сессии — */
 .sessionRow {
   display: flex;
