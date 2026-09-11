@@ -2,16 +2,22 @@
 
 import { useCallback, useEffect, useRef, useState, useTransition } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { DropZone, Lightbox, MonoLabel } from '@/components/primitives';
 import { ConfirmDialog } from '@/components/editor/ConfirmDialog';
-import { deleteImage, uploadImages } from '@/lib/actions/images';
+import { deleteImage, renameImage, uploadImages } from '@/lib/actions/images';
 import { useQuickEntry } from '@/components/editor/QuickEntryProvider';
 import { numericDate } from '@/lib/dates';
 import { plural } from '@/lib/plural';
 import type { GalleryGroup, GalleryImage } from '@/lib/queries/gallery';
 import { NO_SESSION } from '@/lib/sessions-shared';
+import picker from '@/components/editor/Picker.module.css';
 import styles from './Gallery.module.css';
+
+/* Столько же стоит в renameImage: подпись живёт одной-двумя строками
+ * под плиткой, длиннее её всё равно не прочитать. */
+const CAPTION_LIMIT = 120;
 
 const KIND_LABEL: Record<GalleryImage['kind'], string> = {
   art: 'АРТ',
@@ -34,15 +40,18 @@ function meta(image: GalleryImage): string {
 
 function Tile({
   image,
-  canRemove,
+  canWrite,
   onOpen,
   onRemove,
+  onRename,
 }: {
   image: GalleryImage;
-  /** Крестик показываем только вошедшим — галерею собирают вместе. */
-  canRemove: boolean;
+  /** Крестик и правку подписи показываем только вошедшим — галерею
+   *  собирают вместе. */
+  canWrite: boolean;
   onOpen: () => void;
   onRemove: () => void;
+  onRename: (caption: string) => void;
 }) {
   const className = [styles.tile, image.isKey ? styles.key : undefined].filter(Boolean).join(' ');
 
@@ -73,12 +82,11 @@ function Tile({
 
       {/* Подпись обычного кадра лежит под изображением: поверх фотографии её
           было почти не разобрать. У ключевого кадра она остаётся плашкой —
-          там под ней тёмная подложка. */}
-      {!image.isKey && image.caption ? (
-        <span className={styles.caption}>{image.caption}</span>
-      ) : null}
+          там под ней тёмная подложка, — а под кадром вошедшему остаётся
+          строка правки. */}
+      <Caption image={image} canWrite={canWrite} onRename={onRename} />
 
-      {canRemove ? (
+      {canWrite ? (
         <button
           type="button"
           className={styles.remove}
@@ -90,6 +98,88 @@ function Tile({
         </button>
       ) : null}
     </div>
+  );
+}
+
+/* Подпись правит любой вошедший: перетащенному файлу она достаётся от его
+ * имени, а «IMG_2043» под плиткой не рассказывает ничего. Поле открывается
+ * на месте строки — тем же движением, что у достижений персонажа. */
+function Caption({
+  image,
+  canWrite,
+  onRename,
+}: {
+  image: GalleryImage;
+  canWrite: boolean;
+  onRename: (caption: string) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState('');
+  /* Escape закрывает поле, а закрытие уносит фокус — и onBlur сохранил бы
+   * ровно то, от чего человек отказался. */
+  const cancelled = useRef(false);
+
+  if (!canWrite) {
+    /* Гостю подпись — просто строка; у ключевого кадра она и так лежит
+     * плашкой поверх изображения, второй раз её показывать незачем. */
+    return !image.isKey && image.caption ? (
+      <span className={styles.caption}>{image.caption}</span>
+    ) : null;
+  }
+
+  if (editing) {
+    return (
+      <input
+        className={`${picker.field} ${styles.captionInput}`}
+        value={draft}
+        autoFocus
+        maxLength={CAPTION_LIMIT}
+        placeholder="Подпись"
+        aria-label="Подпись кадра"
+        onChange={(event) => setDraft(event.currentTarget.value)}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter') {
+            event.preventDefault();
+            event.currentTarget.blur();
+          }
+          if (event.key === 'Escape') {
+            cancelled.current = true;
+            setEditing(false);
+          }
+        }}
+        onBlur={(event) => {
+          setEditing(false);
+          if (cancelled.current) {
+            cancelled.current = false;
+            return;
+          }
+          onRename(event.currentTarget.value);
+        }}
+      />
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      className={styles.captionEdit}
+      title={image.caption ? 'Изменить подпись' : 'Добавить подпись'}
+      onClick={() => {
+        cancelled.current = false;
+        setDraft(image.caption ?? '');
+        setEditing(true);
+      }}
+    >
+      {/* У ключевого кадра подпись уже видна на плашке — под ним остаётся
+          только приглашение её поправить. */}
+      {image.isKey || !image.caption ? (
+        <MonoLabel size={9} tracking="0.06em" tone={image.caption ? 'faint' : 'disabled'} block>
+          {image.caption ? 'Изменить подпись' : 'Добавить подпись'}
+        </MonoLabel>
+      ) : (
+        <span className={styles.caption}>{image.caption}</span>
+      )}
+    </button>
   );
 }
 
@@ -155,6 +245,24 @@ export function GalleryBoard({
     [router],
   );
 
+  const rename = useCallback(
+    (image: GalleryImage, value: string) => {
+      const next = value.trim();
+      /* Ничего не поменялось — не тревожим сервер и не мигаем страницей. */
+      if (next === (image.caption ?? '')) return;
+
+      startTransition(async () => {
+        const result = await renameImage(image.id, next);
+        if (!result.ok) setError(result.error);
+        else {
+          setError(null);
+          router.refresh();
+        }
+      });
+    },
+    [router],
+  );
+
   /* Перетаскивание ловим на всей странице — README «Галерея». */
   useEffect(() => {
     if (!canWrite) return;
@@ -199,7 +307,20 @@ export function GalleryBoard({
         <section key={group.key} className={styles.page}>
           {grouped ? (
             <div className={styles.groupHead}>
-              <h2 className={styles.groupTitle}>{group.title}</h2>
+              {/* Заголовок группы ведёт на страницу сессии — тем же движением,
+                  что заголовки блоков «Хроники» ведут на свои экраны.
+                  У кадров вне игр вести некуда: там остаётся просто заголовок. */}
+              {group.sessionNumber ? (
+                <Link
+                  href={`/sessions/${group.sessionNumber}`}
+                  className={styles.groupLink}
+                  title="Открыть страницу сессии"
+                >
+                  <h2 className={styles.groupTitle}>{group.title}</h2>
+                </Link>
+              ) : (
+                <h2 className={styles.groupTitle}>{group.title}</h2>
+              )}
               <span className={styles.rule} />
               <MonoLabel size={10} tracking="0.1em">
                 {`${group.images.length} ${plural(group.images.length, 'изображение', 'изображения', 'изображений')} · ${numericDate(group.date)}`}
@@ -212,9 +333,10 @@ export function GalleryBoard({
               <Tile
                 key={image.id}
                 image={image}
-                canRemove={canWrite}
+                canWrite={canWrite}
                 onOpen={() => setLightbox({ group: groupIndex, index })}
                 onRemove={() => setRemoving(image)}
+                onRename={(caption) => rename(image, caption)}
               />
             ))}
           </div>

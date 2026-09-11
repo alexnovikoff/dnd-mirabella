@@ -36,6 +36,9 @@ export type GalleryGroup = {
   key: string;
   title: string;
   date: string | null;
+  /** Номер сессии — по нему заголовок группы ведёт на её страницу.
+   *  null у кадров вне игр и у плоского списка: вести там некуда. */
+  sessionNumber: number | null;
   images: GalleryImage[];
 };
 
@@ -83,6 +86,7 @@ export function getGallery(filter: GalleryFilter, grouped: boolean) {
             key: 'all',
             title: 'Все изображения',
             date: null,
+            sessionNumber: null,
             images: rows.map(toImage),
           },
         ] satisfies GalleryGroup[],
@@ -99,6 +103,7 @@ export function getGallery(filter: GalleryFilter, grouped: boolean) {
             ? `Сессия ${row.sessionNumber}${row.sessionTitle ? ` — ${row.sessionTitle}` : ''}`
             : 'Без сессии',
           date: row.sessionDate,
+          sessionNumber: row.sessionNumber,
           images: [],
         });
       }

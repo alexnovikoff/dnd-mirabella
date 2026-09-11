@@ -20,6 +20,13 @@
   font-size: 24px;
   font-weight: 600;
   color: var(--ink);
+  transition: color var(--hover-fast);
+}
+
+/* Заголовок группы — ссылка на сессию, как заголовки блоков «Хроники».
+   Подсветка на ховере та же, что у превью доски. */
+.groupLink:hover .groupTitle {
+  color: var(--accent);
 }
 
 .rule {
@@ -141,6 +148,38 @@
   overflow: hidden;
 }
 
+/* Подпись под кадром — кнопка: клик открывает поле правки на её месте,
+   поэтому строка не должна прыгать по высоте. У ключевого кадра тут стоит
+   не подпись, а приглашение её поправить: сама подпись видна на плашке. */
+.captionEdit {
+  display: block;
+  width: 100%;
+  min-height: 24px;
+  padding: 2px 0;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px dashed transparent;
+  text-align: left;
+  transition: border-color var(--hover-fast);
+}
+
+.captionEdit:hover {
+  border-bottom-color: var(--accent);
+}
+
+/* Ключевой кадр тянется на всю высоту своих двух строк, и строка правки
+   должна оставаться под ним, а не растягиваться вместе с ним. */
+.key .captionEdit {
+  flex: 0 0 auto;
+}
+
+.captionInput {
+  min-height: 24px;
+  padding: 3px 6px;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
 /* Полоса и переключатель группы над ней. */
 .dropBlock {
   display: flex;
@@ -229,6 +268,12 @@
   .chip {
     min-height: 44px;
     padding: 0 12px;
+  }
+
+  /* На сенсорном экране подпись — такая же цель для пальца, как кнопки. */
+  .captionEdit,
+  .captionInput {
+    min-height: 44px;
   }
 
   .grid {
