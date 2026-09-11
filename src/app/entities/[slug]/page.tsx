@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import { Screen } from '@/components/shell/Screen';
 import { LinkRow, MonoLabel, StatusPill } from '@/components/primitives';
 import { EntityEditor } from '@/components/entity/EntityEditor';
+import { EntityImages } from '@/components/entity/EntityImages';
 import { RelationsEditor } from '@/components/entity/RelationsEditor';
 import { getBoard, getNodeDetail } from '@/lib/queries/board';
 import { getLinkLabels } from '@/lib/queries/labels';
@@ -53,6 +54,15 @@ export default async function EntityPage({
           isCharacter: detail.isCharacter,
         }}
       />
+
+      {/* Изображения идут сразу под правкой: карточку узнают в лицо раньше,
+          чем читают её связи. */}
+      <div className={styles.block}>
+        <MonoLabel size={10} tracking="0.14em" block>
+          {`Изображения · ${detail.images.length}`}
+        </MonoLabel>
+        <EntityImages nodeId={detail.id} name={detail.name} images={detail.images} />
+      </div>
 
       <div className={styles.block}>
         <MonoLabel size={10} tracking="0.14em" block>

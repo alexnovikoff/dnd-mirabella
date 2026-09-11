@@ -2,7 +2,7 @@
 
 import { randomUUID } from 'node:crypto';
 import { revalidatePath } from 'next/cache';
-import { and, eq, ne } from 'drizzle-orm';
+import { and, eq, notInArray } from 'drizzle-orm';
 import { runDb } from '@/lib/db/client';
 import * as t from '@/lib/db/schema';
 import { CAMPAIGN_ID } from '@/lib/db/seed';
@@ -141,9 +141,10 @@ export async function deleteImage(imageId: string): Promise<ImageResult> {
         .select({ url: t.images.url, entryId: t.images.entryId, entryKind: t.entries.kind })
         .from(t.images)
         .leftJoin(t.entries, eq(t.entries.id, t.images.entryId))
-        /* Достижения снимает своё действие на странице персонажа: там
-         * и подтверждение своё, и revalidate другой. */
-        .where(and(eq(t.images.id, imageId), ne(t.images.kind, 'achievement')))
+        /* Кадры узлов снимают свои действия — на странице персонажа
+         * и на карточке сущности: там и подтверждение своё, и revalidate
+         * другой. */
+        .where(and(eq(t.images.id, imageId), notInArray(t.images.kind, t.NODE_IMAGE_KINDS)))
         .limit(1);
       if (!row) return { status: 'gone' };
 
@@ -188,9 +189,9 @@ export async function renameImage(imageId: string, caption: string): Promise<Ima
       .select({ entryId: t.images.entryId, entryKind: t.entries.kind })
       .from(t.images)
       .leftJoin(t.entries, eq(t.entries.id, t.images.entryId))
-      /* Достижения переименовывает своё действие на странице персонажа:
-       * там и подпись своя, и revalidate другой. */
-      .where(and(eq(t.images.id, imageId), ne(t.images.kind, 'achievement')))
+      /* Кадры узлов переименовывают свои действия — на странице персонажа
+       * и на карточке сущности: там и подпись своя, и revalidate другой. */
+      .where(and(eq(t.images.id, imageId), notInArray(t.images.kind, t.NODE_IMAGE_KINDS)))
       .limit(1);
     if (!row) return 'gone';
 

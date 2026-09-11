@@ -1,7 +1,7 @@
 /* Запросы экрана «Галерея»: лента изображений, сгруппированная по сессиям
  * либо плоская по дате. */
 
-import { and, desc, eq, ne } from 'drizzle-orm';
+import { and, desc, eq, notInArray } from 'drizzle-orm';
 import { runDb } from '@/lib/db/client';
 import * as t from '@/lib/db/schema';
 import { CAMPAIGN_ID } from '@/lib/db/seed';
@@ -19,8 +19,9 @@ export function isGalleryFilter(value: string | undefined): value is GalleryFilt
   return GALLERY_FILTERS.some((f) => f.id === value);
 }
 
-/** Всё, кроме достижений: те живут на странице персонажа. */
-export type GalleryKind = Exclude<t.ImageKind, 'achievement'>;
+/** Всё, кроме кадров, привязанных к узлу: достижения живут на странице
+ *  персонажа, кадры сущности — на её карточке. */
+export type GalleryKind = Exclude<t.ImageKind, t.NodeImageKind>;
 
 export type GalleryImage = {
   id: string;
@@ -44,9 +45,12 @@ export type GalleryGroup = {
 
 export function getGallery(filter: GalleryFilter, grouped: boolean) {
   return runDb(async (db) => {
-    /* Достижения — часть страницы персонажа, а не хроники кампании:
-     * фильтра под них здесь нет, и в «ВСЁ» они тоже не попадают. */
-    const conditions = [eq(t.images.campaignId, CAMPAIGN_ID), ne(t.images.kind, 'achievement')];
+    /* Достижения и кадры карточек — часть своих страниц, а не хроники
+     * кампании: фильтра под них здесь нет, и в «ВСЁ» они не попадают. */
+    const conditions = [
+      eq(t.images.campaignId, CAMPAIGN_ID),
+      notInArray(t.images.kind, t.NODE_IMAGE_KINDS),
+    ];
     if (filter !== 'all') conditions.push(eq(t.images.kind, filter));
 
     const rows = await db
@@ -129,7 +133,7 @@ function toImage(row: Row): GalleryImage {
     id: row.id,
     url: row.url,
     caption: row.caption,
-    /* Достижения отсечены условием выборки — сюда доходят только виды ленты. */
+    /* Кадры узлов отсечены условием выборки — сюда доходят только виды ленты. */
     kind: row.kind as GalleryKind,
     isKey: row.isKey,
     uploaderName: row.uploaderName,

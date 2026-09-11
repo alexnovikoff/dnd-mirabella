@@ -1,6 +1,6 @@
 /* Запросы страницы персонажа: метрики, его записи, связи, личная заметка. */
 
-import { and, desc, eq, inArray, ne, or, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, notInArray, or, sql } from 'drizzle-orm';
 import { runDb } from '@/lib/db/client';
 import * as t from '@/lib/db/schema';
 import { CAMPAIGN_ID } from '@/lib/db/seed';
@@ -131,8 +131,9 @@ export function getCharacter(slug: string, viewer: Viewer | null) {
       })
       .filter((entry): entry is NonNullable<typeof entry> => entry !== null);
 
-    /* Достижения из блока внизу страницы в эту сетку не идут: у них своя
-     * галерея, и считать их дважды не за что. */
+    /* Кадры, привязанные к узлу, в эту сетку не идут: у достижений внизу
+     * страницы и у карточек сущностей свои галереи, и считать их дважды
+     * не за что. */
     const images = row.playerId
       ? await db
           .select({ id: t.images.id, caption: t.images.caption, url: t.images.url })
@@ -141,7 +142,7 @@ export function getCharacter(slug: string, viewer: Viewer | null) {
             and(
               eq(t.images.campaignId, CAMPAIGN_ID),
               eq(t.images.uploaderId, row.playerId),
-              ne(t.images.kind, 'achievement'),
+              notInArray(t.images.kind, t.NODE_IMAGE_KINDS),
             ),
           )
           .orderBy(desc(t.images.createdAt))

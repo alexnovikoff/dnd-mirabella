@@ -1,7 +1,7 @@
 /* Запросы экрана «Доска связей»: узлы с координатами, ручные рёбра
  * и панель выбранного узла. */
 
-import { and, eq, or } from 'drizzle-orm';
+import { and, desc, eq, or } from 'drizzle-orm';
 import { runDb } from '@/lib/db/client';
 import * as t from '@/lib/db/schema';
 import { CAMPAIGN_ID } from '@/lib/db/seed';
@@ -120,6 +120,10 @@ export type NodeDetail = {
   aliases: string[];
   /** Персонаж партии: тип не меняется, удалить нельзя. */
   isCharacter: boolean;
+  /** Кадры, приложенные к самой карточке: их грузят и снимают прямо здесь.
+   *  Не путать с mentions.images — там счётчик записей-фото, где узел назван
+   *  в тексте. */
+  images: { id: string; url: string | null; caption: string | null; uploaderName: string | null }[];
   relations: {
     /** id ребра — по нему связь правят и удаляют. */
     linkId: string;
@@ -194,6 +198,20 @@ export function getNodeDetail(slug: string): Promise<NodeDetail | null> {
         sessionNumber: row.sessionNumber,
       }));
 
+    /* Кадры карточки: у достижений персонажа та же привязка к узлу,
+     * поэтому вид проверяем явно. */
+    const images = await db
+      .select({
+        id: t.images.id,
+        url: t.images.url,
+        caption: t.images.caption,
+        uploaderName: t.users.name,
+      })
+      .from(t.images)
+      .leftJoin(t.users, eq(t.users.id, t.images.uploaderId))
+      .where(and(eq(t.images.nodeId, node.id), eq(t.images.kind, 'entity')))
+      .orderBy(desc(t.images.createdAt), desc(t.images.id));
+
     const [character] = await db
       .select({ nodeId: t.characters.nodeId })
       .from(t.characters)
@@ -209,6 +227,7 @@ export function getNodeDetail(slug: string): Promise<NodeDetail | null> {
       description: node.description,
       aliases: node.aliases,
       isCharacter: Boolean(character),
+      images,
       relations,
       mentions: {
         moments,
