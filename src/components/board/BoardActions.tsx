@@ -15,8 +15,19 @@ import type { NodeKind } from '@/lib/db/schema';
 import picker from '@/components/editor/Picker.module.css';
 import styles from './Board.module.css';
 
-/** Типы, которые имеет смысл заводить с доски. Персонажи заводятся не здесь. */
-const KINDS: NodeKind[] = ['npc', 'location', 'faction', 'artifact', 'event', 'rumor', 'unknown'];
+/** Типы, которые имеет смысл заводить с доски. «Персонаж» здесь — обычный узел
+ *  графа: карточка персонажа партии (раса, класс, портрет, игрок) заводится
+ *  не здесь, и такой узел в «Партию» не попадёт. */
+const KINDS: NodeKind[] = [
+  'character',
+  'npc',
+  'location',
+  'faction',
+  'artifact',
+  'event',
+  'rumor',
+  'unknown',
+];
 
 const LEGEND = [
   { color: 'var(--status-open)', label: 'ОТКРЫТА' },
