@@ -11,10 +11,12 @@ import picker from '@/components/editor/Picker.module.css';
 import styles from './NoteCards.module.css';
 
 /** Что заводится из базы знаний: свободная заметка либо узел графа.
- *  Персонаж партии сюда не входит — он заводится не здесь. */
+ *  «Персонаж» здесь — тип узла; карточка персонажа партии с расой, классом
+ *  и портретом заводится не здесь. */
 export type KbItemType = 'note' | NodeKind;
 
 const NODE_KINDS: NodeKind[] = [
+  'character',
   'npc',
   'location',
   'faction',
