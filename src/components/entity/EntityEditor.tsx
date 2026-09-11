@@ -12,7 +12,20 @@ import type { NodeKind, NodeStatus } from '@/lib/db/schema';
 import picker from '@/components/editor/Picker.module.css';
 import styles from './EntityEditor.module.css';
 
-const KINDS: NodeKind[] = ['npc', 'location', 'faction', 'artifact', 'event', 'rumor', 'unknown'];
+/** Типы, между которыми переключается обычный узел. «Персонаж» в списке
+ *  есть: узел такого типа заводится с доски и из базы знаний, и без него
+ *  select не показывал бы собственный тип узла. Персонажа партии это не
+ *  касается: у него ниже единственный вариант, и тип ему держит сервер. */
+const KINDS: NodeKind[] = [
+  'character',
+  'npc',
+  'location',
+  'faction',
+  'artifact',
+  'event',
+  'rumor',
+  'unknown',
+];
 
 const STATUSES: { value: string; label: string }[] = [
   { value: '', label: 'БЕЗ СТАТУСА' },
