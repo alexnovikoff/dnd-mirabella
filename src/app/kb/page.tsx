@@ -74,13 +74,13 @@ export default async function KnowledgeBasePage({
       }
     >
       <div className={styles.list}>
+        <AddKbItemButton defaultType={defaultType} />
         {cards.map((card) => (
           <RumorNote key={card.id} card={card} tab={active} />
         ))}
         {showNotes
           ? notes.map((note) => <FreeNoteCard key={note.id} note={note} index={index} />)
           : null}
-        <AddKbItemButton defaultType={defaultType} />
       </div>
     </Screen>
   );
