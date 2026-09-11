@@ -33,6 +33,15 @@
   text-decoration: line-through;
 }
 
+/* Мета-ряд карточки: тип узла и статус в одну строку, с переносом на узких
+ * экранах. Тип приглушён, статус несёт свой цвет. */
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 5px;
+}
+
 .chips {
   display: flex;
   flex-wrap: wrap;

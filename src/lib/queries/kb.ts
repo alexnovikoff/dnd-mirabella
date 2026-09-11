@@ -26,6 +26,8 @@ export type RumorCard = {
   id: string;
   name: string;
   slug: string;
+  /** Тип узла — мета под названием карточки: NPC, ЛОКАЦИЯ и так далее. */
+  kind: t.NodeKind;
   status: t.NodeStatus | null;
   links: number;
   /** Чипы связанных сущностей под карточкой. */
@@ -48,6 +50,7 @@ export function getRumors(): Promise<RumorCard[]> {
         id: t.nodes.id,
         name: t.nodes.name,
         slug: t.nodes.slug,
+        kind: t.nodes.kind,
         status: t.nodes.status,
         links: sql<number>`count(${t.links.id})::int`,
       })
@@ -131,6 +134,7 @@ export function getNodesByKind(kind: t.NodeKind): Promise<RumorCard[]> {
         id: t.nodes.id,
         name: t.nodes.name,
         slug: t.nodes.slug,
+        kind: t.nodes.kind,
         status: t.nodes.status,
         links: sql<number>`count(${t.links.id})::int`,
       })

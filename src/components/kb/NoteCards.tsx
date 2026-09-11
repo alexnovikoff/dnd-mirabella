@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { MonoLabel, STATUS_META, StatusPill } from '@/components/primitives';
 import { WikiText } from '@/components/wiki/WikiText';
+import { NODE_KIND_LABEL } from '@/lib/nodes';
 import type { FreeNote, RumorCard } from '@/lib/queries/kb';
 import styles from './NoteCards.module.css';
 
@@ -24,7 +25,14 @@ export function RumorNote({ card, tab }: { card: RumorCard; tab?: string }) {
       <span className={meta?.struck ? `${styles.name} ${styles.struck}` : styles.name}>
         {card.name}
       </span>
-      {card.status ? <StatusPill status={card.status} links={card.links} /> : null}
+      {/* Мета-ряд: тип узла и статус через «·», как на доске и в макете.
+       * Тип есть у каждого узла, статус — не у каждого. */}
+      <span className={styles.meta}>
+        <MonoLabel size={9} tracking="0.08em" tone="muted">
+          {card.status ? `${NODE_KIND_LABEL[card.kind]} ·` : NODE_KIND_LABEL[card.kind]}
+        </MonoLabel>
+        {card.status ? <StatusPill status={card.status} links={card.links} /> : null}
+      </span>
       {card.related.length > 0 ? (
         <span className={styles.chips}>
           {card.related.map((node) => (
