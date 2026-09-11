@@ -14,6 +14,11 @@ export type UploadResult = { ok: true; saved: number } | { ok: false; error: str
 
 export type ImageResult = { ok: true } | { ok: false; error: string };
 
+/* Подпись живёт одной-двумя строками под плиткой: длиннее её всё равно
+ * не прочитать. То же число стоит в maxLength поля правки — и у достижений,
+ * которые лежат в той же таблице. */
+const CAPTION_LIMIT = 120;
+
 /** Фото из шита быстрой записи: файл, подпись и одна запись под них.
  *  Отличается от uploadImages тем, что кадр приходит вместе с записью,
  *  а не отдельным перетаскиванием на «Галерею». */
@@ -154,6 +159,50 @@ export async function deleteImage(imageId: string): Promise<ImageResult> {
   if (outcome.status === 'gone') return { ok: false, error: 'Кадр уже убрали' };
 
   await removeUpload(outcome.url);
+
+  revalidatePath('/');
+  revalidatePath('/gallery');
+  revalidatePath('/sessions/[number]', 'page');
+  return { ok: true };
+}
+
+/** Переписать подпись кадра. Права те же, что на снятие: галерею собирают
+ *  вместе, и подпись чужого кадра правит любой вошедший. Править есть что:
+ *  перетащенному файлу подпись достаётся от его имени, а «IMG_2043»
+ *  под плиткой не рассказывает ничего.
+ *
+ *  Запись типа «фото» — это и есть кадр (ровно поэтому deleteImage уносит её
+ *  следом), и заголовок в ленте у неё тот же, что подпись под плиткой:
+ *  расходиться им нельзя. Момент, к которому кадр только приложен, живёт
+ *  своей жизнью — его заголовок остаётся как был.
+ */
+export async function renameImage(imageId: string, caption: string): Promise<ImageResult> {
+  await requireViewer();
+
+  /* Пустая подпись — это «без подписи», а не пустая строка: «Галерея»
+   * и лайтбокс различают их. */
+  const next = caption.trim().slice(0, CAPTION_LIMIT) || null;
+
+  const outcome = await runDb(async (db): Promise<'gone' | 'renamed'> => {
+    const [row] = await db
+      .select({ entryId: t.images.entryId, entryKind: t.entries.kind })
+      .from(t.images)
+      .leftJoin(t.entries, eq(t.entries.id, t.images.entryId))
+      /* Достижения переименовывает своё действие на странице персонажа:
+       * там и подпись своя, и revalidate другой. */
+      .where(and(eq(t.images.id, imageId), ne(t.images.kind, 'achievement')))
+      .limit(1);
+    if (!row) return 'gone';
+
+    await db.update(t.images).set({ caption: next }).where(eq(t.images.id, imageId));
+    if (row.entryId && row.entryKind === 'image') {
+      await db.update(t.entries).set({ title: next }).where(eq(t.entries.id, row.entryId));
+    }
+
+    return 'renamed';
+  });
+
+  if (outcome === 'gone') return { ok: false, error: 'Кадр уже убрали' };
 
   revalidatePath('/');
   revalidatePath('/gallery');

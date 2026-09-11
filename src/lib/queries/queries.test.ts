@@ -235,6 +235,40 @@ describe('getBoard', () => {
   });
 });
 
+describe('getGallery', () => {
+  /* Заголовок группы ведёт на страницу сессии — номер для ссылки берут
+   * из самой группы, а не выковыривают из её названия. */
+  it('группа сессии знает свой номер', async () => {
+    const gallery = await getGallery('all', true);
+    expect(gallery.groups.map((group) => [group.title, group.sessionNumber])).toEqual([
+      ['Сессия 2', 2],
+      ['Сессия 1 — Первая', 1],
+    ]);
+  });
+
+  it('у группы «Без сессии» номера нет — вести некуда', async () => {
+    await runDb(async (db) => {
+      await db.insert(t.images).values({
+        id: 'i-loose',
+        campaignId: FIXTURE.campaignId,
+        url: null,
+        caption: 'Карта мира',
+        uploaderId: FIXTURE.users.player,
+        kind: 'map',
+      });
+    });
+
+    const gallery = await getGallery('all', true);
+    const loose = gallery.groups.find((group) => group.title === 'Без сессии');
+    expect(loose?.sessionNumber).toBeNull();
+  });
+
+  it('плоский список номера не несёт — в нём кадры всех игр разом', async () => {
+    const gallery = await getGallery('all', false);
+    expect(gallery.groups[0].sessionNumber).toBeNull();
+  });
+});
+
 describe('достижения персонажа', () => {
   it('приходят с подписью и автором загрузки', async () => {
     const character = await getCharacter('geroy', null);
