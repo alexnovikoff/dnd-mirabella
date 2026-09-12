@@ -210,6 +210,57 @@ a.cell:hover {
   white-space: pre-wrap;
 }
 
+/* — Имена из [[скобок]], которым не нашлось сущности — */
+.resolve {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-self: stretch;
+}
+
+.resolveNote {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink-body-2);
+}
+
+.resolveRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.resolveButton {
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--accent);
+  padding: 6px 10px;
+  min-height: 44px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  transition:
+    background var(--hover-fast),
+    color var(--hover-fast);
+}
+
+.resolveButton:hover {
+  background: var(--accent);
+  color: var(--accent-on-warm);
+}
+
+.resolveButton:disabled {
+  opacity: 0.5;
+}
+
 @media (max-width: 767px) {
   .grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));

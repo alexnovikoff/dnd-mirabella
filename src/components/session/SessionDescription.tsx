@@ -7,7 +7,11 @@ import { ConfirmDialog } from '@/components/editor/ConfirmDialog';
 import { WikiTextarea } from '@/components/editor/WikiTextarea';
 import { useQuickEntry } from '@/components/editor/QuickEntryProvider';
 import { createDraftNode } from '@/lib/actions/entries';
-import { deleteSessionDescription, saveSessionDescription } from '@/lib/actions/sessions';
+import {
+  deleteSessionDescription,
+  resolveSessionMention,
+  saveSessionDescription,
+} from '@/lib/actions/sessions';
 import type { PickerNode } from '@/lib/queries/nodes';
 import styles from './Session.module.css';
 
@@ -37,6 +41,10 @@ export function SessionDescription({
   const [draft, setDraft] = useState(description ?? '');
   const [error, setError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
+  /* Имена из [[скобок]], которым не нашлось сущности: текст сохранён, но
+   * рёбер графа по ним нет. Пока список висит, его можно разобрать кнопкой
+   * «создать» — потом пересчёт случится только при следующей правке. */
+  const [unresolved, setUnresolved] = useState<string[]>([]);
   const [pending, startTransition] = useTransition();
 
   const errorLine = error ? (
@@ -44,6 +52,39 @@ export function SessionDescription({
       {error}
     </MonoLabel>
   ) : null;
+
+  const resolveBlock =
+    unresolved.length > 0 ? (
+      <div className={styles.resolve}>
+        <p className={styles.resolveNote}>
+          Для этих имён нет сущности, поэтому связи в графе не появились. Заведите их — или
+          оставьте, ссылки останутся простым текстом.
+        </p>
+        {unresolved.map((name) => (
+          <div key={name} className={styles.resolveRow}>
+            <span>{name}</span>
+            <button
+              type="button"
+              className={styles.resolveButton}
+              disabled={pending}
+              onClick={() =>
+                startTransition(async () => {
+                  const result = await resolveSessionMention(number, name);
+                  if (!result.ok) {
+                    setError(result.error);
+                    return;
+                  }
+                  setUnresolved(result.unresolved);
+                  router.refresh();
+                })
+              }
+            >
+              СОЗДАТЬ
+            </button>
+          </div>
+        ))}
+      </div>
+    ) : null;
 
   if (!open) {
     /* Разлогиненному пустой блок с недоступной кнопкой читался бы как
@@ -65,6 +106,7 @@ export function SessionDescription({
         )}
 
         {errorLine}
+        {resolveBlock}
 
         {canWrite ? (
           <div className={styles.buttons}>
@@ -110,6 +152,7 @@ export function SessionDescription({
                   return;
                 }
                 setDraft('');
+                setUnresolved([]);
                 router.refresh();
               })
             }
@@ -132,6 +175,7 @@ export function SessionDescription({
             setError(result.error);
             return;
           }
+          setUnresolved(result.unresolved);
           setOpen(false);
           router.refresh();
         });

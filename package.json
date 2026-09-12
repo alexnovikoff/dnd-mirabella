@@ -19,6 +19,7 @@
     "db:reset": "rm -rf .pglite && DATABASE_URL= pnpm db:setup",
     "db:setup": "tsx --env-file-if-exists=.env src/lib/db/setup.ts",
     "db:resync-sessions": "tsx --env-file-if-exists=.env scripts/resync-sessions.ts",
+    "db:resync-session-links": "tsx --env-file-if-exists=.env scripts/resync-session-links.ts",
     "auth:password": "tsx --env-file-if-exists=.env scripts/set-password.ts",
     "test": "vitest run"
   },

@@ -127,6 +127,7 @@ export default async function BoardPage({
                 </MonoLabel>
                 <p className={styles.mentions}>
                   {detail.mentions.moments.length === 0 &&
+                  detail.mentions.sessions.length === 0 &&
                   detail.mentions.notes === 0 &&
                   detail.mentions.images === 0
                     ? 'Узел ещё нигде не упомянут.'
@@ -137,6 +138,16 @@ export default async function BoardPage({
                                 moment.sessionNumber
                                   ? `С${moment.sessionNumber} «${moment.title ?? 'без заголовка'}»`
                                   : `«${moment.title ?? 'без заголовка'}»`,
+                              )
+                              .join(', ')}.`
+                          : null,
+                        /* Пересказ игры — такой же источник ссылок, как момент. */
+                        detail.mentions.sessions.length > 0
+                          ? `Сессии: ${detail.mentions.sessions
+                              .map((session) =>
+                                session.title
+                                  ? `С${session.number} «${session.title}»`
+                                  : `С${session.number}`,
                               )
                               .join(', ')}.`
                           : null,

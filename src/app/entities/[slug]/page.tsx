@@ -82,7 +82,9 @@ export default async function EntityPage({
         <MonoLabel size={10} tracking="0.14em" block>
           Упоминания
         </MonoLabel>
-        {detail.mentions.moments.length === 0 && detail.mentions.notes === 0 ? (
+        {detail.mentions.moments.length === 0 &&
+        detail.mentions.sessions.length === 0 &&
+        detail.mentions.notes === 0 ? (
           <MonoLabel size={9} tracking="0.08em" tone="faint">
             Сущность ещё нигде не упомянута
           </MonoLabel>
@@ -93,6 +95,16 @@ export default async function EntityPage({
                 key={moment.id}
                 name={moment.title ?? 'Без заголовка'}
                 label={moment.sessionNumber ? `С${moment.sessionNumber}` : undefined}
+              />
+            ))}
+            {/* Ссылка из пересказа игры: ведёт на саму сессию — там текст,
+                в котором сущность названа. */}
+            {detail.mentions.sessions.map((session) => (
+              <LinkRow
+                key={`session-${session.number}`}
+                name={session.title ?? `Сессия ${session.number}`}
+                label={`С${session.number}`}
+                href={`/sessions/${session.number}`}
               />
             ))}
             {detail.mentions.notes > 0 ? (
