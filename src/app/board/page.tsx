@@ -40,7 +40,8 @@ export default async function BoardPage({
           selectedSlug={selectedSlug}
         />
 
-        {/* <768px граф заменяется списком — README «Доска связей». */}
+        {/* <768px под графом идёт список узлов: оглавление доски, которую
+            на телефоне листают пальцем. */}
         <div className={styles.list}>
           {board.nodes.map((item) => (
             <LinkRow
