@@ -27,8 +27,10 @@ const KINDS: NodeKind[] = [
   'unknown',
 ];
 
+/* «НЕ ЗАДАН», а не «БЕЗ СТАТУСА»: список стоит в паре с типом в колонке
+ * шириной 300px, и длинная подпись в него не влезала целиком. */
 const STATUSES: { value: string; label: string }[] = [
-  { value: '', label: 'БЕЗ СТАТУСА' },
+  { value: '', label: 'НЕ ЗАДАН' },
   { value: 'open', label: 'ОТКРЫТА' },
   { value: 'resolved', label: 'РАСКРЫТА' },
   { value: 'dead_end', label: 'ТУПИК' },
@@ -121,19 +123,21 @@ export function EntityEditor({
         });
       }}
     >
-      <div className={styles.row}>
-        <label className={styles.field}>
-          <MonoLabel size={9} tracking="0.14em" block>
-            Название
-          </MonoLabel>
-          <input
-            className={picker.field}
-            value={name}
-            onChange={(e) => setName(e.currentTarget.value)}
-            required
-          />
-        </label>
+      <label className={styles.field}>
+        <MonoLabel size={9} tracking="0.14em" block>
+          Название
+        </MonoLabel>
+        <input
+          className={picker.field}
+          value={name}
+          onChange={(e) => setName(e.currentTarget.value)}
+          required
+        />
+      </label>
 
+      {/* Тип и статус — короткие списки одного порядка, и читаются они парой.
+          Название забрало бы у них всю строку, поэтому стоит выше отдельно. */}
+      <div className={styles.row}>
         <label className={styles.field}>
           <MonoLabel size={9} tracking="0.14em" block>
             Тип
@@ -157,7 +161,7 @@ export function EntityEditor({
           </select>
         </label>
 
-        <label className={styles.field}>
+        <label className={`${styles.field} ${styles.status}`}>
           <MonoLabel size={9} tracking="0.14em" block>
             Статус
           </MonoLabel>
@@ -225,9 +229,10 @@ export function EntityEditor({
             type="button"
             className={styles.danger}
             disabled={pending}
+            title="Удалить сущность"
             onClick={() => setConfirming(true)}
           >
-            УДАЛИТЬ СУЩНОСТЬ
+            УДАЛИТЬ
           </button>
         ) : null}
       </div>

@@ -393,6 +393,35 @@
   gap: 6px;
 }
 
+/* «Связи» и «Упоминания» отступают от карточки узла: выше — имя, описание,
+ * кадр и правка, и вплотную список связей читался их продолжением. Отступ
+ * заметно больше промежутка между самими блоками — это шов панели, а не
+ * ещё один зазор. */
+.panelDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-top: 34px;
+}
+
+/* Кадр карточки прямо в панели: узел узнают в лицо, не уходя с доски.
+ * Плитка та же, что в блоке изображений сущности, — кадр вписан целиком,
+ * потому что сюда несут и портреты NPC, и широкие виды локаций. */
+.preview {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  width: 100%;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--hatch);
+  overflow: hidden;
+  --hatch-step: 6px;
+}
+
+.previewPhoto {
+  object-fit: contain;
+}
+
 /* Действия над выбранным узлом прижаты к низу панели. */
 .panelActions {
   display: flex;

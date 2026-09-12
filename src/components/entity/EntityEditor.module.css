@@ -62,10 +62,12 @@
   padding: 12px 14px;
 }
 
+/* Тип и статус стоят парой и не переносятся: в панели узла шириной 300px
+ * два списка по 120px не помещались рядом, и статус уезжал на свою строку. */
 .row {
   display: flex;
   gap: 8px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .field {
@@ -74,6 +76,17 @@
   gap: 2px;
   flex: 1;
   min-width: 120px;
+}
+
+/* Ширину полей в строке делит сам flex — минимума у них нет. Статусу доля
+ * уже: его пункты короче названий типов, и лишнее место он забирал у «Тип»,
+ * где стоит «Неизвестно». */
+.row .field {
+  min-width: 0;
+}
+
+.row .status {
+  flex-grow: 0.92;
 }
 
 /* Поля внутри формы правки ниже обычных: панель узла всего 300px,
@@ -86,24 +99,45 @@
   font-size: 13px;
 }
 
-.textarea {
-  min-height: 58px;
+/* Список в паре на пункт мельче и с полями поуже: в панели узла на два списка
+ * приходится 229px, и на общей мерке выше самые длинные пункты —
+ * «Неизвестно» и «РАСКРЫТА» — обрезались на середине слова. */
+.form .row select {
+  padding-left: 6px;
+  padding-right: 6px;
+  font-size: 12px;
+}
+
+/* Описание — единственное поле, где пишут фразами, а не словом: ему нужно
+ * показывать несколько строк разом, иначе правка идёт вслепую. Селектор
+ * с .form обязателен: общая мерка полей выше перебивает голый класс. */
+.form .textarea {
+  min-height: 112px;
   resize: vertical;
   line-height: 1.5;
 }
 
+/* Три кнопки одной строкой и с отбивкой от «Описания»: вплотную к полю они
+ * читались его продолжением, а перенос уводил «Удалить» на свою строку. */
 .buttons {
   display: flex;
   gap: 8px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  margin-top: 12px;
 }
 
+.buttons button {
+  white-space: nowrap;
+}
+
+/* Кнопки формы чуть крупнее соседней «Править», но растут вверх и вниз:
+ * втроём они стоят одной строкой в 229px, и вширь там взять уже нечего. */
 .submit {
   background: var(--accent);
   border: 1px solid var(--accent);
   border-radius: var(--radius);
   color: var(--accent-on-warm);
-  padding: 7px 12px;
+  padding: 7px 9px;
   font-family: var(--font-mono);
   font-size: 10px;
   letter-spacing: 0.08em;
@@ -119,7 +153,7 @@
   border: 1px solid var(--rule);
   border-radius: var(--radius);
   color: var(--ink-muted);
-  padding: 7px 12px;
+  padding: 7px 9px;
   font-family: var(--font-mono);
   font-size: 10px;
   letter-spacing: 0.08em;
@@ -131,7 +165,7 @@
   border: 1px solid var(--accent);
   border-radius: var(--radius);
   color: var(--accent);
-  padding: 7px 12px;
+  padding: 7px 9px;
   font-family: var(--font-mono);
   font-size: 10px;
   letter-spacing: 0.08em;
