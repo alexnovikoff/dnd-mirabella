@@ -45,12 +45,17 @@ export default async function SessionPage({ params }: { params: Promise<{ number
           .filter(Boolean)
           .join(' · ') || undefined
       }
-      aside={
+      /* Вверх, к списку, и вбок, в галерею: те же текстовые ссылки над
+         заголовком, что и на карточке сущности. Соседние сессии — ниже:
+         это перелистывание, а не выход из карточки. */
+      back={{ href: '/sessions', label: 'К списку сессий' }}
+      links={[{ href: '/gallery', label: 'к Галерее' }]}
+    >
+      <div className={styles.toolbar}>
+        {/* Перелистывание прижато к левому краю: кнопка соседней сессии стоит
+            на одном и том же месте, есть у неё пара или нет. Ряд остаётся и
+            когда листать некуда — правым краем он держит кнопку правки. */}
         <div className={styles.nav}>
-          {/* Соседние сессии листают хронику вбок, эта ссылка — вверх, к списку. */}
-          <Link href="/sessions" className={styles.navLink} title="Вернуться к списку сессий">
-            К списку сессий
-          </Link>
           {session.previous ? (
             <Link href={`/sessions/${session.previous}`} className={styles.navLink}>
               ← С{session.previous}
@@ -62,21 +67,19 @@ export default async function SessionPage({ params }: { params: Promise<{ number
             </Link>
           ) : null}
         </div>
-      }
-    >
-      <div className={styles.header}>
-        <div className={styles.nav}>
-          <Metric value={moments.length} label="МОМЕНТОВ" />
-          <Metric value={quotes.length} label="ЦИТАТ" />
-          <Metric value={notes.length} label="ЗАМЕТОК" />
-          <Metric value={session.images.length} label="КАДРОВ" />
-        </div>
         <SessionEditor
           number={session.number}
           title={session.title}
           date={session.date}
           location={session.location}
         />
+      </div>
+
+      <div className={styles.nav}>
+        <Metric value={moments.length} label="МОМЕНТОВ" />
+        <Metric value={quotes.length} label="ЦИТАТ" />
+        <Metric value={notes.length} label="ЗАМЕТОК" />
+        <Metric value={session.images.length} label="КАДРОВ" />
       </div>
 
       <SessionDescription number={session.number} description={session.description} nodes={nodes}>

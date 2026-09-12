@@ -22,9 +22,17 @@
   gap: 6px;
 }
 
-/* Ссылка возврата к списку — строкой над заголовком карточки. */
-.back {
+/* Строка ссылок над заголовком карточки: возврат к списку и соседние
+ * разделы. Обводки нет — это текст, а не кнопки. */
+.crumbs {
   align-self: flex-start;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.back {
   padding: 2px 0;
   font-family: var(--font-mono);
   font-size: 10px;
