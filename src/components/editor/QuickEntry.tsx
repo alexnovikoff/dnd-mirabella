@@ -387,6 +387,16 @@ export function QuickEntry({
                   className={styles.caption}
                   value={caption}
                   onChange={(e) => setCaption(e.currentTarget.value)}
+                  /* Подпись — единственная строка в форме кадра, и Enter в ней
+                   * ждут как «готово»: в обычной форме он нажал бы главную
+                   * кнопку. Делаем ровно это — пока прошлая отправка не
+                   * закончилась, кнопки выключены, и Enter тоже молчит. */
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !pending) {
+                      e.preventDefault();
+                      submit(true);
+                    }
+                  }}
                   placeholder="Подпись к кадру (необязательно)…"
                 />
               </>
