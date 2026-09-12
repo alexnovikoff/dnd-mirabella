@@ -2,14 +2,7 @@ import { Screen } from '@/components/shell/Screen';
 import { FilterChips } from '@/components/primitives';
 import { AddKbItemButton } from '@/components/kb/AddKbItemButton';
 import { FreeNoteCard, RumorNote } from '@/components/kb/NoteCards';
-import {
-  getFreeNotes,
-  getNodesByKind,
-  getRumors,
-  isKbTab,
-  KB_TABS,
-  mergeKbCards,
-} from '@/lib/queries/kb';
+import { getFreeNotes, getNodeCards, getRumors, isKbTab, kbCards, KB_TABS } from '@/lib/queries/kb';
 import { getNodeIndex } from '@/lib/queries/chronicle';
 import { getViewer } from '@/lib/viewer';
 import { plural } from '@/lib/plural';
@@ -24,22 +17,14 @@ export default async function KnowledgeBasePage({
   const active = isKbTab(tab) ? tab : 'all';
   const viewer = await getViewer();
 
-  const [rumors, notes, npcs, locations, index] = await Promise.all([
+  const [rumors, notes, nodes, index] = await Promise.all([
     getRumors(),
     getFreeNotes(viewer),
-    getNodesByKind('npc'),
-    getNodesByKind('location'),
+    getNodeCards(),
     getNodeIndex(),
   ]);
 
-  const cards =
-    active === 'npc'
-      ? npcs
-      : active === 'locations'
-        ? locations
-        : active === 'all'
-          ? mergeKbCards(rumors, npcs, locations)
-          : rumors;
+  const cards = kbCards(active, rumors, nodes);
   /* Свободные заметки живут только в «Заметках» и во «Всём». */
   const showNotes = active === 'all' || active === 'notes';
   const count = cards.length + (showNotes ? notes.length : 0);

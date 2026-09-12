@@ -8,7 +8,7 @@ import { getBoard } from './board';
 import { getCharacter } from './characters';
 import { getFeed, getRecentSessions, getStatusNodes } from './chronicle';
 import { getGallery } from './gallery';
-import { getFreeNotes, getRumors } from './kb';
+import { getFreeNotes, getNodeCards, getRumors, kbCards } from './kb';
 import { getQuotes, getRandomQuote } from './quotes';
 import { findSessionId, getSessionOptions, resolveSessionId } from './sessions';
 
@@ -107,6 +107,59 @@ describe('getStatusNodes и getRumors', () => {
 
   it('узлы без статуса в наводки не попадают', async () => {
     expect((await getRumors()).map((row) => row.name)).not.toContain('Герой');
+  });
+});
+
+describe('База знаний: состав табов', () => {
+  /* Регрессия: список собирался из белого списка «наводки + NPC + локации»,
+   * и узел другого типа без статуса не попадал ни в один таб — хотя кнопка
+   * «+ Добавить» на этой же странице заводит все восемь типов. */
+  it('во «Всё» попадает узел без статуса и вне NPC и локаций', async () => {
+    const [rumors, nodes] = await Promise.all([getRumors(), getNodeCards()]);
+    expect(kbCards('all', rumors, nodes).map((card) => card.name)).toContain('Герой');
+  });
+
+  it('во «Всё» попадает свежезаведённый узел любого типа', async () => {
+    await runDb((db) =>
+      db.insert(t.nodes).values({
+        id: 'n-guild',
+        campaignId: FIXTURE.campaignId,
+        kind: 'faction',
+        name: 'Гильдия',
+        slug: 'gildiya',
+        aliases: [],
+      }),
+    );
+
+    const [rumors, nodes] = await Promise.all([getRumors(), getNodeCards()]);
+    expect(kbCards('all', rumors, nodes).map((card) => card.name)).toContain('Гильдия');
+  });
+
+  it('во «Всё» наводки идут первыми, остальные по имени', async () => {
+    const [rumors, nodes] = await Promise.all([getRumors(), getNodeCards()]);
+    expect(kbCards('all', rumors, nodes).map((card) => card.name)).toEqual([
+      'Таверна',
+      'Призрак',
+      'Тупик',
+      'Герой',
+    ]);
+  });
+
+  it('узел со статусом не задваивается', async () => {
+    const [rumors, nodes] = await Promise.all([getRumors(), getNodeCards()]);
+    const names = kbCards('all', rumors, nodes).map((card) => card.name);
+    expect(names.filter((name) => name === 'Таверна')).toHaveLength(1);
+  });
+
+  it('подтабы остаются фильтром по типу', async () => {
+    const nodes = await getNodeCards();
+    expect(kbCards('npc', [], nodes).map((card) => card.name)).toEqual(['Призрак']);
+    expect(kbCards('locations', [], nodes).map((card) => card.name)).toEqual(['Таверна']);
+  });
+
+  it('таб «Заметки» показывает только наводки', async () => {
+    const [rumors, nodes] = await Promise.all([getRumors(), getNodeCards()]);
+    expect(kbCards('notes', rumors, nodes).map((card) => card.name)).not.toContain('Герой');
   });
 });
 

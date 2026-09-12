@@ -126,8 +126,9 @@ export function getFreeNotes(viewer: Viewer | null): Promise<FreeNote[]> {
   });
 }
 
-/** Подтабы NPC и Локации: узлы соответствующего типа со счётчиком связей. */
-export function getNodesByKind(kind: t.NodeKind): Promise<RumorCard[]> {
+/** Карточки узлов со счётчиком связей: без аргумента — все узлы кампании,
+ *  с типом — только узлы этого типа (подтабы NPC и Локации). */
+export function getNodeCards(kind?: t.NodeKind): Promise<RumorCard[]> {
   return runDb(async (db) => {
     const rows = await db
       .select({
@@ -140,7 +141,7 @@ export function getNodesByKind(kind: t.NodeKind): Promise<RumorCard[]> {
       })
       .from(t.nodes)
       .leftJoin(t.links, eq(t.links.toNodeId, t.nodes.id))
-      .where(and(eq(t.nodes.campaignId, CAMPAIGN_ID), eq(t.nodes.kind, kind)))
+      .where(and(eq(t.nodes.campaignId, CAMPAIGN_ID), kind ? eq(t.nodes.kind, kind) : undefined))
       .groupBy(t.nodes.id)
       .orderBy(t.nodes.name);
 
@@ -148,9 +149,9 @@ export function getNodesByKind(kind: t.NodeKind): Promise<RumorCard[]> {
   });
 }
 
-/** Таб «Всё»: наводки, NPC и локации одним списком. Узел со статусом попадает
- *  и в наводки, и в свой тип — в объединении он остаётся один раз, в порядке
- *  первой группы (наводки идут по статусу, остальные по имени). */
+/** Объединение без повторов: узел со статусом попадает и в наводки, и в общий
+ *  список узлов — в объединении он остаётся один раз, в порядке первой группы
+ *  (наводки идут по статусу, остальные по имени). */
 export function mergeKbCards(...groups: RumorCard[][]): RumorCard[] {
   const byId = new Map<string, RumorCard>();
   for (const group of groups) {
@@ -159,4 +160,18 @@ export function mergeKbCards(...groups: RumorCard[][]): RumorCard[] {
     }
   }
   return [...byId.values()];
+}
+
+/** Что показывает раздел базы знаний.
+ *
+ *  «Всё» собирается из всех узлов кампании, а не из перечня типов. Перечень
+ *  («наводки, NPC и локации») терял узел любого другого типа без статуса —
+ *  а «+ Добавить» на этой же странице и «+ УЗЕЛ» на доске заводят все восемь
+ *  типов, и персонаж, фракция или артефакт пропадали из базы знаний совсем. */
+export function kbCards(tab: KbTab, rumors: RumorCard[], nodes: RumorCard[]): RumorCard[] {
+  if (tab === 'npc') return nodes.filter((card) => card.kind === 'npc');
+  if (tab === 'locations') return nodes.filter((card) => card.kind === 'location');
+  if (tab === 'all') return mergeKbCards(rumors, nodes);
+  /* «Заметки» — свободные заметки и наводки, как в сайдбаре Хроники. */
+  return rumors;
 }
