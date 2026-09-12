@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import { LinkRow, MonoLabel } from '@/components/primitives';
 import { BoardCanvas } from '@/components/board/BoardCanvas';
@@ -21,6 +22,10 @@ export default async function BoardPage({
    * переводить на случайный первый узел. */
   const selectedSlug = node ?? null;
   const detail = selectedSlug ? await getNodeDetail(selectedSlug) : null;
+
+  /* В панель идёт один кадр — первый (он же самый свежий). Остальные лежат
+   * на странице сущности: колонке в 300px сетка плиток не по размеру. */
+  const preview = detail?.images.find((image) => image.url) ?? null;
 
   return (
     <div className={styles.layout}>
@@ -59,6 +64,21 @@ export default async function BoardPage({
               {detail.description ? (
                 <p className={styles.description}>{detail.description}</p>
               ) : null}
+
+              {/* Кадр стоит выше правки: узел узнают в лицо раньше, чем
+                  берутся его править. */}
+              {preview?.url ? (
+                <div className={styles.preview}>
+                  <Image
+                    src={preview.url}
+                    alt={preview.caption ?? detail.name}
+                    fill
+                    className={styles.previewPhoto}
+                    sizes="(max-width: 1023px) 100vw, 300px"
+                  />
+                </div>
+              ) : null}
+
               {/* Тот же редактор, что на странице сущности: название, тип,
                   статус и описание правятся не уходя с доски. */}
               <EntityEditor
@@ -75,59 +95,65 @@ export default async function BoardPage({
               />
             </div>
 
-            <div className={styles.block}>
-              <MonoLabel size={10} tracking="0.14em" block>
-                {`Связи · ${detail.relations.length}`}
-              </MonoLabel>
-              <div className={styles.rows}>
-                {detail.relations.length === 0 ? (
-                  <MonoLabel size={9} tracking="0.08em" tone="faint">
-                    Связей пока нет
-                  </MonoLabel>
-                ) : (
-                  detail.relations.map((relation) => (
-                    <LinkRow
-                      key={`${relation.id}-${relation.label ?? ''}`}
-                      arrow
-                      name={relation.name}
-                      label={relation.label?.toUpperCase()}
-                      href={`/board?node=${relation.slug}`}
-                    />
-                  ))
-                )}
-              </div>
-            </div>
-
-            <div className={styles.block}>
-              <MonoLabel size={10} tracking="0.14em" block>
-                Упоминания
-              </MonoLabel>
-              <p className={styles.mentions}>
-                {detail.mentions.moments.length === 0 &&
-                detail.mentions.notes === 0 &&
-                detail.mentions.images === 0
-                  ? 'Узел ещё нигде не упомянут.'
-                  : [
-                      detail.mentions.moments.length > 0
-                        ? `Моменты: ${detail.mentions.moments
-                            .map((moment) =>
-                              moment.sessionNumber
-                                ? `С${moment.sessionNumber} «${moment.title ?? 'без заголовка'}»`
-                                : `«${moment.title ?? 'без заголовка'}»`,
-                            )
-                            .join(', ')}.`
-                        : null,
-                      detail.mentions.notes > 0 ? `Заметки: ${detail.mentions.notes}.` : null,
-                      detail.mentions.images > 0 ? `Изображения: ${detail.mentions.images}.` : null,
-                    ]
-                      .filter(Boolean)
-                      .join(' ')}
-              </p>
-              <Link href={`/entities/${detail.slug}`}>
-                <MonoLabel size={9} tracking="0.08em" tone="accent">
-                  Открыть страницу сущности →
+            {/* «Связи», «Упоминания» и ссылка на карточку отходят от узла
+                ниже — см. .panelDetails. */}
+            <div className={styles.panelDetails}>
+              <div className={styles.block}>
+                <MonoLabel size={10} tracking="0.14em" block>
+                  {`Связи · ${detail.relations.length}`}
                 </MonoLabel>
-              </Link>
+                <div className={styles.rows}>
+                  {detail.relations.length === 0 ? (
+                    <MonoLabel size={9} tracking="0.08em" tone="faint">
+                      Связей пока нет
+                    </MonoLabel>
+                  ) : (
+                    detail.relations.map((relation) => (
+                      <LinkRow
+                        key={`${relation.id}-${relation.label ?? ''}`}
+                        arrow
+                        name={relation.name}
+                        label={relation.label?.toUpperCase()}
+                        href={`/board?node=${relation.slug}`}
+                      />
+                    ))
+                  )}
+                </div>
+              </div>
+
+              <div className={styles.block}>
+                <MonoLabel size={10} tracking="0.14em" block>
+                  Упоминания
+                </MonoLabel>
+                <p className={styles.mentions}>
+                  {detail.mentions.moments.length === 0 &&
+                  detail.mentions.notes === 0 &&
+                  detail.mentions.images === 0
+                    ? 'Узел ещё нигде не упомянут.'
+                    : [
+                        detail.mentions.moments.length > 0
+                          ? `Моменты: ${detail.mentions.moments
+                              .map((moment) =>
+                                moment.sessionNumber
+                                  ? `С${moment.sessionNumber} «${moment.title ?? 'без заголовка'}»`
+                                  : `«${moment.title ?? 'без заголовка'}»`,
+                              )
+                              .join(', ')}.`
+                          : null,
+                        detail.mentions.notes > 0 ? `Заметки: ${detail.mentions.notes}.` : null,
+                        detail.mentions.images > 0
+                          ? `Изображения: ${detail.mentions.images}.`
+                          : null,
+                      ]
+                        .filter(Boolean)
+                        .join(' ')}
+                </p>
+                <Link href={`/entities/${detail.slug}`}>
+                  <MonoLabel size={9} tracking="0.08em" tone="accent">
+                    Открыть страницу сущности →
+                  </MonoLabel>
+                </Link>
+              </div>
             </div>
 
             <div className={styles.panelActions}>
