@@ -65,20 +65,26 @@ export function getBoard() {
         kind: 'manual' as const,
       }));
 
-    /* Ребро-упоминание: два узла, названные в одной записи. README —
+    /* Ребро-упоминание: два узла, названные в одном тексте. README —
      * «ссылки ставятся из текста и одновременно образуют граф»; без этого
-     * половина связей кампании на доску не попадала. */
+     * половина связей кампании на доску не попадала. Текст — это и запись,
+     * и пересказ сессии, поэтому группируем по источнику, а не по записи. */
     const mentionRows = await db
-      .select({ entryId: t.links.fromEntryId, nodeId: t.links.toNodeId })
+      .select({
+        entryId: t.links.fromEntryId,
+        sessionId: t.links.fromSessionId,
+        nodeId: t.links.toNodeId,
+      })
       .from(t.links)
       .where(and(eq(t.links.campaignId, CAMPAIGN_ID), eq(t.links.kind, 'mention')));
 
-    const byEntry = new Map<string, string[]>();
+    const bySource = new Map<string, string[]>();
     for (const row of mentionRows) {
-      if (!row.entryId || !positioned.has(row.nodeId)) continue;
-      const list = byEntry.get(row.entryId) ?? [];
+      const source = row.entryId ? `e:${row.entryId}` : row.sessionId ? `s:${row.sessionId}` : null;
+      if (!source || !positioned.has(row.nodeId)) continue;
+      const list = bySource.get(source) ?? [];
       list.push(row.nodeId);
-      byEntry.set(row.entryId, list);
+      bySource.set(source, list);
     }
 
     /* Ключ пары не зависит от направления: ручная связь A→B гасит
@@ -87,7 +93,7 @@ export function getBoard() {
     const drawn = new Set(manual.map((edge) => pairKey(edge.from, edge.to)));
 
     const mention: BoardEdge[] = [];
-    for (const nodeIds of byEntry.values()) {
+    for (const nodeIds of bySource.values()) {
       const unique = [...new Set(nodeIds)];
       for (let i = 0; i < unique.length; i += 1) {
         for (let j = i + 1; j < unique.length; j += 1) {
@@ -134,6 +140,8 @@ export type NodeDetail = {
   }[];
   mentions: {
     moments: { id: string; title: string | null; sessionNumber: number | null }[];
+    /** Игры, в пересказе которых узел назван по [[ссылке]]. */
+    sessions: { number: number; title: string | null }[];
     notes: number;
     images: number;
   };
@@ -198,6 +206,15 @@ export function getNodeDetail(slug: string): Promise<NodeDetail | null> {
         sessionNumber: row.sessionNumber,
       }));
 
+    /* Упоминания из пересказов игр: у них нет записи-источника, ребро
+     * приходит прямо от сессии. */
+    const sessionMentions = await db
+      .select({ number: t.sessions.number, title: t.sessions.title })
+      .from(t.links)
+      .innerJoin(t.sessions, eq(t.sessions.id, t.links.fromSessionId))
+      .where(and(eq(t.links.kind, 'mention'), eq(t.links.toNodeId, node.id)))
+      .orderBy(t.sessions.number);
+
     /* Кадры карточки: у достижений персонажа та же привязка к узлу,
      * поэтому вид проверяем явно. */
     const images = await db
@@ -231,6 +248,7 @@ export function getNodeDetail(slug: string): Promise<NodeDetail | null> {
       relations,
       mentions: {
         moments,
+        sessions: sessionMentions,
         notes: mentionRows.filter((row) => row.kind === 'note').length,
         images: mentionRows.filter((row) => row.kind === 'image').length,
       },

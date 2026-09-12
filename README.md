@@ -95,6 +95,15 @@ pnpm auth:password «Имя»  # сменить пароль участнику 
    DATABASE_URL='<строка Neon>' pnpm auth:password Метель
    ```
 
+6. **Рёбра старых пересказов** — разово, после миграции `0009`. Описания
+   сессий умели `[[ссылки]]` раньше, чем те стали заводить рёбра графа;
+   пересчёт по уже написанным текстам:
+
+   ```bash
+   DATABASE_URL='<строка Neon>' pnpm db:resync-session-links          # предпросмотр
+   DATABASE_URL='<строка Neon>' pnpm db:resync-session-links --apply
+   ```
+
 ## Где что лежит
 
 ```

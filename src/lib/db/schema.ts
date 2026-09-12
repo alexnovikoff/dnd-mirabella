@@ -218,8 +218,11 @@ export const images = pgTable(
   (t) => [index('images_session').on(t.sessionId), index('images_node').on(t.nodeId)],
 );
 
-/** Ребро графа. Ровно один из fromNodeId / fromEntryId заполнен:
- *  узел→узел — ручная связь, запись→узел — упоминание из [[текста]]. */
+/** Ребро графа. Ровно один из fromNodeId / fromEntryId / fromSessionId
+ *  заполнен: узел→узел — ручная связь, запись→узел и сессия→узел —
+ *  упоминания из [[текста]]. Описание сессии — такой же текст со ссылками,
+ *  как момент или заметка, поэтому у него свой источник, а не подставная
+ *  запись. */
 export const links = pgTable(
   'links',
   {
@@ -230,6 +233,9 @@ export const links = pgTable(
     kind: linkKindEnum('kind').notNull(),
     fromNodeId: text('from_node_id').references(() => nodes.id, { onDelete: 'cascade' }),
     fromEntryId: text('from_entry_id').references(() => entries.id, { onDelete: 'cascade' }),
+    /** Упоминание из описания сессии. Каскад: описание удалённой игры
+     *  пересказывать больше нечему. */
+    fromSessionId: text('from_session_id').references(() => sessions.id, { onDelete: 'cascade' }),
     toNodeId: text('to_node_id')
       .notNull()
       .references(() => nodes.id, { onDelete: 'cascade' }),
@@ -238,10 +244,14 @@ export const links = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
-    check('links_exactly_one_source', sql`(${t.fromNodeId} is null) <> (${t.fromEntryId} is null)`),
+    check(
+      'links_exactly_one_source',
+      sql`num_nonnulls(${t.fromNodeId}, ${t.fromEntryId}, ${t.fromSessionId}) = 1`,
+    ),
     index('links_to').on(t.toNodeId),
     index('links_from_node').on(t.fromNodeId),
     index('links_from_entry').on(t.fromEntryId),
+    index('links_from_session').on(t.fromSessionId),
   ],
 );
 
@@ -282,6 +292,7 @@ export const sessionRelations = relations(sessions, ({ one, many }) => ({
   campaign: one(campaigns, { fields: [sessions.campaignId], references: [campaigns.id] }),
   entries: many(entries),
   images: many(images),
+  mentions: many(links, { relationName: 'linkFromSession' }),
 }));
 
 export const nodeRelations = relations(nodes, ({ one, many }) => ({
@@ -319,6 +330,11 @@ export const linkRelations = relations(links, ({ one }) => ({
     fields: [links.fromEntryId],
     references: [entries.id],
     relationName: 'linkFromEntry',
+  }),
+  fromSession: one(sessions, {
+    fields: [links.fromSessionId],
+    references: [sessions.id],
+    relationName: 'linkFromSession',
   }),
   toNode: one(nodes, {
     fields: [links.toNodeId],

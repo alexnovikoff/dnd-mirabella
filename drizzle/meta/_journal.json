@@ -64,6 +64,13 @@
       "when": 1789139812062,
       "tag": "0008_illegal_the_leader",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1789177182427,
+      "tag": "0009_salty_warbound",
+      "breakpoints": true
     }
   ]
 }

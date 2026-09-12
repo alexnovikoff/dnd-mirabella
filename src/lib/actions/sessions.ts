@@ -6,7 +6,9 @@ import { and, desc, eq } from 'drizzle-orm';
 import { runDb } from '@/lib/db/client';
 import * as t from '@/lib/db/schema';
 import { CAMPAIGN_ID } from '@/lib/db/seed';
+import { syncSessionLinks } from '@/lib/wiki/sync-links';
 import { requireViewer } from './guard';
+import { createDraftNode } from './entries';
 
 export type SessionResult = { ok: true; number: number } | { ok: false; error: string };
 
@@ -69,6 +71,9 @@ export async function updateSession(
   return { ok: true, number };
 }
 
+export type DescriptionResult =
+  { ok: true; number: number; unresolved: string[] } | { ok: false; error: string };
+
 /**
  * Описание сессии — пересказ игры своими словами.
  *
@@ -77,31 +82,79 @@ export async function updateSession(
  *
  * Пустой текст стирает описание, поэтому «удалить» — тот же запрос, а не
  * отдельная ветка в базе.
+ *
+ * Вместе с текстом пересчитываются рёбра-упоминания: [[ссылка]] в пересказе
+ * — такая же ссылка, как в моменте, и узел должен узнать о ней в базе знаний
+ * и на доске связей. Убранная из текста — ребро уносит.
  */
 export async function saveSessionDescription(
   number: number,
   description: string,
-): Promise<SessionResult> {
+): Promise<DescriptionResult> {
   await requireViewer();
 
-  const ok = await runDb(async (db) => {
-    const result = await db
+  const saved = await runDb(async (db) => {
+    const body = description.trim() || null;
+
+    const [session] = await db
       .update(t.sessions)
-      .set({ description: description.trim() || null })
+      .set({ description: body })
       .where(and(eq(t.sessions.campaignId, CAMPAIGN_ID), eq(t.sessions.number, number)))
-      .returning({ number: t.sessions.number });
-    return result.length > 0;
+      .returning({ id: t.sessions.id });
+    if (!session) return null;
+
+    const sync = await syncSessionLinks(db, CAMPAIGN_ID, session.id, body);
+    return sync.unresolved;
   });
 
-  if (!ok) return { ok: false, error: 'Сессия не найдена' };
+  if (saved === null) return { ok: false, error: 'Сессия не найдена' };
 
   revalidatePath('/sessions');
   revalidatePath(`/sessions/${number}`);
-  return { ok: true, number };
+  /* Ссылки из пересказа — те же рёбра графа: панель узла, доска и счётчики
+   * связей в базе знаний меняются вместе с текстом. */
+  revalidatePath('/board');
+  revalidatePath('/kb');
+  revalidatePath('/entities/[slug]', 'page');
+  return { ok: true, number, unresolved: saved };
 }
 
-export async function deleteSessionDescription(number: number): Promise<SessionResult> {
+export async function deleteSessionDescription(number: number): Promise<DescriptionResult> {
   return saveSessionDescription(number, '');
+}
+
+/** Завести сущность по имени, оставшемуся неразрешённым в уже сохранённом
+ *  пересказе, и сразу пересчитать рёбра сессии — пересчёт бывает только при
+ *  сохранении, иначе ребро не появится никогда. Близнец resolveMention для
+ *  записей. */
+export async function resolveSessionMention(
+  number: number,
+  name: string,
+): Promise<DescriptionResult> {
+  await requireViewer();
+  if (!name.trim()) return { ok: false, error: 'Пустое имя сущности' };
+
+  await createDraftNode(name);
+
+  const unresolved = await runDb(async (db) => {
+    const [session] = await db
+      .select({ id: t.sessions.id, description: t.sessions.description })
+      .from(t.sessions)
+      .where(and(eq(t.sessions.campaignId, CAMPAIGN_ID), eq(t.sessions.number, number)))
+      .limit(1);
+    if (!session) return null;
+
+    const sync = await syncSessionLinks(db, CAMPAIGN_ID, session.id, session.description);
+    return sync.unresolved;
+  });
+
+  if (unresolved === null) return { ok: false, error: 'Сессия не найдена' };
+
+  revalidatePath(`/sessions/${number}`);
+  revalidatePath('/board');
+  revalidatePath('/kb');
+  revalidatePath('/entities/[slug]', 'page');
+  return { ok: true, number, unresolved };
 }
 
 /**
