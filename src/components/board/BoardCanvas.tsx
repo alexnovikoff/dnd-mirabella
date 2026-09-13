@@ -1,12 +1,13 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { MonoLabel } from '@/components/primitives';
 import { saveNodePosition } from '@/lib/actions/board';
 import { useQuickEntry } from '@/components/editor/QuickEntryProvider';
 import { LinkTypeDialog } from './LinkTypeDialog';
 import { nodeAt, type NodeBox } from '@/lib/board-drag';
+import { centerOf, scrollToCenter } from '@/lib/board-view';
 import { NODE_KIND_LABEL } from '@/lib/nodes';
 import type { BoardEdge, BoardNode } from '@/lib/queries/board';
 import styles from './Board.module.css';
@@ -16,7 +17,9 @@ const DRAG_THRESHOLD = 4;
 
 /* Масштаб доски. Координаты узлов хранятся в процентах, поэтому масштаб —
  * чисто визуальная штука: он ничего не пересчитывает и никуда не сохраняется. */
-const ZOOM_STEPS = [0.6, 0.75, 0.9, 1, 1.25, 1.5, 2] as const;
+const ZOOM_STEPS = [0.2, 0.4, 0.6, 0.8, 1, 1.2, 1.4, 1.6, 1.8, 2] as const;
+/* Доска открывается на 100% на любом экране, телефон тоже: имена узлов
+ * читаются, а до остального графа доска дотягивается пальцем. */
 const ZOOM_DEFAULT = ZOOM_STEPS.indexOf(1);
 
 /* Собственный размер полотна: он не зависит от ширины колонки, поэтому
@@ -25,6 +28,19 @@ const ZOOM_DEFAULT = ZOOM_STEPS.indexOf(1);
  * но там доска и не двигалась. */
 const BOARD_WIDTH = 1500;
 const BOARD_HEIGHT = 900;
+
+/* Пустое поле вокруг полотна со всех сторон. Без него прокрутка начиналась
+ * ровно с угла полотна, и доску можно было потянуть только вправо и вниз:
+ * левый и верхний край упирались в ноль. Узлы в поле не ставятся — их
+ * координаты по-прежнему проценты полотна, поле нужно лишь для обзора. */
+const BOARD_MARGIN = 600;
+const FIELD_WIDTH = BOARD_WIDTH + BOARD_MARGIN * 2;
+const FIELD_HEIGHT = BOARD_HEIGHT + BOARD_MARGIN * 2;
+const FIELD = { width: FIELD_WIDTH, height: FIELD_HEIGHT };
+
+function viewportOf(scroller: HTMLElement) {
+  return { width: scroller.clientWidth, height: scroller.clientHeight };
+}
 
 type NodeDrag = { id: string; movedFar: boolean };
 /** Пара, которую связываем: открыто окно типа связи. */
@@ -73,14 +89,45 @@ export function BoardCanvas({
 
   const zoom = ZOOM_STEPS[zoomStep];
   const byId = new Map(nodes.map((node) => [node.id, node]));
+  /* Масштаб, при котором поле сейчас отрисовано. */
+  const zoomRef = useRef(zoom);
+  /* Точка поля, которую после смены масштаба надо вернуть в центр окна.
+   * Первый показ — середина поля: запас для перетаскивания есть во все
+   * стороны сразу. */
+  const anchorRef = useRef<{ x: number; y: number } | null>({
+    x: FIELD_WIDTH / 2,
+    y: FIELD_HEIGHT / 2,
+  });
 
-  /* На телефоне полотно шире экрана в разы, и на 100% доска открывается
-   * своим углом — графа будто нет вовсе. Самый мелкий шаг вмещает её по
-   * высоте целиком, вбок доску листают пальцем. Эффектом, а не начальным
-   * состоянием: на сервере ширины экрана нет, и гидратация разошлась бы. */
-  useEffect(() => {
-    if (window.matchMedia('(max-width: 767px)').matches) setZoomStep(0);
-  }, []);
+  /* Масштаб меняет размер поля, а прокрутка остаётся в пикселях — без
+   * поправки вид уезжал бы к углу. Центр снимаем до смены: после неё
+   * прокрутку уже не прочесть — на меньшем поле браузер её обрезает. */
+  function zoomTo(step: number) {
+    if (ZOOM_STEPS[step] === zoomRef.current) return;
+    const scroller = scrollerRef.current;
+    if (scroller) {
+      anchorRef.current = centerOf(
+        { left: scroller.scrollLeft, top: scroller.scrollTop },
+        zoomRef.current,
+        viewportOf(scroller),
+        FIELD,
+      );
+    }
+    setZoomStep(step);
+  }
+
+  /* До отрисовки — иначе мелькнул бы пустой угол поля. */
+  useLayoutEffect(() => {
+    zoomRef.current = zoom;
+    const scroller = scrollerRef.current;
+    const anchor = anchorRef.current;
+    if (!scroller || !anchor) return;
+    anchorRef.current = null;
+
+    const { left, top } = scrollToCenter(anchor, zoom, viewportOf(scroller), FIELD);
+    scroller.scrollLeft = left;
+    scroller.scrollTop = top;
+  }, [zoom]);
 
   /* Полотно больше окна, поэтому выбранный узел может оказаться за краем —
    * например при переходе по связи из панели. Подкручиваем к нему. */
@@ -92,13 +139,12 @@ export function BoardCanvas({
     if (!node) return;
 
     const position = positions[node.id] ?? { x: node.x, y: node.y };
-    const target = {
-      left: (BOARD_WIDTH * zoom * position.x) / 100 - scroller.clientWidth / 2,
-      top: (BOARD_HEIGHT * zoom * position.y) / 100 - scroller.clientHeight / 2,
+    const point = {
+      x: BOARD_MARGIN + (BOARD_WIDTH * position.x) / 100,
+      y: BOARD_MARGIN + (BOARD_HEIGHT * position.y) / 100,
     };
     scroller.scrollTo({
-      left: Math.max(0, target.left),
-      top: Math.max(0, target.top),
+      ...scrollToCenter(point, zoom, viewportOf(scroller), FIELD),
       behavior: 'smooth',
     });
     /* Только на смену выбора: при перетаскивании и масштабировании
@@ -183,7 +229,7 @@ export function BoardCanvas({
           className={styles.zoomButton}
           aria-label="Уменьшить масштаб"
           disabled={zoomStep === 0}
-          onClick={() => setZoomStep((step) => Math.max(0, step - 1))}
+          onClick={() => zoomTo(Math.max(0, zoomStep - 1))}
         >
           −
         </button>
@@ -191,7 +237,7 @@ export function BoardCanvas({
           type="button"
           className={styles.zoomValue}
           title="Вернуть 100%"
-          onClick={() => setZoomStep(ZOOM_DEFAULT)}
+          onClick={() => zoomTo(ZOOM_DEFAULT)}
         >
           {`${Math.round(zoom * 100)}%`}
         </button>
@@ -200,19 +246,20 @@ export function BoardCanvas({
           className={styles.zoomButton}
           aria-label="Увеличить масштаб"
           disabled={zoomStep === ZOOM_STEPS.length - 1}
-          onClick={() => setZoomStep((step) => Math.min(ZOOM_STEPS.length - 1, step + 1))}
+          onClick={() => zoomTo(Math.min(ZOOM_STEPS.length - 1, zoomStep + 1))}
         >
           +
         </button>
       </div>
 
       <div className={styles.scroller} ref={scrollerRef}>
-        {/* Распорка задаёт место под увеличенную канву: transform на размеры
-            в потоке не влияет, без неё не появилось бы прокрутки. Фон живёт
-            здесь же — иначе по краям масштабированной канвы виден просвет. */}
+        {/* Распорка задаёт место под увеличенную канву вместе с полем вокруг:
+            transform на размеры в потоке не влияет, без неё не появилось бы
+            прокрутки. Фон живёт здесь же — иначе по краям масштабированной
+            канвы виден просвет. */}
         <div
           className={pan?.movedFar ? `${styles.sizer} ${styles.panning}` : styles.sizer}
-          style={{ width: BOARD_WIDTH * zoom, height: BOARD_HEIGHT * zoom }}
+          style={{ width: FIELD_WIDTH * zoom, height: FIELD_HEIGHT * zoom }}
           onPointerDown={(event) => {
             /* Тянем за пустое место — двигаем доску. */
             if (event.button !== 0) return;
@@ -260,6 +307,11 @@ export function BoardCanvas({
             className={styles.canvas}
             ref={canvasRef}
             style={{
+              /* Посередине распорки. Пока поле больше окна, это ровно
+                 BOARD_MARGIN × масштаб; на мелком масштабе распорка
+                 тянется до края окна, и доска не липнет к углу. */
+              left: `calc((100% - ${BOARD_WIDTH * zoom}px) / 2)`,
+              top: `calc((100% - ${BOARD_HEIGHT * zoom}px) / 2)`,
               width: BOARD_WIDTH,
               height: BOARD_HEIGHT,
               transform: `scale(${zoom})`,
