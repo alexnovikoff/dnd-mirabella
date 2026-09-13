@@ -82,19 +82,15 @@ export function EntityEditor({
     );
   }
 
+  /* Прежних имён рядом с кнопкой нет: и на доске, и на странице сущности она
+   * делит строку с подписью или заголовком, и именам там тесно. Обе страницы
+   * ставят их под названием. */
   if (!open) {
     return (
       <div className={styles.bar}>
         <button type="button" className={styles.action} onClick={() => setOpen(true)}>
           Править
         </button>
-        {/* На доске кнопка делит строку с подписью «Выбранный узел», и
-            прежним именам рядом с ней тесно: их панель ставит под названием. */}
-        {node.aliases.length > 0 && returnTo !== 'board' ? (
-          <MonoLabel size={9} tracking="0.06em" tone="faint">
-            {`Прежние имена: ${node.aliases.join(', ')}`}
-          </MonoLabel>
-        ) : null}
       </div>
     );
   }

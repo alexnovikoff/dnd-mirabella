@@ -7,6 +7,11 @@ export type ScreenLink = { href: string; label: string };
 export type ScreenProps = {
   /** Заголовок экрана — Cormorant 42px/1. */
   title: string;
+  /** Кнопка в строке заголовка, у правого края: «Править». Раскрытая
+   *  форма переносится под заголовок на всю ширину. */
+  action?: React.ReactNode;
+  /** Мета-строка сразу под заголовком: тип и статус карточки. */
+  meta?: React.ReactNode;
   /** Подпись под заголовком: счётчики, сроки, подсказки. */
   note?: React.ReactNode;
   /** Фильтры и тумблеры справа от заголовка. */
@@ -18,7 +23,7 @@ export type ScreenProps = {
   children?: React.ReactNode;
 };
 
-export function Screen({ title, note, aside, back, links, children }: ScreenProps) {
+export function Screen({ title, action, meta, note, aside, back, links, children }: ScreenProps) {
   return (
     <section className={styles.screen}>
       <div className={styles.head}>
@@ -37,7 +42,15 @@ export function Screen({ title, note, aside, back, links, children }: ScreenProp
               ))}
             </div>
           ) : null}
-          <h1 className={styles.title}>{title}</h1>
+          {action ? (
+            <div className={styles.titleRow}>
+              <h1 className={styles.title}>{title}</h1>
+              {action}
+            </div>
+          ) : (
+            <h1 className={styles.title}>{title}</h1>
+          )}
+          {meta ? <div className={styles.meta}>{meta}</div> : null}
           {note ? <p className={styles.note}>{note}</p> : null}
         </div>
         {aside}
