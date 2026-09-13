@@ -1,7 +1,8 @@
 /* Запросы страницы персонажа: метрики, его записи, связи, личная заметка. */
 
-import { and, desc, eq, inArray, notInArray, or, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNotNull, notInArray, or, sql } from 'drizzle-orm';
 import { runDb } from '@/lib/db/client';
+import { nameMatcher } from '@/lib/name-mentions';
 import * as t from '@/lib/db/schema';
 import { CAMPAIGN_ID } from '@/lib/db/seed';
 import type { Viewer } from '@/lib/auth-shared';
@@ -29,6 +30,7 @@ export function getCharacter(slug: string, viewer: Viewer | null) {
         id: t.nodes.id,
         name: t.nodes.name,
         slug: t.nodes.slug,
+        aliases: t.nodes.aliases,
         description: t.nodes.description,
         race: t.characters.race,
         classes: t.characters.classes,
@@ -131,22 +133,29 @@ export function getCharacter(slug: string, viewer: Viewer | null) {
       })
       .filter((entry): entry is NonNullable<typeof entry> => entry !== null);
 
-    /* Кадры, привязанные к узлу, в эту сетку не идут: у достижений внизу
+    /* Галерея персонажа — кадры, в подписи которых он назван, в любом падеже
+     * и под любым из прежних имён. Кто кадр загрузил, не важно: игрок
+     * снимает всю партию, а не себя.
+     *
+     * Склонения по-русски база не разбирает, поэтому подписи фильтруются
+     * здесь — кадров у кампании сотни, не миллионы.
+     *
+     * Кадры, привязанные к узлу, в эту сетку не идут: у достижений внизу
      * страницы и у карточек сущностей свои галереи, и считать их дважды
      * не за что. */
-    const images = row.playerId
-      ? await db
-          .select({ id: t.images.id, caption: t.images.caption, url: t.images.url })
-          .from(t.images)
-          .where(
-            and(
-              eq(t.images.campaignId, CAMPAIGN_ID),
-              eq(t.images.uploaderId, row.playerId),
-              notInArray(t.images.kind, t.NODE_IMAGE_KINDS),
-            ),
-          )
-          .orderBy(desc(t.images.createdAt))
-      : [];
+    const mentions = nameMatcher([row.name, ...row.aliases]);
+    const captioned = await db
+      .select({ id: t.images.id, caption: t.images.caption, url: t.images.url })
+      .from(t.images)
+      .where(
+        and(
+          eq(t.images.campaignId, CAMPAIGN_ID),
+          isNotNull(t.images.caption),
+          notInArray(t.images.kind, t.NODE_IMAGE_KINDS),
+        ),
+      )
+      .orderBy(desc(t.images.createdAt), desc(t.images.id));
+    const images = captioned.filter((image) => mentions(image.caption));
 
     const achievements = await db
       .select({
