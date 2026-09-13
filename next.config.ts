@@ -7,8 +7,9 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ['@electric-sql/pglite', '@node-rs/argon2'],
   experimental: {
     serverActions: {
-      /* Кадры в «Галерею» и из шита едут серверными экшенами, по файлу
-       * на запрос (lib/uploads). По умолчанию Next пускает в экшен 1 МБ —
+      /* Кадры в «Галерею», из шита, в достижения персонажа и на карточку
+       * сущности едут серверными экшенами, по файлу на запрос
+       * (lib/uploads). По умолчанию Next пускает в экшен 1 МБ —
        * меньше обычного фото. Выше 4 МБ поднимать некуда: запрос к функции
        * на Vercel ограничен 4,5 МБ. Число совпадает с UPLOAD_LIMIT_MB. */
       bodySizeLimit: '4mb',

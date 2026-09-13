@@ -23,7 +23,9 @@ export type EntityImageResult = { ok: true } | { ok: false; error: string };
 const CAPTION_LIMIT = 120;
 
 /** Загрузка кадров на карточку: кнопкой и перетаскиванием на блок, пачкой.
- *  Подпись берём из имени файла — её видно под плиткой. */
+ *  Подпись берём из имени файла — её видно под плиткой.
+ *  Карточка шлёт файлы по одному (lib/uploads): пачка одной формой
+ *  не пролезает в предел тела запроса. */
 export async function uploadEntityImages(form: FormData): Promise<EntityImageResult> {
   const viewer = await requireViewer();
 
