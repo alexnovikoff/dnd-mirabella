@@ -32,30 +32,44 @@ export default async function EntityPage({
   return (
     <Screen
       title={detail.name}
-      note={detail.description ?? undefined}
-      back={{ href: backTab ? `/kb?tab=${backTab}` : '/kb', label: 'К базе знаний' }}
-      aside={
-        <div className={styles.tools}>
+      /* «Править» в строке названия: под шапкой, между описанием и кадрами,
+         её приходилось искать. Раскрытая форма встаёт под название. */
+      action={
+        <EntityEditor
+          node={{
+            id: detail.id,
+            name: detail.name,
+            kind: detail.kind,
+            status: detail.status,
+            description: detail.description,
+            aliases: detail.aliases,
+            isCharacter: detail.isCharacter,
+          }}
+        />
+      }
+      /* Тип и статус — сразу под названием: справа от шапки, у нижнего края
+         описания, их не связывали с самой сущностью. */
+      meta={
+        <>
           <MonoLabel size={10} tracking="0.08em">
             {NODE_KIND_LABEL[detail.kind]}
           </MonoLabel>
           {detail.status ? <StatusPill status={detail.status} /> : null}
-        </div>
+          {detail.aliases.length > 0 ? (
+            <MonoLabel size={9} tracking="0.06em" tone="faint">
+              {`Прежние имена: ${detail.aliases.join(', ')}`}
+            </MonoLabel>
+          ) : null}
+        </>
       }
+      note={detail.description ?? undefined}
+      back={{ href: backTab ? `/kb?tab=${backTab}` : '/kb', label: 'К базе знаний' }}
+      /* С доски сущность видна в окружении связей — туда и ссылка, с узлом
+         уже выбранным. Единственная на странице: строка «Открыть на доске
+         связей» внизу, под упоминаниями, её только дублировала. */
+      links={[{ href: `/board?node=${detail.slug}`, label: 'к доске связей' }]}
     >
-      <EntityEditor
-        node={{
-          id: detail.id,
-          name: detail.name,
-          kind: detail.kind,
-          status: detail.status,
-          description: detail.description,
-          aliases: detail.aliases,
-          isCharacter: detail.isCharacter,
-        }}
-      />
-
-      {/* Изображения идут сразу под правкой: карточку узнают в лицо раньше,
+      {/* Изображения идут сразу под шапкой: карточку узнают в лицо раньше,
           чем читают её связи. */}
       <div className={styles.block}>
         <MonoLabel size={10} tracking="0.14em" block>
@@ -113,8 +127,6 @@ export default async function EntityPage({
           </div>
         )}
       </div>
-
-      <LinkRow name="Открыть на доске связей" label="ГРАФ" href={`/board?node=${detail.slug}`} />
     </Screen>
   );
 }
