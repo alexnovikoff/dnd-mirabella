@@ -1,11 +1,7 @@
+import Image from 'next/image';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import {
-  AccentQuoteCard,
-  ImagePlaceholder,
-  Metric,
-  MonoLabel,
-  ParchmentCard,
-} from '@/components/primitives';
+import { AccentQuoteCard, Metric, MonoLabel, ParchmentCard } from '@/components/primitives';
 import { WikiText } from '@/components/wiki/WikiText';
 import { EntryActions } from '@/components/entry/EntryActions';
 import { Achievements } from '@/components/character/Achievements';
@@ -172,7 +168,23 @@ export default async function CharacterPage({ params }: { params: Promise<{ slug
             </MonoLabel>
             <div className={styles.grid3}>
               {character.images.slice(0, 6).map((image) => (
-                <ImagePlaceholder key={image.id} hatchStep={6} className={styles.cell} />
+                <Link
+                  key={image.id}
+                  href="/gallery"
+                  className={styles.cell}
+                  title={image.caption ?? undefined}
+                >
+                  {/* Кадр без файла оставляет ячейке штриховку плейсхолдера. */}
+                  {image.url ? (
+                    <Image
+                      src={image.url}
+                      alt={image.caption ?? ''}
+                      fill
+                      sizes="(max-width: 1023px) 33vw, 96px"
+                      className={styles.photo}
+                    />
+                  ) : null}
+                </Link>
               ))}
             </div>
           </div>
