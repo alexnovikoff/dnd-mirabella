@@ -13,7 +13,6 @@ export type CharacterEntry = {
   title: string | null;
   body: string | null;
   roll: number | null;
-  isCrit: boolean;
   isFail: boolean;
   sessionId: string | null;
   sessionNumber: number | null;
@@ -54,7 +53,6 @@ export function getCharacter(slug: string, viewer: Viewer | null) {
         title: t.entries.title,
         body: t.entries.body,
         roll: t.entries.roll,
-        isCrit: t.entries.isCrit,
         isFail: t.entries.isFail,
         visibility: t.entries.visibility,
         authorId: t.entries.authorId,
@@ -83,7 +81,6 @@ export function getCharacter(slug: string, viewer: Viewer | null) {
       title: entry.title,
       body: entry.body,
       roll: entry.roll,
-      isCrit: entry.isCrit,
       isFail: entry.isFail,
       sessionId: entry.sessionId,
       sessionNumber: entry.sessionNumber,
@@ -188,7 +185,6 @@ export function getCharacter(slug: string, viewer: Viewer | null) {
         moments: publicEntries.filter((entry) => entry.kind === 'moment').length,
         quotes: publicEntries.filter((entry) => entry.kind === 'quote').length,
         links: relations.length,
-        crits: publicEntries.filter((entry) => entry.isCrit).length,
       },
     };
   });

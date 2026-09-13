@@ -91,7 +91,6 @@ export function getFeed(filter: FeedFilter = 'all', viewer: Viewer | null = null
         title: t.entries.title,
         body: t.entries.body,
         roll: t.entries.roll,
-        isCrit: t.entries.isCrit,
         isFail: t.entries.isFail,
         tags: t.entries.tags,
         visibility: t.entries.visibility,

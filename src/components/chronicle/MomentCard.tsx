@@ -5,13 +5,12 @@ import { EntryActions } from '@/components/entry/EntryActions';
 import type { FeedEntry } from '@/lib/queries/chronicle';
 import styles from './MomentCard.module.css';
 
-/** Строка меты: «СЕССИЯ 26 · ТА САМАЯ ТАВЕРНА · КРИТ 20».
- *  Разделители — цветом линии, критический успех и провал — акцентом. */
+/** Строка меты: «СЕССИЯ 26 · ТА САМАЯ ТАВЕРНА · ПРОВАЛ 1».
+ *  Разделители — цветом линии, провал — акцентом. */
 function Meta({ entry }: { entry: FeedEntry }) {
   const parts: { text: string; accent?: boolean }[] = [];
   if (entry.sessionNumber !== null) parts.push({ text: `Сессия ${entry.sessionNumber}` });
   if (entry.sessionTitle) parts.push({ text: entry.sessionTitle });
-  if (entry.isCrit) parts.push({ text: `Крит ${entry.roll ?? 20}`, accent: true });
   if (entry.isFail) parts.push({ text: `Провал ${entry.roll ?? 1}`, accent: true });
 
   return (

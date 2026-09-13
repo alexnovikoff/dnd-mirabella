@@ -154,7 +154,7 @@ export default function StyleguidePage() {
         <div className={styles.grid3}>
           <ParchmentCard className={styles.span2}>
             <MonoLabel size={10} tracking="0.06em" tone="faint">
-              Сессия 14 · Базар Халь-Раши · <span style={{ color: 'var(--accent)' }}>Крит 20</span>
+              Сессия 14 · Базар Халь-Раши
             </MonoLabel>
             <div
               style={{

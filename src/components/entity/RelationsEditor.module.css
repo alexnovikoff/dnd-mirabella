@@ -30,10 +30,43 @@
   color: var(--accent);
 }
 
-/* Тип связи занимает столько, сколько нужно ему, остальное — названию. */
+/* Тип связи занимает столько, сколько нужно ему, остальное — названию.
+ * Ширина — под «Завсегдатай» (11 знаков) вместе с местом под стрелку. */
 .labelField {
   flex: 0 0 auto;
   width: 96px;
+}
+
+/* Тип длиннее поля в покое обрезан, а в фокусе виден целиком: поле растёт
+ * под текст влево, поверх имени, и ряд не перестраивается. Где
+ * field-sizing нет, текст просто прокручивается внутри поля. */
+@supports (field-sizing: content) {
+  .labelField > div:first-child {
+    justify-content: flex-end;
+  }
+
+  .labelField:focus-within input {
+    field-sizing: content;
+    flex: none;
+    width: auto;
+    min-width: 100%;
+    max-width: 210px;
+  }
+}
+
+/* В ряду поле типа компактнее, чем в окнах доски: не спорит с именем по
+ * высоте и ширине. Справа — место под стрелку, чтобы текст под неё не
+ * заходил. На телефоне остаётся палец-размер из LabelInput. */
+@media (min-width: 768px) {
+  .labelField input {
+    min-height: 24px;
+    padding: 3px 16px 3px 6px;
+  }
+
+  .labelField button {
+    right: 1px;
+    padding: 1px 3px;
+  }
 }
 
 .remove {
