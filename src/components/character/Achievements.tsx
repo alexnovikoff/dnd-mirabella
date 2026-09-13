@@ -17,6 +17,7 @@ import {
   uploadAchievements,
 } from '@/lib/actions/achievements';
 import { plural } from '@/lib/plural';
+import { describeFailures, uploadEach } from '@/lib/uploads';
 import picker from '@/components/editor/Picker.module.css';
 import styles from './Character.module.css';
 
@@ -49,21 +50,34 @@ export function Achievements({
   /* Escape закрывает поле, а закрытие уносит фокус — и onBlur сохранил бы
    * ровно то, от чего человек отказался. */
   const cancelled = useRef(false);
+  /* «Загружаем 2 из 5…» — пачка едет по файлу, и без счёта долгая загрузка
+   * выглядит зависшей. */
+  const [progress, setProgress] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
   const upload = useCallback(
     (files: FileList | File[]) => {
-      const form = new FormData();
-      form.append('nodeId', nodeId);
-      for (const file of Array.from(files)) form.append('files', file);
+      /* Список снимаем сразу: поле выбора файлов тут же сбрасывают, а файлы
+       * уходят уже после первого await. */
+      const list = Array.from(files);
 
       startTransition(async () => {
-        const result = await uploadAchievements(form);
-        if (!result.ok) setError(result.error);
-        else {
-          setError(null);
-          router.refresh();
-        }
+        /* Пачка одной формой не пролезает в предел тела запроса — каждый
+         * файл едет своим запросом (lib/uploads). */
+        const outcome = await uploadEach(
+          list,
+          (file) => {
+            const form = new FormData();
+            form.append('nodeId', nodeId);
+            form.append('files', file);
+            return uploadAchievements(form);
+          },
+          (current, total) => setProgress(total > 1 ? `Загружаем ${current} из ${total}…` : null),
+        );
+        setProgress(null);
+        setError(describeFailures(outcome.failed));
+        /* Часть пачки могла и не лечь — те, что легли, показываем сразу. */
+        if (outcome.saved > 0) router.refresh();
       });
     },
     [nodeId, router],
@@ -254,7 +268,7 @@ export function Achievements({
           >
             <DropZone
               active={dragging}
-              label={pending ? 'Загружаем…' : 'Бросьте картинки сюда или нажмите'}
+              label={pending ? (progress ?? 'Загружаем…') : 'Бросьте картинки сюда или нажмите'}
             />
           </button>
         </>

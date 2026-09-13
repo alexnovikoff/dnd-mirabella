@@ -23,7 +23,9 @@ export type AchievementResult = { ok: true } | { ok: false; error: string };
 const CAPTION_LIMIT = 120;
 
 /** Загрузка достижений: кнопкой и перетаскиванием на блок, можно пачкой.
- *  Подпись берём из имени файла — её потом видно под плиткой. */
+ *  Подпись берём из имени файла — её потом видно под плиткой.
+ *  Блок шлёт файлы по одному (lib/uploads): пачка одной формой
+ *  не пролезает в предел тела запроса. */
 export async function uploadAchievements(form: FormData): Promise<AchievementResult> {
   const viewer = await requireViewer();
 
