@@ -142,6 +142,13 @@ describe('uploadImages', () => {
     expect(await uploadImages(dropped(NO_SESSION))).toEqual({ ok: true, saved: 1 });
     expect((await bare())[0]?.sessionId).toBeNull();
   });
+
+  /* Как у кадра из шита: «photo» под плиткой не рассказывает ничего,
+   * а подпись по-человечески добавляют потом. */
+  it('не подписывает кадр именем файла', async () => {
+    expect(await uploadImages(dropped())).toEqual({ ok: true, saved: 1 });
+    expect((await bare())[0]?.caption).toBeNull();
+  });
 });
 
 /* Пустой пункт в списке сессий доступен любой записи, не только кадру. */
