@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { eq } from 'drizzle-orm';
 import { createTestDb } from '@/lib/db/test-db';
 import { runDb, setDbForTesting } from '@/lib/db/client';
 import { FIXTURE, seedFixture } from '@/lib/db/fixture';
@@ -334,11 +335,6 @@ describe('достижения персонажа', () => {
     });
   });
 
-  it('в сетку сайдбара не попадают — она про кадры кампании', async () => {
-    const character = await getCharacter('geroy', null);
-    expect(character?.images.map((image) => image.caption)).toEqual(['Кадр']);
-  });
-
   it('в общую «Галерею» не попадают ни в одном фильтре', async () => {
     const all = await getGallery('all', false);
     expect(all.total).toBe(2);
@@ -361,6 +357,64 @@ describe('достижения персонажа', () => {
 
     const character = await getCharacter('geroy', null);
     expect(character?.achievements.map((item) => item.caption)).toEqual(['Первый уровень']);
+  });
+});
+
+describe('галерея персонажа', () => {
+  const addImage = (id: string, caption: string, createdAt: Date, kind: t.ImageKind = 'art') =>
+    runDb((db) =>
+      db.insert(t.images).values({
+        id,
+        campaignId: FIXTURE.campaignId,
+        url: null,
+        caption,
+        uploaderId: FIXTURE.users.other,
+        kind,
+        ...(kind === 'achievement' ? { nodeId: FIXTURE.nodes.hero } : {}),
+        createdAt,
+      }),
+    );
+
+  it('собирает кадры, где персонаж упомянут в подписи в любом падеже', async () => {
+    await addImage('i-hero-gen', 'Засада на Героя', new Date('2026-02-01'));
+    await addImage('i-hero-dat', 'Герою досталось', new Date('2026-02-02'));
+    await addImage('i-nobody', 'Пейзаж', new Date('2026-02-03'));
+
+    const character = await getCharacter('geroy', null);
+    expect(character?.images.map((image) => image.caption)).toEqual([
+      'Герою досталось',
+      'Засада на Героя',
+    ]);
+  });
+
+  it('кадр игрока персонажа без упоминания в сетку не идёт — важна подпись, а не автор', async () => {
+    const character = await getCharacter('geroy', null);
+    expect(character?.images.map((image) => image.caption)).not.toContain('Кадр');
+  });
+
+  it('узнаёт персонажа и по прежнему имени', async () => {
+    await runDb((db) =>
+      db
+        .update(t.nodes)
+        .set({ aliases: ['Храбрец'] })
+        .where(eq(t.nodes.id, FIXTURE.nodes.hero)),
+    );
+    await addImage('i-alias', 'Портрет Храбреца', new Date('2026-02-01'));
+
+    const character = await getCharacter('geroy', null);
+    expect(character?.images.map((image) => image.caption)).toEqual(['Портрет Храбреца']);
+  });
+
+  it('достижения в сетку не идут, даже если персонаж назван в подписи', async () => {
+    await addImage(
+      'i-achievement-named',
+      'Герой взял уровень',
+      new Date('2026-02-01'),
+      'achievement',
+    );
+
+    const character = await getCharacter('geroy', null);
+    expect(character?.images).toEqual([]);
   });
 });
 
