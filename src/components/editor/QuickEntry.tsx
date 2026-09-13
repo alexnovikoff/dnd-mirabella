@@ -18,6 +18,8 @@ import type { PickerNode } from '@/lib/queries/nodes';
 import type { SessionOption } from '@/lib/queries/sessions';
 import { NO_SESSION } from '@/lib/sessions-shared';
 import { shortRuDate } from '@/lib/dates';
+import { plural } from '@/lib/plural';
+import { describeFailures, uploadEach } from '@/lib/uploads';
 import styles from './QuickEntry.module.css';
 
 const TYPES: { id: EntryKind; label: string; lands: string }[] = [
@@ -32,6 +34,15 @@ function sessionLabel(session: SessionOption): string {
   return [`Сессия ${session.number}`, session.title, shortRuDate(session.date)]
     .filter(Boolean)
     .join(' · ');
+}
+
+/** Строка в поле кадра: что выбрано. Список имён целиком в полосу не влезет —
+ *  первого файла хватает, чтобы узнать пачку. */
+function filesLabel(files: File[]): string {
+  if (files.length === 0) return 'Выберите файлы или бросьте их сюда';
+  if (files.length === 1) return files[0].name;
+  const count = `${files.length} ${plural(files.length, 'файл', 'файла', 'файлов')}`;
+  return `${count}: ${files[0].name} и ещё ${files.length - 1}`;
 }
 
 /** Запись, открытая на правку. Данные берём из карточки — лишний запрос
@@ -88,7 +99,9 @@ export function QuickEntry({
   );
   const [dmOnly, setDmOnly] = useState(editing?.visibility === 'dm_only');
   const [confirmingDelete, setConfirmingDelete] = useState(false);
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
+  /* «Загружаем 2 из 5…» — кадры пачки уходят по одному. */
+  const [progress, setProgress] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const isDraft = editing?.visibility === 'draft';
@@ -133,18 +146,43 @@ export function QuickEntry({
 
       /* Фото приходит вместе с файлом, поэтому уходит формой, а не объектом. */
       if (kind === 'image' && !editing) {
-        const form = new FormData();
-        form.append('caption', caption);
-        form.append('publish', publish ? '1' : '0');
-        form.append('sessionId', sessionId);
-        if (file) form.append('file', file);
+        const photo = (file?: File) => {
+          const form = new FormData();
+          form.append('caption', caption);
+          form.append('publish', publish ? '1' : '0');
+          form.append('sessionId', sessionId);
+          if (file) form.append('file', file);
+          return createPhotoEntry(form);
+        };
 
-        const photo = await createPhotoEntry(form);
-        if (!photo.ok) {
-          setError(photo.error);
+        /* Без файла остаётся подпись к кадру, который принесут позже. */
+        if (files.length === 0) {
+          const result = await photo();
+          if (!result.ok) {
+            setError(result.error);
+            return;
+          }
+          router.refresh();
+          onClose();
           return;
         }
-        router.refresh();
+
+        /* Каждый файл — свой кадр и своя запись, ровно как если бы их заводили
+         * по одному: в выбранную сессию и с подписью из поля. И запросами
+         * они едут по одному — пачка одной формой не пролезает в предел
+         * тела запроса. */
+        const outcome = await uploadEach(files, photo, (current, total) =>
+          setProgress(total > 1 ? `Загружаем ${current} из ${total}…` : null),
+        );
+        setProgress(null);
+        if (outcome.saved > 0) router.refresh();
+        if (outcome.failed.length > 0) {
+          /* В поле остаются только не легшие кадры: повторная отправка
+           * не должна удвоить те, что уже в галерее. */
+          setFiles(outcome.failed.map((item) => item.file));
+          setError(describeFailures(outcome.failed));
+          return;
+        }
         onClose();
         return;
       }
@@ -206,6 +244,16 @@ export function QuickEntry({
       className={styles.scrim}
       onMouseDown={(e) => {
         if (!sheetRef.current?.contains(e.target as Node)) onClose();
+      }}
+      /* Файлы, брошенные мимо поля, не должны ни открыться во вкладке вместо
+       * страницы, ни достаться странице под шитом: «Галерея» уложила бы их
+       * в группу со своей полосы, а не в сессию из шита. Текст не трогаем —
+       * его перетаскивают внутри поля записи. */
+      onDragOver={(e) => {
+        if (e.dataTransfer.types.includes('Files')) e.preventDefault();
+      }}
+      onDrop={(e) => {
+        if (e.dataTransfer.types.includes('Files')) e.preventDefault();
       }}
     >
       <div
@@ -279,7 +327,7 @@ export function QuickEntry({
                   onClick={() => {
                     setKind(option.id);
                     setError(null);
-                    setFile(null);
+                    setFiles([]);
                   }}
                 >
                   {option.label}
@@ -351,11 +399,15 @@ export function QuickEntry({
                   ref={fileRef}
                   type="file"
                   accept="image/*"
+                  multiple
                   hidden
-                  onChange={(e) => setFile(e.currentTarget.files?.[0] ?? null)}
+                  onChange={(e) => setFiles(Array.from(e.currentTarget.files ?? []))}
                 />
-                {/* Файл можно выбрать или бросить прямо сюда; без файла
-                    останется подпись к кадру, который принесут позже. */}
+                {/* Файлы можно выбрать или бросить прямо сюда — один или пачкой;
+                    без файла останется подпись к кадру, который принесут позже.
+                    preventDefault на броске — знак странице под шитом, что
+                    файлы уже забрали: «Галерея» проверяет его и не грузит их
+                    второй раз в группу со своей полосы. */}
                 <div
                   role="button"
                   tabIndex={0}
@@ -374,14 +426,11 @@ export function QuickEntry({
                   onDrop={(e) => {
                     e.preventDefault();
                     setDragging(false);
-                    const dropped = e.dataTransfer.files?.[0];
-                    if (dropped) setFile(dropped);
+                    const dropped = Array.from(e.dataTransfer.files ?? []);
+                    if (dropped.length > 0) setFiles(dropped);
                   }}
                 >
-                  <DropZone
-                    active={dragging}
-                    label={file ? file.name : 'Выберите файл или бросьте его сюда'}
-                  />
+                  <DropZone active={dragging} label={progress ?? filesLabel(files)} />
                 </div>
                 <input
                   className={styles.caption}
@@ -397,7 +446,11 @@ export function QuickEntry({
                       submit(true);
                     }
                   }}
-                  placeholder="Подпись к кадру (необязательно)…"
+                  placeholder={
+                    files.length > 1
+                      ? 'Подпись ко всем кадрам (необязательно)…'
+                      : 'Подпись к кадру (необязательно)…'
+                  }
                 />
               </>
             ) : (

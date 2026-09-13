@@ -10,6 +10,7 @@ import { deleteImage, renameImage, uploadImages } from '@/lib/actions/images';
 import { useQuickEntry } from '@/components/editor/QuickEntryProvider';
 import { numericDate } from '@/lib/dates';
 import { plural } from '@/lib/plural';
+import { describeFailures, uploadEach } from '@/lib/uploads';
 import type { GalleryGroup, GalleryImage } from '@/lib/queries/gallery';
 import { NO_SESSION } from '@/lib/sessions-shared';
 import picker from '@/components/editor/Picker.module.css';
@@ -101,9 +102,9 @@ function Tile({
   );
 }
 
-/* Подпись правит любой вошедший: перетащенному файлу она достаётся от его
- * имени, а «IMG_2043» под плиткой не рассказывает ничего. Поле открывается
- * на месте строки — тем же движением, что у достижений персонажа. */
+/* Подпись правит любой вошедший: брошенные на страницу кадры приходят без неё,
+ * и добавить её удобнее всего прямо под плиткой. Поле открывается на месте
+ * строки — тем же движением, что у достижений персонажа. */
 function Caption({
   image,
   canWrite,
@@ -203,26 +204,33 @@ export function GalleryBoard({
   const [error, setError] = useState<string | null>(null);
   const [lightbox, setLightbox] = useState<{ group: number; index: number } | null>(null);
   const [removing, setRemoving] = useState<GalleryImage | null>(null);
+  /* «Загружаем 2 из 5…» — пачка едет по файлу, и без счёта долгая загрузка
+   * выглядит зависшей. */
+  const [progress, setProgress] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const depth = useRef(0);
 
   const flat = groups.flatMap((group) => group.images);
 
   const upload = useCallback(
-    (files: FileList) => {
-      const form = new FormData();
-      for (const file of Array.from(files)) form.append('files', file);
-      /* Пустое значение означало бы «на усмотрение сервера» — то есть
-       * активную сессию; вне сессий кадр кладут только явным NO_SESSION. */
-      if (!toSession) form.append('sessionId', NO_SESSION);
-
+    (files: File[]) => {
       startTransition(async () => {
-        const result = await uploadImages(form);
-        if (!result.ok) setError(result.error);
-        else {
-          setError(null);
-          router.refresh();
-        }
+        const outcome = await uploadEach(
+          files,
+          (file) => {
+            const form = new FormData();
+            form.append('files', file);
+            /* Пустое значение означало бы «на усмотрение сервера» — то есть
+             * активную сессию; вне сессий кадр кладут только явным NO_SESSION. */
+            if (!toSession) form.append('sessionId', NO_SESSION);
+            return uploadImages(form);
+          },
+          (current, total) => setProgress(total > 1 ? `Загружаем ${current} из ${total}…` : null),
+        );
+        setProgress(null);
+        setError(describeFailures(outcome.failed));
+        /* Часть пачки могла и не лечь — те, что легли, показываем сразу. */
+        if (outcome.saved > 0) router.refresh();
       });
     },
     [router, toSession],
@@ -280,11 +288,14 @@ export function GalleryBoard({
       if (depth.current === 0) setDragging(false);
     }
     function onDrop(event: DragEvent) {
-      if (!event.dataTransfer?.files.length) return;
-      event.preventDefault();
       depth.current = 0;
       setDragging(false);
-      upload(event.dataTransfer.files);
+      /* Файлы уже забрали поверх страницы — шит быстрой записи со своей
+       * сессией. Подхватить их ещё и здесь значило бы положить пачку второй
+       * раз, да ещё в группу с полосы: так кадры и уезжали в последнюю сессию. */
+      if (event.defaultPrevented || !event.dataTransfer?.files.length) return;
+      event.preventDefault();
+      upload(Array.from(event.dataTransfer.files));
     }
 
     window.addEventListener('dragenter', onDragEnter);
@@ -383,7 +394,7 @@ export function GalleryBoard({
               active={dragging}
               label={
                 pending
-                  ? 'Загружаем…'
+                  ? (progress ?? 'Загружаем…')
                   : `Бросьте файлы сюда или нажмите · группа «${sessionLabel && toSession ? sessionLabel : 'Без сессии'}»`
               }
             />

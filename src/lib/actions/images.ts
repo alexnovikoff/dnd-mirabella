@@ -86,7 +86,9 @@ export async function createPhotoEntry(
 }
 
 /** Drag-and-drop на страницу «Галерея»: файлы попадают в активную сессию,
- *  либо — если на полосе выбрали «Без сессии» — вне игр вообще. */
+ *  либо — если на полосе выбрали «Без сессии» — вне игр вообще.
+ *  Страница шлёт файлы по одному (lib/uploads): пачка одной формой
+ *  не пролезает в предел тела запроса. */
 export async function uploadImages(form: FormData): Promise<UploadResult> {
   const viewer = await requireViewer();
   const files = form.getAll('files').filter((item): item is File => item instanceof File);
@@ -97,10 +99,8 @@ export async function uploadImages(form: FormData): Promise<UploadResult> {
     return { ok: false, error: `Не картинка: ${unsupported.name}` };
   }
 
-  const urls: { url: string; caption: string }[] = [];
-  for (const file of files) {
-    urls.push({ url: await saveUpload(file), caption: file.name.replace(/\.[^.]+$/, '') });
-  }
+  const urls: string[] = [];
+  for (const file of files) urls.push(await saveUpload(file));
 
   const target = String(form.get('sessionId') ?? '') || null;
 
@@ -108,13 +108,15 @@ export async function uploadImages(form: FormData): Promise<UploadResult> {
     const sessionId = await resolveSessionId(db, target);
 
     await db.insert(t.images).values(
-      urls.map((item) => ({
+      urls.map((url) => ({
         id: randomUUID(),
         campaignId: CAMPAIGN_ID,
         sessionId,
         entryId: null,
-        url: item.url,
-        caption: item.caption,
+        url,
+        /* Без подписи — как у кадра из шита: «IMG_2043» под плиткой
+         * не рассказывает ничего, подпись добавляют потом, прямо в сетке. */
+        caption: null,
         uploaderId: viewer.id,
         kind: 'art' as const,
       })),
@@ -168,9 +170,8 @@ export async function deleteImage(imageId: string): Promise<ImageResult> {
 }
 
 /** Переписать подпись кадра. Права те же, что на снятие: галерею собирают
- *  вместе, и подпись чужого кадра правит любой вошедший. Править есть что:
- *  перетащенному файлу подпись достаётся от его имени, а «IMG_2043»
- *  под плиткой не рассказывает ничего.
+ *  вместе, и подпись чужого кадра правит любой вошедший. Кадры, брошенные
+ *  на страницу пачкой, приходят без подписи — здесь её и добавляют.
  *
  *  Запись типа «фото» — это и есть кадр (ровно поэтому deleteImage уносит её
  *  следом), и заголовок в ленте у неё тот же, что подпись под плиткой:
