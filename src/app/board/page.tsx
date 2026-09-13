@@ -23,9 +23,18 @@ export default async function BoardPage({
   const selectedSlug = node ?? null;
   const detail = selectedSlug ? await getNodeDetail(selectedSlug) : null;
 
-  /* В панель идёт один кадр — первый (он же самый свежий). Остальные лежат
-   * на странице сущности: колонке в 300px сетка плиток не по размеру. */
-  const preview = detail?.images.find((image) => image.url) ?? null;
+  /* В панель идёт один кадр. У персонажа партии это портрет: кадров карточки
+   * у него не бывает, лицо загружают на странице персонажа. У остальных —
+   * первый кадр карточки (он же самый свежий). Остальные лежат на странице
+   * сущности: колонке в 300px сетка плиток не по размеру. */
+  const entityImage = detail?.images.find((image) => image.url);
+  const preview = !detail
+    ? null
+    : detail.portrait
+      ? { url: detail.portrait, alt: `Портрет: ${detail.name}` }
+      : entityImage?.url
+        ? { url: entityImage.url, alt: entityImage.caption ?? detail.name }
+        : null;
 
   return (
     <div className={styles.layout}>
@@ -58,42 +67,52 @@ export default async function BoardPage({
         {detail ? (
           <>
             <div className={styles.block}>
-              <MonoLabel size={10} tracking="0.14em" block>
-                Выбранный узел
-              </MonoLabel>
+              {/* «Править» стоит в одной строке с подписью блока: под кадром
+                  её приходилось искать, пролистав имя, описание и картинку.
+                  Раскрытая форма переносится под строку на всю ширину. */}
+              <div className={styles.panelHead}>
+                <MonoLabel size={10} tracking="0.14em" block>
+                  Выбранный узел
+                </MonoLabel>
+                {/* Тот же редактор, что на странице сущности: название, тип,
+                    статус и описание правятся не уходя с доски. */}
+                <EntityEditor
+                  returnTo="board"
+                  node={{
+                    id: detail.id,
+                    name: detail.name,
+                    kind: detail.kind,
+                    status: detail.status,
+                    description: detail.description,
+                    aliases: detail.aliases,
+                    isCharacter: detail.isCharacter,
+                  }}
+                />
+              </div>
               <h2 className={styles.nodeName}>{detail.name}</h2>
+              {detail.aliases.length > 0 ? (
+                <MonoLabel size={9} tracking="0.06em" tone="faint" block>
+                  {`Прежние имена: ${detail.aliases.join(', ')}`}
+                </MonoLabel>
+              ) : null}
               {detail.description ? (
                 <p className={styles.description}>{detail.description}</p>
               ) : null}
 
-              {/* Кадр стоит выше правки: узел узнают в лицо раньше, чем
-                  берутся его править. */}
-              {preview?.url ? (
+              {/* Размеры — только место под кадр до загрузки: высоту по
+                  пропорциям самого файла задаёт .previewPhoto. */}
+              {preview ? (
                 <div className={styles.preview}>
                   <Image
                     src={preview.url}
-                    alt={preview.caption ?? detail.name}
-                    fill
+                    alt={preview.alt}
+                    width={600}
+                    height={600}
                     className={styles.previewPhoto}
-                    sizes="(max-width: 1023px) 100vw, 300px"
+                    sizes="(max-width: 1023px) 360px, 300px"
                   />
                 </div>
               ) : null}
-
-              {/* Тот же редактор, что на странице сущности: название, тип,
-                  статус и описание правятся не уходя с доски. */}
-              <EntityEditor
-                returnTo="board"
-                node={{
-                  id: detail.id,
-                  name: detail.name,
-                  kind: detail.kind,
-                  status: detail.status,
-                  description: detail.description,
-                  aliases: detail.aliases,
-                  isCharacter: detail.isCharacter,
-                }}
-              />
             </div>
 
             {/* «Связи», «Упоминания» и ссылка на карточку отходят от узла

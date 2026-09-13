@@ -88,7 +88,9 @@ export function EntityEditor({
         <button type="button" className={styles.action} onClick={() => setOpen(true)}>
           Править
         </button>
-        {node.aliases.length > 0 ? (
+        {/* На доске кнопка делит строку с подписью «Выбранный узел», и
+            прежним именам рядом с ней тесно: их панель ставит под названием. */}
+        {node.aliases.length > 0 && returnTo !== 'board' ? (
           <MonoLabel size={9} tracking="0.06em" tone="faint">
             {`Прежние имена: ${node.aliases.join(', ')}`}
           </MonoLabel>

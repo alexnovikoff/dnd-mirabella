@@ -33,6 +33,7 @@ vi.mock('@/lib/viewer', () => ({
 }));
 
 const { deletePortrait, savePortraitCrop, uploadPortrait } = await import('./characters');
+const { getNodeDetail } = await import('@/lib/queries/board');
 
 const HERO = FIXTURE.nodes.hero;
 const CROP = { x: 0.1, y: 0.2, w: 0.5, h: 0.6 };
@@ -171,5 +172,24 @@ describe('deletePortrait', () => {
       portraitCrop: null,
     });
     expect(fake.removed.sort()).toEqual(['/uploads/1.png', '/uploads/2.png']);
+  });
+});
+
+describe('портрет в панели доски', () => {
+  it('у персонажа партии панель получает портрет', async () => {
+    await uploadPortrait(form({ nodeId: HERO, file: picture() }));
+
+    expect((await getNodeDetail('geroy'))?.portrait).toBe('/uploads/1.png');
+  });
+
+  it('кадр для «Партии» портрет не подменяет: панель показывает снимок целиком', async () => {
+    await uploadPortrait(form({ nodeId: HERO, file: picture() }));
+    await savePortraitCrop(form({ nodeId: HERO, file: picture(), crop: JSON.stringify(CROP) }));
+
+    expect((await getNodeDetail('geroy'))?.portrait).toBe('/uploads/1.png');
+  });
+
+  it('у сущности без строки в characters портрета нет', async () => {
+    expect((await getNodeDetail('prizrak'))?.portrait).toBeNull();
   });
 });
