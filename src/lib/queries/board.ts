@@ -130,6 +130,10 @@ export type NodeDetail = {
    *  Не путать с mentions.images — там счётчик записей-фото, где узел назван
    *  в тексте. */
   images: { id: string; url: string | null; caption: string | null; uploaderName: string | null }[];
+  /** Портрет персонажа партии как его загрузили, без кадрирования. У персонажа
+   *  лицо живёт здесь, а не в images: страница персонажа кадров карточки не
+   *  грузит. null — не персонаж партии или портрета нет. */
+  portrait: string | null;
   relations: {
     /** id ребра — по нему связь правят и удаляют. */
     linkId: string;
@@ -230,7 +234,7 @@ export function getNodeDetail(slug: string): Promise<NodeDetail | null> {
       .orderBy(desc(t.images.createdAt), desc(t.images.id));
 
     const [character] = await db
-      .select({ nodeId: t.characters.nodeId })
+      .select({ nodeId: t.characters.nodeId, portrait: t.characters.portrait })
       .from(t.characters)
       .where(eq(t.characters.nodeId, node.id))
       .limit(1);
@@ -245,6 +249,7 @@ export function getNodeDetail(slug: string): Promise<NodeDetail | null> {
       aliases: node.aliases,
       isCharacter: Boolean(character),
       images,
+      portrait: character?.portrait ?? null,
       relations,
       mentions: {
         moments,
