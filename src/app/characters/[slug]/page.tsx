@@ -71,7 +71,6 @@ export default async function CharacterPage({ params }: { params: Promise<{ slug
               <Metric value={character.metrics.moments} label="МОМЕНТОВ" />
               <Metric value={character.metrics.quotes} label="ЦИТАТ" />
               <Metric value={character.metrics.links} label="СВЯЗЕЙ" />
-              <Metric value={character.metrics.crits} label="КРИТА" accent />
             </div>
           </div>
         </div>
@@ -92,7 +91,6 @@ export default async function CharacterPage({ params }: { params: Promise<{ slug
               <MonoLabel size={10} tracking="0.06em" tone="faint">
                 {[
                   moment.sessionNumber ? `Сессия ${moment.sessionNumber}` : null,
-                  moment.isCrit ? `Крит ${moment.roll ?? 20}` : null,
                   moment.isFail ? `Провал ${moment.roll ?? 1}` : null,
                 ]
                   .filter(Boolean)
