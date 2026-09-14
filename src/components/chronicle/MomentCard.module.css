@@ -40,16 +40,40 @@
   padding: 4px 8px;
 }
 
-/* Компактная карточка: превью 108×84 слева, текст справа. */
-.compact {
+/* Миниатюра кадра записи или упомянутого узла. Не на всю ширину, как блок
+ * изображения в макете: чаще всего это портрет, и в полосе 150px от лица
+ * остались бы одни глаза. */
+.thumb {
+  position: relative;
+  width: 200px;
+  max-width: 100%;
+  height: 150px;
+  overflow: hidden;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+}
+
+.photo {
+  object-fit: cover;
+}
+
+/* Компактная карточка: превью 108×84 слева, текст справа. Селектор с тегом:
+ * стили ParchmentCard приезжают ещё и с loading.tsx, встают после стилей
+ * страницы и при равной специфичности возвращали карточке колонку. */
+article.compact {
   flex-direction: row;
   gap: 14px;
   align-items: stretch;
 }
 
 .compactPreview {
+  position: relative;
   width: 108px;
+  height: 84px;
   flex: none;
+  overflow: hidden;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
 }
 
 .compactText {
@@ -78,7 +102,7 @@
     font-size: 24px;
   }
 
-  .compact {
+  article.compact {
     flex-direction: column;
   }
 
