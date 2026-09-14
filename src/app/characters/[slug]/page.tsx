@@ -6,6 +6,7 @@ import { WikiText } from '@/components/wiki/WikiText';
 import { EntryActions } from '@/components/entry/EntryActions';
 import { Achievements } from '@/components/character/Achievements';
 import { CharacterEditor } from '@/components/character/CharacterEditor';
+import { GuestToggle } from '@/components/character/GuestToggle';
 import { PersonalNotes } from '@/components/character/PersonalNotes';
 import { PortraitEditor } from '@/components/character/PortraitEditor';
 import { RelationsEditor } from '@/components/entity/RelationsEditor';
@@ -72,6 +73,8 @@ export default async function CharacterPage({ params }: { params: Promise<{ slug
               <Metric value={character.metrics.quotes} label="ЦИТАТ" />
               <Metric value={character.metrics.links} label="СВЯЗЕЙ" />
             </div>
+            {/* Гостевой персонаж не виден в «Партии», hero и авторах цитат. */}
+            <GuestToggle nodeId={character.id} guest={!character.isPc} />
           </div>
         </div>
       </header>

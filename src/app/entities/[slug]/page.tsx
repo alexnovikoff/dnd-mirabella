@@ -3,6 +3,7 @@ import { Screen } from '@/components/shell/Screen';
 import { LinkRow, MonoLabel, StatusPill } from '@/components/primitives';
 import { EntityEditor } from '@/components/entity/EntityEditor';
 import { EntityImages } from '@/components/entity/EntityImages';
+import { GuestToggle } from '@/components/character/GuestToggle';
 import { RelationsEditor } from '@/components/entity/RelationsEditor';
 import { getBoard, getNodeDetail } from '@/lib/queries/board';
 import { getLinkLabels } from '@/lib/queries/labels';
@@ -44,6 +45,7 @@ export default async function EntityPage({
             description: detail.description,
             aliases: detail.aliases,
             isCharacter: detail.isCharacter,
+            hasPlayer: detail.hasPlayer,
           }}
         />
       }
@@ -55,6 +57,7 @@ export default async function EntityPage({
             {NODE_KIND_LABEL[detail.kind]}
           </MonoLabel>
           {detail.status ? <StatusPill status={detail.status} /> : null}
+          {detail.isCharacter ? <GuestToggle nodeId={detail.id} guest={detail.isGuest} /> : null}
           {detail.aliases.length > 0 ? (
             <MonoLabel size={9} tracking="0.06em" tone="faint">
               {`Прежние имена: ${detail.aliases.join(', ')}`}
@@ -67,7 +70,14 @@ export default async function EntityPage({
       /* С доски сущность видна в окружении связей — туда и ссылка, с узлом
          уже выбранным. Единственная на странице: строка «Открыть на доске
          связей» внизу, под упоминаниями, её только дублировала. */
-      links={[{ href: `/board?node=${detail.slug}`, label: 'к доске связей' }]}
+      links={[
+        { href: `/board?node=${detail.slug}`, label: 'к доске связей' },
+        /* У персонажа, основного или гостевого, есть и своя страница:
+           портрет, достижения, моменты о нём. */
+        ...(detail.isCharacter
+          ? [{ href: `/characters/${detail.slug}`, label: 'к странице персонажа' }]
+          : []),
+      ]}
     >
       {/* Изображения идут сразу под шапкой: карточку узнают в лицо раньше,
           чем читают её связи. */}

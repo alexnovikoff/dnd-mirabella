@@ -22,14 +22,15 @@ export type QuoteCard = {
   sessionNumber: number | null;
 };
 
-/** Кто может быть автором цитаты: партия плюс мастер. */
+/** Кто может быть автором цитаты: основные персонажи. Гостевых среди
+ *  авторов нет — ни в фильтре цитатника, ни в шите быстрой записи. */
 export function getQuoteAuthors() {
   return runDb(async (db) => {
     const characters = await db
       .select({ id: t.nodes.id, name: t.nodes.name, slug: t.nodes.slug })
       .from(t.characters)
       .innerJoin(t.nodes, eq(t.nodes.id, t.characters.nodeId))
-      .where(eq(t.nodes.campaignId, CAMPAIGN_ID))
+      .where(and(eq(t.nodes.campaignId, CAMPAIGN_ID), eq(t.characters.isPc, true)))
       .orderBy(t.nodes.name);
 
     return characters;

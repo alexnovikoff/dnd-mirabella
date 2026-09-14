@@ -78,6 +78,13 @@
       "when": 1789348092767,
       "tag": "0010_married_king_cobra",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1789348430823,
+      "tag": "0011_guest_characters",
+      "breakpoints": true
     }
   ]
 }

@@ -12,10 +12,10 @@ import type { NodeKind, NodeStatus } from '@/lib/db/schema';
 import picker from '@/components/editor/Picker.module.css';
 import styles from './EntityEditor.module.css';
 
-/** Типы, между которыми переключается обычный узел. «Персонаж» в списке
- *  есть: узел такого типа заводится с доски и из базы знаний, и без него
- *  select не показывал бы собственный тип узла. Персонажа партии это не
- *  касается: у него ниже единственный вариант, и тип ему держит сервер. */
+/** Типы, между которыми переключается узел. Смена на «Персонаж» делает узел
+ *  гостевым персонажем, смена с него — убирает портрет, биографию и
+ *  достижения (с подтверждением). Персонажу игрока тип не меняется: у него
+ *  ниже единственный вариант, и тип ему держит сервер. */
 const KINDS: NodeKind[] = [
   'character',
   'npc',
@@ -50,7 +50,10 @@ export function EntityEditor({
     status: NodeStatus | null;
     description: string | null;
     aliases: string[];
+    /** Узел — персонаж, основной или гостевой: у него есть строка в characters. */
     isCharacter: boolean;
+    /** К персонажу привязан игрок: тип не меняется, удалить нельзя. */
+    hasPlayer: boolean;
   };
 }) {
   const router = useRouter();
@@ -64,6 +67,8 @@ export function EntityEditor({
   const [description, setDescription] = useState(node.description ?? '');
   const [error, setError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
+  /* Смена типа с «Персонажа» стирает портрет и достижения — сначала спросить. */
+  const [confirmingKind, setConfirmingKind] = useState(false);
   const [pending, startTransition] = useTransition();
 
   /* Без входа править нечем. Пустое место на месте кнопки читается как
@@ -95,30 +100,39 @@ export function EntityEditor({
     );
   }
 
+  const save = () => {
+    setError(null);
+    startTransition(async () => {
+      const result = await updateNode(node.id, {
+        name,
+        kind,
+        status: (status || null) as NodeStatus | null,
+        description,
+      });
+      setConfirmingKind(false);
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      setOpen(false);
+      /* Слаг мог смениться вместе с именем — уходим на новый адрес. */
+      router.replace(
+        returnTo === 'board' ? `/board?node=${result.slug}` : `/entities/${result.slug}`,
+      );
+      router.refresh();
+    });
+  };
+
   return (
     <form
       className={styles.form}
       onSubmit={(event) => {
         event.preventDefault();
-        setError(null);
-        startTransition(async () => {
-          const result = await updateNode(node.id, {
-            name,
-            kind,
-            status: (status || null) as NodeStatus | null,
-            description,
-          });
-          if (!result.ok) {
-            setError(result.error);
-            return;
-          }
-          setOpen(false);
-          /* Слаг мог смениться вместе с именем — уходим на новый адрес. */
-          router.replace(
-            returnTo === 'board' ? `/board?node=${result.slug}` : `/entities/${result.slug}`,
-          );
-          router.refresh();
-        });
+        if (node.isCharacter && kind !== 'character') {
+          setConfirmingKind(true);
+          return;
+        }
+        save();
       }}
     >
       <label className={styles.field}>
@@ -142,12 +156,12 @@ export function EntityEditor({
           </MonoLabel>
           <select
             className={picker.field}
-            value={node.isCharacter ? 'character' : kind}
-            disabled={node.isCharacter}
-            title={node.isCharacter ? 'У персонажа партии тип не меняется' : undefined}
+            value={node.hasPlayer ? 'character' : kind}
+            disabled={node.hasPlayer}
+            title={node.hasPlayer ? 'У персонажа игрока тип не меняется' : undefined}
             onChange={(e) => setKind(e.currentTarget.value as NodeKind)}
           >
-            {node.isCharacter ? (
+            {node.hasPlayer ? (
               <option value="character">{NODE_KIND_TITLE.character}</option>
             ) : (
               KINDS.map((item) => (
@@ -189,6 +203,13 @@ export function EntityEditor({
         />
       </label>
 
+      {!node.isCharacter && kind === 'character' ? (
+        <MonoLabel size={9} tracking="0.06em" tone="faint" block>
+          Станет гостевым персонажем: появится своя страница, а в «Партию» его переводит тумблер на
+          карточке
+        </MonoLabel>
+      ) : null}
+
       {name !== node.name ? (
         <MonoLabel size={9} tracking="0.06em" tone="faint" block>
           {`Прежнее имя «${node.name}» уйдёт в алиасы — [[ссылки]] в старых записях не сломаются`}
@@ -221,8 +242,8 @@ export function EntityEditor({
           ОТМЕНА
         </button>
 
-        {/* Персонажа партии не удаляем: у него своя строка в characters. */}
-        {!node.isCharacter ? (
+        {/* Персонажа игрока не удаляем: у игрока своя учётка и своя страница. */}
+        {!node.hasPlayer ? (
           <button
             type="button"
             className={styles.danger}
@@ -238,7 +259,11 @@ export function EntityEditor({
       {confirming ? (
         <ConfirmDialog
           title="Удалить сущность?"
-          body="Исчезнут её связи на доске и упоминания в графе. Текст записей не изменится: ссылки на неё останутся, но станут простым текстом."
+          body={
+            node.isCharacter
+              ? 'Исчезнут портрет, достижения, связи на доске и упоминания в графе. Текст записей не изменится: ссылки останутся, но станут простым текстом.'
+              : 'Исчезнут её связи на доске и упоминания в графе. Текст записей не изменится: ссылки на неё останутся, но станут простым текстом.'
+          }
           quoted={node.name}
           confirmLabel="УДАЛИТЬ"
           pending={pending}
@@ -255,6 +280,18 @@ export function EntityEditor({
             })
           }
           onCancel={() => setConfirming(false)}
+        />
+      ) : null}
+
+      {confirmingKind ? (
+        <ConfirmDialog
+          title="Перестанет быть персонажем?"
+          body={`Тип сменится на «${NODE_KIND_TITLE[kind]}». Портрет, биография и достижения персонажа пропадут, связи и упоминания останутся.`}
+          quoted={node.name}
+          confirmLabel="СМЕНИТЬ ТИП"
+          pending={pending}
+          onConfirm={save}
+          onCancel={() => setConfirmingKind(false)}
         />
       ) : null}
     </form>

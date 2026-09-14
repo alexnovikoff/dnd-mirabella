@@ -23,8 +23,8 @@ export default async function BoardPage({
   const selectedSlug = node ?? null;
   const detail = selectedSlug ? await getNodeDetail(selectedSlug) : null;
 
-  /* В панель идёт один кадр. У персонажа партии это портрет: кадров карточки
-   * у него не бывает, лицо загружают на странице персонажа. У остальных —
+  /* В панель идёт один кадр. У персонажа это портрет, если он загружен: лицо
+   * загружают на странице персонажа. У остальных и у персонажа без портрета —
    * первый кадр карточки (он же самый свежий). Остальные лежат на странице
    * сущности: колонке в 300px сетка плиток не по размеру. */
   const entityImage = detail?.images.find((image) => image.url);
@@ -86,6 +86,7 @@ export default async function BoardPage({
                     description: detail.description,
                     aliases: detail.aliases,
                     isCharacter: detail.isCharacter,
+                    hasPlayer: detail.hasPlayer,
                   }}
                 />
               </div>
@@ -198,7 +199,7 @@ export default async function BoardPage({
               <DeleteNodeButton
                 nodeId={detail.id}
                 name={detail.name}
-                isCharacter={detail.isCharacter}
+                hasPlayer={detail.hasPlayer}
               />
             </div>
           </>

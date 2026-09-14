@@ -35,6 +35,7 @@ export function getCharacter(slug: string, viewer: Viewer | null) {
         bio: t.characters.bio,
         sinceSession: t.characters.sinceSession,
         playerId: t.characters.playerId,
+        isPc: t.characters.isPc,
       })
       .from(t.characters)
       .innerJoin(t.nodes, eq(t.nodes.id, t.characters.nodeId))
@@ -171,14 +172,15 @@ export function getCharacter(slug: string, viewer: Viewer | null) {
   });
 }
 
-/** Все персонажи — для маршрута /party и подсказок. */
-export function getCharacters() {
+/** Персонажи для «Партии»: основные, а с `guests` — и гостевые. */
+export function getCharacters({ guests = false }: { guests?: boolean } = {}) {
   return runDb((db) =>
     db
       .select({
         id: t.nodes.id,
         name: t.nodes.name,
         slug: t.nodes.slug,
+        isPc: t.characters.isPc,
         race: t.characters.race,
         classes: t.characters.classes,
         bio: t.characters.bio,
@@ -189,7 +191,10 @@ export function getCharacters() {
       })
       .from(t.characters)
       .innerJoin(t.nodes, eq(t.nodes.id, t.characters.nodeId))
-      .where(eq(t.nodes.campaignId, CAMPAIGN_ID))
-      .orderBy(t.nodes.name),
+      .where(
+        and(eq(t.nodes.campaignId, CAMPAIGN_ID), ...(guests ? [] : [eq(t.characters.isPc, true)])),
+      )
+      /* Основные первыми, гости — следом: партия читается с начала списка. */
+      .orderBy(desc(t.characters.isPc), t.nodes.name),
   );
 }
