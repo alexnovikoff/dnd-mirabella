@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Cormorant_Garamond, Spectral, IBM_Plex_Mono } from 'next/font/google';
 import { Sheet } from '@/components/shell/Sheet';
 import { Header } from '@/components/shell/Header';
+import { PreviewBadge } from '@/components/shell/PreviewBadge';
 import { QuickEntryProvider } from '@/components/editor/QuickEntryProvider';
 import { getCampaign } from '@/lib/queries/chronicle';
 import { getPickerNodes } from '@/lib/queries/nodes';
@@ -71,6 +72,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="ru" className={`${cormorant.variable} ${spectral.variable} ${plexMono.variable}`}>
       <body>
+        <PreviewBadge />
         <QuickEntryProvider
           nodes={nodes}
           characters={characters}
