@@ -445,7 +445,7 @@ export function BoardCanvas({
                     y2={b.y}
                     stroke="#a6825a"
                     strokeOpacity={derived ? 0.45 : 1}
-                    strokeWidth={derived ? 0.7 : 1}
+                    strokeWidth={derived ? 0.6 : 0.8}
                     strokeDasharray={derived ? '1.5 2.5' : '3 2'}
                     vectorEffect="non-scaling-stroke"
                   >

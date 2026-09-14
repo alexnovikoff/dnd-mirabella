@@ -511,7 +511,7 @@
  * остаётся целым. */
 .kind {
   display: block;
-  margin-top: 2px;
+  margin-top: 4px;
   contain: inline-size;
   overflow: hidden;
   white-space: nowrap;
@@ -536,9 +536,9 @@
 }
 
 /* Верхняя строка панели: подпись слева, «Править» справа. Раскрытая форма
- * правки переносится на свою строку и занимает всю ширину — как в шапке
- * персонажа. */
+ * правки встаёт под строку на всю ширину панели. */
 .panelHead {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -546,8 +546,35 @@
   gap: 8px 12px;
 }
 
+/* Форма лежит поверх имени, описания и кадра, а не в потоке. В потоке она
+ * удлиняла панель, и у узла с кадром вместе с панелью росли доска и
+ * страница. Под формой не прячется ничего нужного: она правит те же имя и
+ * описание. z-index нет намеренно. Слой с ним запер бы в себе окно
+ * подтверждения удаления, и кнопки масштаба доски легли бы поверх его
+ * затемнения. Позиционированных элементов ниже в панели нет, так что форма
+ * и без него рисуется над ними. */
 .panelHead > form {
-  flex: 1 1 100%;
+  position: absolute;
+  top: calc(100% + 20px);
+  left: 0;
+  right: 0;
+  box-shadow: var(--node-shadow-sm);
+}
+
+/* Имя, описание и кадр под формой скрыты, но место держат: иначе над формой
+ * торчал верх имени, а под ней — остаток кадра. */
+.block:has(> .panelHead > form) > :not(.panelHead) {
+  visibility: hidden;
+}
+
+/* Подпись держит высоту кнопки «Править» (.action в EntityEditor.module.css:
+ * 27px, на телефоне 44px). Раскрытая форма встаёт вместо кнопки, строка без
+ * неё сжималась до подписи, и «Выбранный узел» подпрыгивал. Гостю кнопки
+ * нет — и лишней высоты тоже. */
+.panelHead:has(> :nth-child(2)) > :first-child {
+  display: flex;
+  align-items: center;
+  min-height: 27px;
 }
 
 .nodeName {
@@ -676,6 +703,20 @@
   .preview {
     max-width: 360px;
   }
+
+  /* Под доской панель высотой в своё содержимое: у узла без связей форма
+   * поверх вылезла бы за низ страницы. Здесь форма снова в потоке — панель
+   * и так последняя, её рост ничего не сдвигает. */
+  .panelHead > form {
+    position: static;
+    flex: 1 1 100%;
+    margin-block: 12px;
+    box-shadow: none;
+  }
+
+  .block:has(> .panelHead > form) > :not(.panelHead) {
+    visibility: visible;
+  }
 }
 
 @media (max-width: 767px) {
@@ -692,5 +733,9 @@
 
   .toolbar {
     padding: 12px 16px;
+  }
+
+  .panelHead:has(> :nth-child(2)) > :first-child {
+    min-height: 44px;
   }
 }
