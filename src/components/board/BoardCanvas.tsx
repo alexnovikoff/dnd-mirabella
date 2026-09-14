@@ -445,7 +445,7 @@ export function BoardCanvas({
                     y2={b.y}
                     stroke="#a6825a"
                     strokeOpacity={derived ? 0.45 : 1}
-                    strokeWidth={derived ? 0.4 : 0.6}
+                    strokeWidth={derived ? 0.7 : 1}
                     strokeDasharray={derived ? '1.5 2.5' : '3 2'}
                     vectorEffect="non-scaling-stroke"
                   >
@@ -461,7 +461,7 @@ export function BoardCanvas({
                   x2={pendingLine.b.x}
                   y2={pendingLine.b.y}
                   stroke="var(--accent)"
-                  strokeWidth={0.7}
+                  strokeWidth={1.2}
                   vectorEffect="non-scaling-stroke"
                 />
               ) : null}

@@ -41,7 +41,7 @@ export function BoardToolbar() {
   const [open, setOpen] = useState(false);
 
   return (
-    <>
+    <div className={styles.toolbarWrap}>
       <div className={styles.toolbar}>
         <h1 className={styles.title}>Доска связей</h1>
         <div className={styles.tools}>
@@ -62,7 +62,14 @@ export function BoardToolbar() {
               onClick={() => setOpen((value) => !value)}
               aria-expanded={open}
             >
-              {open ? '× ОТМЕНА' : '+ УЗЕЛ'}
+              {/* Обе подписи в одной ячейке, видна одна: кнопка всегда шириной
+                  в «× ОТМЕНА», и легенда слева от неё не прыгает. */}
+              <span className={open ? styles.addNodeHidden : undefined} aria-hidden={open}>
+                + УЗЕЛ
+              </span>
+              <span className={open ? undefined : styles.addNodeHidden} aria-hidden={!open}>
+                × ОТМЕНА
+              </span>
             </button>
           ) : (
             /* Без входа доска только читается: узлы не двигаются, кнопок
@@ -79,7 +86,7 @@ export function BoardToolbar() {
       </div>
 
       {open ? <AddNodeForm onDone={() => setOpen(false)} /> : null}
-    </>
+    </div>
   );
 }
 

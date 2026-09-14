@@ -61,7 +61,10 @@
   opacity: 0.6;
 }
 
+/* Обе подписи кнопки лежат в одной ячейке сетки — ширину даёт длинная. */
 .addNode {
+  display: inline-grid;
+  justify-items: center;
   border: 1px solid var(--rule);
   border-radius: var(--radius);
   background: transparent;
@@ -70,6 +73,14 @@
   letter-spacing: inherit;
   color: inherit;
   transition: border-color var(--hover-fast);
+}
+
+.addNode > span {
+  grid-area: 1 / 1;
+}
+
+.addNodeHidden {
+  visibility: hidden;
 }
 
 .addNode:hover {
@@ -90,15 +101,29 @@
   border-color: var(--accent);
 }
 
-/* Формы вместо системных окон: узел заводится и связывается прямо на месте. */
+/* Опора для формы нового узла: она выпадает из-под тулбара. */
+.toolbarWrap {
+  position: relative;
+}
+
+/* Формы вместо системных окон: узел заводится и связывается прямо на месте.
+ * Форма нового узла лежит поверх верха доски, а не в потоке: в потоке она
+ * добавляла свою высоту колонке, и страница росла на время ввода. Слой выше
+ * кнопок масштаба (z-index 6), иначе те легли бы на поля. */
 .form {
+  position: absolute;
+  z-index: 7;
+  top: 100%;
+  left: 0;
+  right: 0;
   display: flex;
   align-items: flex-end;
   gap: 12px;
   flex-wrap: wrap;
-  padding: 14px 24px;
+  padding: 12px 24px;
   border-bottom: 1px solid var(--rule);
   background: var(--panel);
+  box-shadow: var(--node-shadow-sm);
 }
 
 .formField {
@@ -107,6 +132,24 @@
   gap: 4px;
   min-width: 180px;
   flex: 1;
+}
+
+/* Поля и кнопка формы нового узла ниже общей мерки в 44px: форма лежит поверх
+ * доски и должна закрывать её как можно меньше. На телефоне мерка
+ * возвращается — ниже. */
+/* Высота задана, а не набрана отступами: у select свой межстрочный интервал,
+ * и по отступам он выходил на 2px выше поля рядом. */
+.form input,
+.form select {
+  height: 32px;
+  min-height: 0;
+  padding: 0 10px;
+  font-size: 13px;
+}
+
+.form .formSubmit {
+  min-height: 32px;
+  padding: 6px 14px;
 }
 
 .formSubmit {
@@ -161,7 +204,13 @@
 
 @media (max-width: 767px) {
   .form {
-    padding: 14px 16px;
+    padding: 12px 16px;
+  }
+
+  .form input,
+  .form select,
+  .form .formSubmit {
+    min-height: 44px;
   }
 }
 
@@ -387,10 +436,12 @@
 
 /* Ширину и высоту растянутой плитки BoardCanvas задаёт инлайном: width —
  * текст переносится по ней, min-height — ниже содержимого плитка не станет.
- * min-content — то же по ширине: плитка сжимается до самого длинного слова,
- * но не режет его (break-word, в отличие от anywhere, этот предел не двигает).
- * Колонкой, чтобы в высокой плитке текст стоял сверху, а не посередине,
- * как у кнопки по умолчанию. */
+ * min-content — то же по ширине: плитка сжимается до самого длинного слова
+ * имени, но не режет его (break-word, в отличие от anywhere, этот предел не
+ * двигает). Отступы и межстрочный интервал плотнее, чем у текста страницы:
+ * из них и складывался нижний предел плитки, и сжать её меньше 75×60 было
+ * нельзя. Колонкой, чтобы в высокой плитке текст стоял сверху, а не
+ * посередине, как у кнопки по умолчанию. */
 .node {
   display: flex;
   flex-direction: column;
@@ -400,9 +451,10 @@
   background: var(--card);
   border: 1px solid var(--rule);
   border-radius: var(--radius);
-  padding: 10px 12px;
+  padding: 7px 10px;
   font-family: var(--font-body);
   font-size: 13px;
+  line-height: 1.3;
   text-align: left;
   color: var(--ink);
   box-shadow: var(--node-shadow);
@@ -454,9 +506,16 @@
   text-decoration: none;
 }
 
+/* Подпись типа ширину плитки не держит: «ПЕРСОНАЖ» длиннее большинства имён
+ * и был пределом сжатия. В узкой плитке она обрезается многоточием, а имя
+ * остаётся целым. */
 .kind {
   display: block;
   margin-top: 2px;
+  contain: inline-size;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 /* Панель выбранного узла */
