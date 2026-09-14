@@ -3,10 +3,19 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { MonoLabel } from '@/components/primitives';
-import { saveNodePosition } from '@/lib/actions/board';
+import { saveNodePosition, saveNodeSize } from '@/lib/actions/board';
 import { useQuickEntry } from '@/components/editor/QuickEntryProvider';
 import { LinkTypeDialog } from './LinkTypeDialog';
 import { nodeAt, type NodeBox } from '@/lib/board-drag';
+import {
+  NODE_SIZE_DEFAULT,
+  NODE_SIZE_STEP,
+  TILE_SCALE_COOKIE,
+  TILE_SCALE_DEFAULT,
+  TILE_SCALE_STEPS,
+  clampNodeSize,
+  resizedNodeSize,
+} from '@/lib/board-tile';
 import { centerOf, scrollToCenter } from '@/lib/board-view';
 import { NODE_KIND_LABEL } from '@/lib/nodes';
 import type { BoardEdge, BoardNode } from '@/lib/queries/board';
@@ -59,18 +68,38 @@ type Pan = {
   top: number;
   movedFar: boolean;
 };
+/** Ручку размера прижали: центр плитки и расстояние до него — в пикселях окна. */
+type Resize = {
+  id: string;
+  pointerId: number;
+  centerX: number;
+  centerY: number;
+  distance: number;
+  size: number;
+};
+
+/* Размер плитки стрелками на ручке. */
+const RESIZE_KEYS: Record<string, number> = {
+  ArrowUp: NODE_SIZE_STEP,
+  ArrowRight: NODE_SIZE_STEP,
+  ArrowDown: -NODE_SIZE_STEP,
+  ArrowLeft: -NODE_SIZE_STEP,
+};
 
 export function BoardCanvas({
   nodes,
   edges,
   labels,
   selectedSlug,
+  initialTileStep,
 }: {
   nodes: BoardNode[];
   edges: BoardEdge[];
   /** Уже использованные типы связи — подсказки в окне после дропа. */
   labels: string[];
   selectedSlug: string | null;
+  /** Ступень множителя плиток из куки зрителя. */
+  initialTileStep: number;
 }) {
   const router = useRouter();
   const { canWrite } = useQuickEntry();
@@ -84,11 +113,35 @@ export function BoardCanvas({
   const [dropTarget, setDropTarget] = useState<string | null>(null);
   const [linking, setLinking] = useState<Linking | null>(null);
   const [pan, setPan] = useState<Pan | null>(null);
+  const [resize, setResize] = useState<Resize | null>(null);
   /* Локальные координаты на время перетаскивания — линии едут за узлом. */
   const [positions, setPositions] = useState<Record<string, { x: number; y: number }>>({});
+  /* Так же и размеры: плитка растёт под рукой, в базу уходит итог. */
+  const [sizes, setSizes] = useState<Record<string, number>>({});
+  const [tileStep, setTileStep] = useState<number>(initialTileStep);
 
   const zoom = ZOOM_STEPS[zoomStep];
+  const tileScale = TILE_SCALE_STEPS[tileStep];
   const byId = new Map(nodes.map((node) => [node.id, node]));
+  const selectedId = nodes.find((node) => node.slug === selectedSlug)?.id ?? null;
+
+  /* Множитель плиток — настройка зрителя, а не кампании: у каждого свой
+   * экран. Кука на год; страница прочтёт её при следующем заходе. */
+  function tileScaleTo(step: number) {
+    setTileStep(step);
+    document.cookie = `${TILE_SCALE_COOKIE}=${TILE_SCALE_STEPS[step]}; path=/board; max-age=31536000; samesite=lax`;
+  }
+
+  const sizeOf = (node: BoardNode) => sizes[node.id] ?? node.size;
+
+  /** Стрелки и двойной щелчок на ручке: размер меняется сразу и сохраняется. */
+  function changeSize(node: BoardNode, size: number) {
+    const next = clampNodeSize(size);
+    if (next === sizeOf(node)) return;
+    setSizes((current) => ({ ...current, [node.id]: next }));
+    void saveNodeSize(node.id, next);
+  }
+
   /* Масштаб, при котором поле сейчас отрисовано. */
   const zoomRef = useRef(zoom);
   /* Точка поля, которую после смены масштаба надо вернуть в центр окна.
@@ -157,15 +210,23 @@ export function BoardCanvas({
     [positions],
   );
 
-  /** Узел под курсором, кроме самого перетаскиваемого: он под ним всегда. */
-  const targetUnder = useCallback((dragged: string, clientX: number, clientY: number) => {
-    const boxes: NodeBox[] = [];
-    for (const [id, element] of nodeRefs.current) {
-      if (id === dragged) continue;
-      boxes.push({ id, rect: element.getBoundingClientRect() });
-    }
-    return nodeAt(boxes, clientX, clientY);
-  }, []);
+  /** Узел под курсором, кроме самого перетаскиваемого: он под ним всегда.
+   *  Выбранный узел нарисован поверх соседей, поэтому и проверяется последним. */
+  const targetUnder = useCallback(
+    (dragged: string, clientX: number, clientY: number) => {
+      const boxes: NodeBox[] = [];
+      let raised: NodeBox | null = null;
+      for (const [id, element] of nodeRefs.current) {
+        if (id === dragged) continue;
+        const box = { id, rect: element.getBoundingClientRect() };
+        if (id === selectedId) raised = box;
+        else boxes.push(box);
+      }
+      if (raised) boxes.push(raised);
+      return nodeAt(boxes, clientX, clientY);
+    },
+    [selectedId],
+  );
 
   /** Ручное ребро этой пары, если оно уже есть. Направление не важно. */
   function manualLinkOf(a: string, b: string) {
@@ -223,33 +284,73 @@ export function BoardCanvas({
     >
       {/* Кнопки масштаба лежат вне прокручиваемой области и вне канвы,
           поэтому изменение масштаба их не двигает. */}
-      <div className={styles.zoomControls}>
-        <button
-          type="button"
-          className={styles.zoomButton}
-          aria-label="Уменьшить масштаб"
-          disabled={zoomStep === 0}
-          onClick={() => zoomTo(Math.max(0, zoomStep - 1))}
-        >
-          −
-        </button>
-        <button
-          type="button"
-          className={styles.zoomValue}
-          title="Вернуть 100%"
-          onClick={() => zoomTo(ZOOM_DEFAULT)}
-        >
-          {`${Math.round(zoom * 100)}%`}
-        </button>
-        <button
-          type="button"
-          className={styles.zoomButton}
-          aria-label="Увеличить масштаб"
-          disabled={zoomStep === ZOOM_STEPS.length - 1}
-          onClick={() => zoomTo(Math.min(ZOOM_STEPS.length - 1, zoomStep + 1))}
-        >
-          +
-        </button>
+      <div className={styles.viewControls}>
+        <div className={styles.zoomControls}>
+          <MonoLabel size={9} tone="faint" className={styles.zoomLabel}>
+            Масштаб
+          </MonoLabel>
+          <button
+            type="button"
+            className={styles.zoomButton}
+            aria-label="Уменьшить масштаб"
+            disabled={zoomStep === 0}
+            onClick={() => zoomTo(Math.max(0, zoomStep - 1))}
+          >
+            −
+          </button>
+          <button
+            type="button"
+            className={styles.zoomValue}
+            title="Вернуть 100%"
+            onClick={() => zoomTo(ZOOM_DEFAULT)}
+          >
+            {`${Math.round(zoom * 100)}%`}
+          </button>
+          <button
+            type="button"
+            className={styles.zoomButton}
+            aria-label="Увеличить масштаб"
+            disabled={zoomStep === ZOOM_STEPS.length - 1}
+            onClick={() => zoomTo(Math.min(ZOOM_STEPS.length - 1, zoomStep + 1))}
+          >
+            +
+          </button>
+        </div>
+
+        {/* Масштаб увеличивает доску целиком, а это — только плитки: узлы
+            стоят где стояли. Мелкие плитки разводят тесный граф, крупные
+            читаются на мелком масштабе. */}
+        <div className={styles.zoomControls}>
+          <MonoLabel size={9} tone="faint" className={styles.zoomLabel}>
+            Плитки
+          </MonoLabel>
+          <button
+            type="button"
+            className={styles.zoomButton}
+            aria-label="Уменьшить плитки"
+            disabled={tileStep === 0}
+            onClick={() => tileScaleTo(Math.max(0, tileStep - 1))}
+          >
+            −
+          </button>
+          <button
+            type="button"
+            className={styles.zoomValue}
+            title="Вернуть плитки 100%"
+            onClick={() => tileScaleTo(TILE_SCALE_DEFAULT)}
+          >
+            {`${Math.round(tileScale * 100)}%`}
+          </button>
+          <button
+            type="button"
+            className={styles.zoomButton}
+            aria-label="Увеличить плитки"
+            disabled={tileStep === TILE_SCALE_STEPS.length - 1}
+            onClick={() => tileScaleTo(Math.min(TILE_SCALE_STEPS.length - 1, tileStep + 1))}
+          >
+            +
+          </button>
+        </div>
       </div>
 
       <div className={styles.scroller} ref={scrollerRef}>
@@ -367,6 +468,14 @@ export function BoardCanvas({
             {nodes.map((node) => {
               const position = positionOf(node);
               const selected = node.slug === selectedSlug;
+              const size = sizeOf(node);
+              const active = drag?.id === node.id || resize?.id === node.id;
+              const wrapClassName = [
+                styles.nodeWrap,
+                active ? styles.wrapActive : selected ? styles.wrapSelected : undefined,
+              ]
+                .filter(Boolean)
+                .join(' ');
               const className = [
                 styles.node,
                 node.status === 'open' ? styles.open : undefined,
@@ -382,8 +491,14 @@ export function BoardCanvas({
               return (
                 <div
                   key={node.id}
-                  className={styles.nodeWrap}
-                  style={{ left: `${position.x}%`, top: `${position.y}%` }}
+                  className={wrapClassName}
+                  style={
+                    {
+                      left: `${position.x}%`,
+                      top: `${position.y}%`,
+                      '--tile-scale': (tileScale * size) / 100,
+                    } as React.CSSProperties
+                  }
                 >
                   <button
                     type="button"
@@ -498,6 +613,79 @@ export function BoardCanvas({
                     >
                       ×
                     </button>
+                  ) : null}
+
+                  {/* Размер плитки — у выбранной, напротив крестика: на каждой
+                      плитке ручки мешали бы брать узел за угол. */}
+                  {selected && canWrite ? (
+                    <button
+                      type="button"
+                      className={styles.resize}
+                      title="Размер плитки: тяните за угол. Двойной щелчок — 100%"
+                      aria-label={`Размер плитки ${size}%, стрелки меняют по ${NODE_SIZE_STEP}%`}
+                      onPointerDown={(event) => {
+                        event.stopPropagation();
+                        if (event.button !== 0) return;
+                        const rect = nodeRefs.current.get(node.id)?.getBoundingClientRect();
+                        if (!rect) return;
+                        try {
+                          event.currentTarget.setPointerCapture(event.pointerId);
+                        } catch {
+                          /* пусто */
+                        }
+                        /* Масштаб растягивает плитку от центра — от него и меряем. */
+                        const centerX = rect.left + rect.width / 2;
+                        const centerY = rect.top + rect.height / 2;
+                        setResize({
+                          id: node.id,
+                          pointerId: event.pointerId,
+                          centerX,
+                          centerY,
+                          distance: Math.hypot(event.clientX - centerX, event.clientY - centerY),
+                          size,
+                        });
+                      }}
+                      onPointerMove={(event) => {
+                        if (resize?.id !== node.id || resize.pointerId !== event.pointerId) return;
+                        const next = resizedNodeSize(
+                          resize.size,
+                          resize.distance,
+                          Math.hypot(
+                            event.clientX - resize.centerX,
+                            event.clientY - resize.centerY,
+                          ),
+                        );
+                        setSizes((current) => ({ ...current, [node.id]: next }));
+                      }}
+                      onPointerUp={(event) => {
+                        event.stopPropagation();
+                        if (resize?.id !== node.id || resize.pointerId !== event.pointerId) return;
+                        try {
+                          event.currentTarget.releasePointerCapture(event.pointerId);
+                        } catch {
+                          /* пусто */
+                        }
+                        setResize(null);
+                        if (size !== resize.size) void saveNodeSize(node.id, size);
+                      }}
+                      onPointerCancel={() => {
+                        if (resize?.id !== node.id) return;
+                        /* Жест прервали — плитка возвращается к прежнему размеру. */
+                        const start = resize.size;
+                        setSizes((current) => ({ ...current, [node.id]: start }));
+                        setResize(null);
+                      }}
+                      onDoubleClick={(event) => {
+                        event.stopPropagation();
+                        changeSize(node, NODE_SIZE_DEFAULT);
+                      }}
+                      onKeyDown={(event) => {
+                        const delta = RESIZE_KEYS[event.key];
+                        if (!delta) return;
+                        event.preventDefault();
+                        changeSize(node, size + delta);
+                      }}
+                    />
                   ) : null}
                 </div>
               );

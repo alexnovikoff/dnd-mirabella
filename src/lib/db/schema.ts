@@ -266,6 +266,9 @@ export const boardPositions = pgTable('board_positions', {
     .references(() => nodes.id, { onDelete: 'cascade' }),
   x: integer('x').notNull(),
   y: integer('y').notNull(),
+  /** Размер плитки в процентах от обычной. Общий на кампанию, как координаты:
+   *  крупной плиткой выделяют главное. Пределы — lib/board-tile. */
+  size: integer('size').notNull().default(100),
 });
 
 /* ── Связи для реляционных запросов ──────────────────────────────── */

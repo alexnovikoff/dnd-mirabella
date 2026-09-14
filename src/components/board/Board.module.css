@@ -219,12 +219,19 @@
   height: 100%;
 }
 
-/* Кнопки масштаба вне прокрутки и вне канвы — масштаб их не двигает. */
-.zoomControls {
+/* Кнопки масштаба и плиток вне прокрутки и вне канвы — масштаб их не
+ * двигает. Сеткой, чтобы обе строки были одной ширины и цифры стояли
+ * друг под другом. */
+.viewControls {
   position: absolute;
   z-index: 6;
   top: 10px;
   right: 10px;
+  display: grid;
+  gap: 6px;
+}
+
+.zoomControls {
   display: flex;
   align-items: center;
   gap: 2px;
@@ -232,6 +239,11 @@
   border: 1px solid var(--rule);
   border-radius: var(--radius);
   box-shadow: var(--node-shadow-sm);
+}
+
+.zoomLabel {
+  flex: 1;
+  padding: 0 6px 0 9px;
 }
 
 .zoomButton,
@@ -263,10 +275,51 @@
   opacity: 0.4;
 }
 
-/* Обёртка узла: сам узел плюс крестик снятия выделения. */
+/* Обёртка узла: сам узел плюс крестик снятия выделения и ручка размера.
+ * Размер — масштабом от центра: координаты узла остаются центром плитки,
+ * а имя и подпись растут вместе с рамкой. */
 .nodeWrap {
   position: absolute;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%) scale(var(--tile-scale, 1));
+}
+
+/* transform делает обёртку отдельным слоем, и z-index внутри неё соседей
+ * не перекрывает — поднимать нужно саму обёртку. Выбранная плитка поверх
+ * соседей: увеличенная, она иначе прятала бы ручку под ними. */
+.wrapSelected {
+  z-index: 2;
+}
+
+.wrapActive {
+  z-index: 3;
+}
+
+/* Крестик и ручка не растут с плиткой: на крупной они стали бы кнопками
+ * в полплитки. Масштаб доски их по-прежнему увеличивает — как всё полотно. */
+.deselect,
+.resize {
+  transform: scale(calc(1 / var(--tile-scale, 1)));
+}
+
+/* Ручка размера — напротив крестика. Квадратная, чтобы не спутать с ним. */
+.resize {
+  position: absolute;
+  right: -9px;
+  bottom: -9px;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  background: linear-gradient(135deg, var(--card) 50%, var(--accent) 50%);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  cursor: nwse-resize;
+  touch-action: none;
+  transition: background var(--hover-fast);
+}
+
+.resize:hover,
+.resize:focus-visible {
+  background: var(--accent);
 }
 
 .deselect {
@@ -313,12 +366,9 @@
   border-color: var(--accent);
 }
 
+/* Поверх соседей узел поднимает .wrapActive на обёртке. */
 .dragging {
   cursor: grabbing;
-  /* z-index слушается только у позиционированного элемента: без relative
-   * перетаскиваемый узел уезжает под тех, кто ниже по алфавиту. */
-  position: relative;
-  z-index: 3;
 }
 
 /* Узел, на который сейчас бросят: кольцо акцентом. Двигать рамку нельзя —

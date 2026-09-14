@@ -3,6 +3,7 @@
 import { randomUUID } from 'node:crypto';
 import { revalidatePath } from 'next/cache';
 import { and, eq } from 'drizzle-orm';
+import { clampNodeSize } from '@/lib/board-tile';
 import { runDb } from '@/lib/db/client';
 import * as t from '@/lib/db/schema';
 import { CAMPAIGN_ID } from '@/lib/db/seed';
@@ -34,6 +35,21 @@ export async function saveNodePosition(nodeId: string, x: number, y: number) {
   revalidatePath('/board');
   /* Тот же граф показывает превью на «Хронике». */
   revalidatePath('/');
+}
+
+/** Размер плитки узла в процентах. Общий на кампанию, как позиция. Превью
+ *  на «Хронике» его не показывает, поэтому обновляется только доска. */
+export async function saveNodeSize(nodeId: string, size: number) {
+  await requireViewer();
+
+  await runDb(async (db) => {
+    await db
+      .update(t.boardPositions)
+      .set({ size: clampNodeSize(size) })
+      .where(eq(t.boardPositions.nodeId, nodeId));
+  });
+
+  revalidatePath('/board');
 }
 
 /** Кнопка «+ УЗЕЛ» на тулбаре доски и «+ Добавить» в базе знаний. Тип

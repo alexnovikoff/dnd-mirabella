@@ -1,11 +1,13 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import { cookies } from 'next/headers';
 import { LinkRow, MonoLabel } from '@/components/primitives';
 import { BoardCanvas } from '@/components/board/BoardCanvas';
 import { BoardToolbar, DeleteNodeButton, LinkNodeButton } from '@/components/board/BoardActions';
 import { EntityEditor } from '@/components/entity/EntityEditor';
 import { getBoard, getNodeDetail } from '@/lib/queries/board';
 import { getLinkLabels } from '@/lib/queries/labels';
+import { TILE_SCALE_COOKIE, tileScaleStepFrom } from '@/lib/board-tile';
 import { NODE_KIND_LABEL } from '@/lib/nodes';
 import { plural } from '@/lib/plural';
 import styles from '@/components/board/Board.module.css';
@@ -16,7 +18,7 @@ export default async function BoardPage({
   searchParams: Promise<{ node?: string }>;
 }) {
   const { node } = await searchParams;
-  const [board, labels] = await Promise.all([getBoard(), getLinkLabels()]);
+  const [board, labels, cookieStore] = await Promise.all([getBoard(), getLinkLabels(), cookies()]);
 
   /* Без выбора панель пустая: снятие выделения должно снимать его, а не
    * переводить на случайный первый узел. */
@@ -47,6 +49,7 @@ export default async function BoardPage({
           edges={board.edges}
           labels={labels}
           selectedSlug={selectedSlug}
+          initialTileStep={tileScaleStepFrom(cookieStore.get(TILE_SCALE_COOKIE)?.value)}
         />
 
         {/* <768px под графом идёт список узлов: оглавление доски, которую

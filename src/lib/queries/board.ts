@@ -14,6 +14,8 @@ export type BoardNode = {
   status: t.NodeStatus | null;
   x: number;
   y: number;
+  /** Размер плитки в процентах от обычной. */
+  size: number;
 };
 
 export type BoardEdge = {
@@ -37,6 +39,7 @@ export function getBoard() {
         status: t.nodes.status,
         x: t.boardPositions.x,
         y: t.boardPositions.y,
+        size: t.boardPositions.size,
       })
       .from(t.boardPositions)
       .innerJoin(t.nodes, eq(t.nodes.id, t.boardPositions.nodeId))
