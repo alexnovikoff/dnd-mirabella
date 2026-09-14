@@ -17,7 +17,7 @@
   flex-wrap: wrap;
   align-items: flex-start;
   gap: 14px;
-  --tile-height: 220px;
+  --tile-height: 260px;
 }
 
 /* --ratio ставит EntityImages.tsx. Панораму шире блока ограничивает его
@@ -102,19 +102,29 @@
   background: var(--accent);
 }
 
-/* Дроп-зона кликабельна — это кнопка выбора файлов. */
+/* Дроп-зона кликабельна — это кнопка выбора файлов. Плитка той же высоты,
+ * что кадр вместе с рамкой: пунктир уже внутри, content-box не нужен. */
 .drop {
   display: block;
   width: 100%;
+  aspect-ratio: var(--ratio);
   background: transparent;
   border: 0;
   padding: 0;
   text-align: inherit;
 }
 
+.dropZone {
+  height: 100%;
+}
+
+.drop:hover .dropZone {
+  border-color: var(--accent);
+}
+
 @media (max-width: 767px) {
   .grid {
     gap: 10px;
-    --tile-height: 140px;
+    --tile-height: 160px;
   }
 }

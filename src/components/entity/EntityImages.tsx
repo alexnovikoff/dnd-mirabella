@@ -20,6 +20,8 @@ import styles from './EntityImages.module.css';
 
 /** Плитка до загрузки кадра и у строки без файла — прежние 16:9. */
 const FALLBACK_RATIO = 16 / 9;
+/** Плитка загрузки квадратная: подпись в ней переносится на две строки. */
+const DROP_RATIO = 1;
 
 export type EntityImage = {
   id: string;
@@ -119,7 +121,7 @@ export function EntityImages({
 
   return (
     <div className={styles.images} {...dropHandlers}>
-      {images.length > 0 ? (
+      {images.length > 0 || canWrite ? (
         <div className={styles.grid}>
           {images.map((image, index) => {
             const ratio = image.url ? ratios[image.id] : undefined;
@@ -177,40 +179,46 @@ export function EntityImages({
               </div>
             );
           })}
+
+          {/* Загрузка — последней плиткой в ряду кадров, той же высоты: полоса
+              под сеткой уводила кнопку от кадров, к которым она добавляет. */}
+          {canWrite ? (
+            <div className={styles.item} style={{ '--ratio': DROP_RATIO } as React.CSSProperties}>
+              <button
+                type="button"
+                className={styles.drop}
+                disabled={pending}
+                onClick={() => fileRef.current?.click()}
+              >
+                <DropZone
+                  active={dragging}
+                  className={styles.dropZone}
+                  label={pending ? (progress ?? 'Загружаем…') : 'Бросьте картинки сюда или нажмите'}
+                />
+              </button>
+            </div>
+          ) : null}
         </div>
       ) : (
         <MonoLabel size={9} tracking="0.08em" tone="faint" block>
-          {canWrite ? 'Изображений пока нет — перетащите картинки сюда' : 'Изображений пока нет'}
+          Изображений пока нет
         </MonoLabel>
       )}
 
       {canWrite ? (
-        <>
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            multiple
-            hidden
-            onChange={(event) => {
-              const files = event.currentTarget.files;
-              if (files?.length) upload(files);
-              /* Один и тот же файл должен грузиться дважды подряд. */
-              event.currentTarget.value = '';
-            }}
-          />
-          <button
-            type="button"
-            className={styles.drop}
-            disabled={pending}
-            onClick={() => fileRef.current?.click()}
-          >
-            <DropZone
-              active={dragging}
-              label={pending ? (progress ?? 'Загружаем…') : 'Бросьте картинки сюда или нажмите'}
-            />
-          </button>
-        </>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          multiple
+          hidden
+          onChange={(event) => {
+            const files = event.currentTarget.files;
+            if (files?.length) upload(files);
+            /* Один и тот же файл должен грузиться дважды подряд. */
+            event.currentTarget.value = '';
+          }}
+        />
       ) : null}
 
       {error ? (
