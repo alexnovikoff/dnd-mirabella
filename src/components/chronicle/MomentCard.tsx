@@ -1,9 +1,10 @@
 import { Fragment } from 'react';
-import { ImagePlaceholder, MonoLabel, ParchmentCard } from '@/components/primitives';
+import Image from 'next/image';
+import { MonoLabel, ParchmentCard } from '@/components/primitives';
 import { WikiText } from '@/components/wiki/WikiText';
 import { EntryActions } from '@/components/entry/EntryActions';
 import { LOOT_TAG } from '@/lib/entries-shared';
-import type { FeedEntry } from '@/lib/queries/chronicle';
+import type { FeedEntry, FeedThumbnail } from '@/lib/queries/chronicle';
 import styles from './MomentCard.module.css';
 
 /** Строка меты: «СЕССИЯ 26 · ТА САМАЯ ТАВЕРНА». Разделители — цветом линии. */
@@ -26,6 +27,24 @@ function Meta({ entry }: { entry: FeedEntry }) {
   );
 }
 
+/** Кадр записи или упомянутого узла (выбор — в getFeed). Карточка без кадра
+ *  обходится без блока: пустая штриховка на его месте ничего не показывает. */
+function Thumbnail({
+  thumbnail,
+  className,
+  sizes,
+}: {
+  thumbnail: FeedThumbnail;
+  className: string;
+  sizes: string;
+}) {
+  return (
+    <div className={className}>
+      <Image src={thumbnail.url} alt={thumbnail.alt} fill sizes={sizes} className={styles.photo} />
+    </div>
+  );
+}
+
 export function MomentCard({
   entry,
   index,
@@ -44,8 +63,8 @@ export function MomentCard({
           <WikiText body={entry.body} index={index} />
         </p>
       ) : null}
-      {entry.image ? (
-        <ImagePlaceholder caption={entry.image.caption ?? undefined} height={150} />
+      {entry.thumbnail ? (
+        <Thumbnail thumbnail={entry.thumbnail} className={styles.thumb} sizes="200px" />
       ) : null}
       {entry.tags.length > 0 ? (
         <div className={styles.tags}>
@@ -90,13 +109,13 @@ export function CompactMomentCard({
 }) {
   return (
     <ParchmentCard as="article" padding="tight" interactive className={styles.compact}>
-      <ImagePlaceholder
-        caption={entry.image?.caption ?? undefined}
-        align="bottom"
-        hatchStep={6}
-        height={84}
-        className={styles.compactPreview}
-      />
+      {entry.thumbnail ? (
+        <Thumbnail
+          thumbnail={entry.thumbnail}
+          className={styles.compactPreview}
+          sizes="(max-width: 767px) 100vw, 108px"
+        />
+      ) : null}
       <div className={styles.compactText}>
         <Meta entry={entry} />
         {entry.title ? <h3 className={styles.compactTitle}>{entry.title}</h3> : null}

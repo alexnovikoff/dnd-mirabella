@@ -8,12 +8,13 @@
  */
 
 import { and, asc, desc, eq, inArray, isNotNull, not, notInArray, sql } from 'drizzle-orm';
-import { runDb } from '@/lib/db/client';
+import { runDb, type Db } from '@/lib/db/client';
 import * as t from '@/lib/db/schema';
 import { CAMPAIGN_ID } from '@/lib/db/seed';
 import type { Viewer } from '@/lib/auth-shared';
 import { LOOT_TAG } from '@/lib/entries-shared';
 import { visibleEntries } from '@/lib/visibility';
+import { parseWikiLinks } from '@/lib/wiki/parse';
 
 export type FeedFilter = 'all' | 'moments' | 'quotes' | 'loot';
 
@@ -73,6 +74,9 @@ export function getNodeIndex() {
 
 export type FeedEntry = Awaited<ReturnType<typeof getFeed>>[number];
 
+/** Миниатюра карточки ленты: только кадр с файлом, штриховки вместо него нет. */
+export type FeedThumbnail = { url: string; alt: string };
+
 export function getFeed(filter: FeedFilter = 'all', viewer: Viewer | null = null) {
   return runDb(async (db) => {
     const visible = visibleEntries(viewer);
@@ -116,6 +120,7 @@ export function getFeed(filter: FeedFilter = 'all', viewer: Viewer | null = null
     if (rows.length === 0) {
       return [] as ((typeof rows)[number] & {
         image: { caption: string | null; url: string | null } | null;
+        thumbnail: FeedThumbnail | null;
       })[];
     }
 
@@ -128,11 +133,86 @@ export function getFeed(filter: FeedFilter = 'all', viewer: Viewer | null = null
 
     const images = new Map(imageRows.map((r) => [r.entryId, r]));
 
+    const mentionRows = await db
+      .select({
+        entryId: t.links.fromEntryId,
+        nodeId: t.nodes.id,
+        name: t.nodes.name,
+        aliases: t.nodes.aliases,
+        portrait: t.characters.portrait,
+      })
+      .from(t.links)
+      .innerJoin(t.nodes, eq(t.nodes.id, t.links.toNodeId))
+      .leftJoin(t.characters, eq(t.characters.nodeId, t.nodes.id))
+      .where(and(eq(t.links.kind, 'mention'), inArray(t.links.fromEntryId, ids)));
+
+    const nodeImages = await mentionedNodeImages(db, mentionRows);
+
+    /* Упомянутые узлы записи по имени и прежним именам — так же, как их
+     * резолвит syncEntryLinks: порядок берётся из текста, а у рёбер его нет. */
+    const mentions = new Map<string, Map<string, (typeof mentionRows)[number]>>();
+    for (const mention of mentionRows) {
+      if (!mention.entryId) continue;
+      const byName = mentions.get(mention.entryId) ?? new Map();
+      byName.set(mention.name.toLowerCase(), mention);
+      for (const alias of mention.aliases) byName.set(alias.toLowerCase(), mention);
+      mentions.set(mention.entryId, byName);
+    }
+
+    /* Свой кадр записи — первым: его приложили именно к этому моменту. Иначе
+     * кадр первого узла из [[ссылок]], у которого он есть. Узлы без кадра
+     * пропускаются: пустая штриховка в ленте ничего не иллюстрирует. */
+    function thumbnailOf(row: (typeof rows)[number]): FeedThumbnail | null {
+      const own = images.get(row.id);
+      if (own?.url) return { url: own.url, alt: own.caption ?? '' };
+
+      const byName = mentions.get(row.id);
+      if (!byName || !row.body) return null;
+      for (const name of parseWikiLinks(row.body)) {
+        const mention = byName.get(name.toLowerCase());
+        const url = mention ? nodeImages.get(mention.nodeId) : undefined;
+        if (mention && url) return { url, alt: mention.name };
+      }
+      return null;
+    }
+
     return rows.map((row) => ({
       ...row,
       image: images.get(row.id) ?? null,
+      thumbnail: thumbnailOf(row),
     }));
   });
+}
+
+/** Кадр узла, как в панели доски: у персонажа портрет, у остальных и у
+ *  персонажа без портрета — самый свежий кадр карточки с файлом. */
+async function mentionedNodeImages(
+  db: Db,
+  mentions: { nodeId: string; portrait: string | null }[],
+): Promise<Map<string, string>> {
+  const result = new Map<string, string>();
+  for (const mention of mentions) {
+    if (mention.portrait) result.set(mention.nodeId, mention.portrait);
+  }
+
+  const rest = [...new Set(mentions.map((m) => m.nodeId))].filter((id) => !result.has(id));
+  if (rest.length === 0) return result;
+
+  /* Достижения тоже привязаны к узлу, поэтому вид проверяем явно. */
+  const entityImages = await db
+    .select({ nodeId: t.images.nodeId, url: t.images.url })
+    .from(t.images)
+    .where(
+      and(inArray(t.images.nodeId, rest), eq(t.images.kind, 'entity'), isNotNull(t.images.url)),
+    )
+    .orderBy(desc(t.images.createdAt), desc(t.images.id));
+
+  for (const image of entityImages) {
+    if (image.nodeId && image.url && !result.has(image.nodeId)) {
+      result.set(image.nodeId, image.url);
+    }
+  }
+  return result;
 }
 
 /** Список сессий в сайдбаре: последние сверху. */
