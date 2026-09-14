@@ -8,6 +8,7 @@ import * as t from '@/lib/db/schema';
 import { CAMPAIGN_ID } from '@/lib/db/seed';
 import { requireViewer } from './guard';
 import { canEditEntry } from '@/lib/auth-shared';
+import { LOOT_TAG } from '@/lib/entries-shared';
 import { slugify } from '@/lib/slug';
 import { syncEntryLinks } from '@/lib/wiki/sync-links';
 import type { PickerNode } from '@/lib/queries/nodes';
@@ -21,6 +22,8 @@ export type NewEntry = {
   subjectId?: string;
   /** Для фото — подпись к кадру. */
   caption?: string;
+  /** Для момента — тип «лут» в шите: запись получает тег #лут. */
+  loot?: boolean;
   /** Сессия, выбранная в шите. Не задана — запись уйдёт в активную. */
   sessionId?: string;
   /** false — черновик: виден только автору (README «Быстрая запись»). */
@@ -58,6 +61,7 @@ export async function createEntry(input: NewEntry): Promise<CreateEntryResult> {
       body: input.kind === 'image' ? null : body,
       authorId: viewer.id,
       subjectId: input.subjectId ?? null,
+      ...(input.kind === 'moment' && input.loot ? { tags: [LOOT_TAG] } : {}),
       visibility: !input.publish
         ? 'draft'
         : input.dmOnly && viewer.role === 'dm'

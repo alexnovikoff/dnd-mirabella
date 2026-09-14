@@ -41,6 +41,11 @@ export function ConfirmDialog({
     <div
       className={styles.scrim}
       onMouseDown={(event) => {
+        /* Окно модальное: нажатие в нём не должно дойти до окна под ним.
+         * Шит правки открывает подтверждение внутри своей подложки, а та
+         * закрывает шит по нажатию мимо него — и «УДАЛИТЬ» закрывало всё
+         * на mousedown, до click, так что удаление не вызывалось. */
+        event.stopPropagation();
         if (!sheetRef.current?.contains(event.target as Node)) onCancel();
       }}
     >

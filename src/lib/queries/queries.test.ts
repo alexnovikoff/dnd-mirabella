@@ -62,6 +62,10 @@ describe('getFeed', () => {
     expect(feed.every((entry) => entry.kind === 'quote')).toBe(true);
   });
 
+  it('фильтр «моменты» оставляет моменты без лута', async () => {
+    expect(titles(await getFeed('moments', null))).toEqual(['Момент']);
+  });
+
   it('фильтр «лут» смотрит на тег', async () => {
     expect(titles(await getFeed('loot', null))).toEqual(['Лут']);
   });
@@ -97,6 +101,90 @@ describe('getFeed', () => {
     const feed = await getFeed('all', null);
     const moment = feed.find((entry) => entry.title === 'Момент');
     expect(moment?.image?.caption).toBe('Кадр');
+  });
+});
+
+describe('getFeed: миниатюра карточки', () => {
+  const momentThumbnail = async () =>
+    (await getFeed('all', null)).find((entry) => entry.id === FIXTURE.entries.moment)?.thumbnail;
+
+  function addNodeImage(id: string, nodeId: string, url: string | null, kind: t.ImageKind) {
+    return runDb((db) =>
+      db.insert(t.images).values({ id, campaignId: FIXTURE.campaignId, nodeId, url, kind }),
+    );
+  }
+
+  it('нет миниатюры, если у упомянутых узлов нет кадров', async () => {
+    /* Свой кадр момента без файла тоже не в счёт: штриховку не рисуем. */
+    expect(await momentThumbnail()).toBeNull();
+  });
+
+  it('берёт кадр упомянутого узла, пропуская узлы без кадра', async () => {
+    await addNodeImage('i-ghost', FIXTURE.nodes.ghost, '/uploads/ghost.png', 'entity');
+    expect(await momentThumbnail()).toEqual({ url: '/uploads/ghost.png', alt: 'Призрак' });
+  });
+
+  it('из нескольких узлов с кадрами — первый по тексту', async () => {
+    await addNodeImage('i-ghost', FIXTURE.nodes.ghost, '/uploads/ghost.png', 'entity');
+    await addNodeImage('i-tavern', FIXTURE.nodes.tavern, '/uploads/tavern.png', 'entity');
+    expect((await momentThumbnail())?.url).toBe('/uploads/tavern.png');
+  });
+
+  it('кадр без файла и достижение миниатюрой не становятся', async () => {
+    await addNodeImage('i-ghost', FIXTURE.nodes.ghost, null, 'entity');
+    await runDb((db) =>
+      db
+        .update(t.entries)
+        .set({ body: 'С [[Герой]] и [[Призрак]].' })
+        .where(eq(t.entries.id, FIXTURE.entries.moment)),
+    );
+    await runDb((db) =>
+      db.insert(t.links).values({
+        id: 'l-m-hero',
+        campaignId: FIXTURE.campaignId,
+        kind: 'mention',
+        fromEntryId: FIXTURE.entries.moment,
+        toNodeId: FIXTURE.nodes.hero,
+      }),
+    );
+    expect(await momentThumbnail()).toBeNull();
+  });
+
+  it('у персонажа берёт портрет, упоминание по прежнему имени тоже считается', async () => {
+    await runDb(async (db) => {
+      await db
+        .update(t.characters)
+        .set({ portrait: '/uploads/hero.png' })
+        .where(eq(t.characters.nodeId, FIXTURE.nodes.hero));
+      await db
+        .update(t.nodes)
+        .set({ aliases: ['Старое имя'] })
+        .where(eq(t.nodes.id, FIXTURE.nodes.hero));
+      await db
+        .update(t.entries)
+        .set({ body: 'Там был [[старое имя]].' })
+        .where(eq(t.entries.id, FIXTURE.entries.moment));
+      await db.insert(t.links).values({
+        id: 'l-m-hero',
+        campaignId: FIXTURE.campaignId,
+        kind: 'mention',
+        fromEntryId: FIXTURE.entries.moment,
+        toNodeId: FIXTURE.nodes.hero,
+      });
+    });
+    await addNodeImage('i-hero', FIXTURE.nodes.hero, '/uploads/hero-card.png', 'entity');
+    expect(await momentThumbnail()).toEqual({ url: '/uploads/hero.png', alt: 'Герой' });
+  });
+
+  it('свой кадр записи с файлом важнее кадров узлов', async () => {
+    await addNodeImage('i-ghost', FIXTURE.nodes.ghost, '/uploads/ghost.png', 'entity');
+    await runDb((db) =>
+      db
+        .update(t.images)
+        .set({ url: '/uploads/moment.png' })
+        .where(eq(t.images.id, FIXTURE.images.key)),
+    );
+    expect(await momentThumbnail()).toEqual({ url: '/uploads/moment.png', alt: 'Кадр' });
   });
 });
 
