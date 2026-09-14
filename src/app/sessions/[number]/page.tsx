@@ -95,9 +95,7 @@ export default async function SessionPage({ params }: { params: Promise<{ number
       {moments.map((entry) => (
         <ParchmentCard key={entry.id} as="article" padding="tight">
           <MonoLabel size={10} tracking="0.06em" tone="faint">
-            {[entry.authorName, entry.isFail ? `Провал ${entry.roll ?? 1}` : null]
-              .filter(Boolean)
-              .join(' · ')}
+            {entry.authorName}
           </MonoLabel>
           {entry.title ? <h3 className={styles.entryTitle}>{entry.title}</h3> : null}
           {entry.body ? (

@@ -190,7 +190,6 @@ export default function StyleguidePage() {
             <AccentQuoteCard
               quote="Я не крал. Я взял на хранение. У себя."
               author="— Оген, сессия 13"
-              meta="Цитата недели · 7 голосов"
             />
             <ParchmentCard padding="tight" interactive>
               <div
@@ -205,7 +204,7 @@ export default function StyleguidePage() {
                 «Мы не заблудились. Мы разведываем.»
               </div>
               <MonoLabel size={9} tracking="0.08em" tone="faint">
-                Аэлис · С14 · ♦ 5
+                Аэлис · С14
               </MonoLabel>
             </ParchmentCard>
           </div>
@@ -213,13 +212,12 @@ export default function StyleguidePage() {
       </section>
 
       <section className={styles.section}>
-        <h2 className={styles.heading}>Цитата недели (feature)</h2>
+        <h2 className={styles.heading}>Случайная цитата (надстрочник и мета)</h2>
         <AccentQuoteCard
-          variant="feature"
-          eyebrow="Цитата недели · сессия 13"
+          eyebrow="Случайная цитата"
           quote="Я не крал. Я взял на хранение. У себя."
           author="— Оген"
-          meta="♦ 7 голосов"
+          meta="Сессия 13"
         />
       </section>
 

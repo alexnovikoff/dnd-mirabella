@@ -71,6 +71,13 @@
       "when": 1789177182427,
       "tag": "0009_salty_warbound",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1789348092767,
+      "tag": "0010_married_king_cobra",
+      "breakpoints": true
     }
   ]
 }

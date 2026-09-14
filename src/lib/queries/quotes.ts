@@ -1,11 +1,10 @@
-/* Запросы экрана «Цитаты»: сетка, цитата недели, голоса, фильтр по автору. */
+/* Запросы экрана «Цитаты»: сетка, фильтр по автору, случайная цитата для «Хроники». */
 
-import { and, desc, eq, inArray, sql } from 'drizzle-orm';
+import { and, desc, eq, sql } from 'drizzle-orm';
 import { runDb } from '@/lib/db/client';
 import * as t from '@/lib/db/schema';
 import { CAMPAIGN_ID } from '@/lib/db/seed';
 import type { Visibility } from '@/lib/db/schema';
-import type { Viewer } from '@/lib/auth-shared';
 
 export type QuoteCard = {
   id: string;
@@ -21,8 +20,6 @@ export type QuoteCard = {
   /** Сессия записи: шит правки открывается с ней в селекте. */
   sessionId: string | null;
   sessionNumber: number | null;
-  votes: number;
-  myVote: boolean;
 };
 
 /** Кто может быть автором цитаты: партия плюс мастер. */
@@ -39,7 +36,7 @@ export function getQuoteAuthors() {
   });
 }
 
-export function getQuotes(authorSlug: string | null, viewer: Viewer | null) {
+export function getQuotes(authorSlug: string | null) {
   return runDb(async (db) => {
     const conditions = [
       eq(t.entries.campaignId, CAMPAIGN_ID),
@@ -67,22 +64,6 @@ export function getQuotes(authorSlug: string | null, viewer: Viewer | null) {
       .where(and(...conditions))
       .orderBy(desc(t.entries.createdAt), desc(t.entries.id));
 
-    const ids = rows.map((row) => row.id);
-    const voteRows =
-      ids.length === 0
-        ? []
-        : await db
-            .select({ entryId: t.votes.entryId, userId: t.votes.userId })
-            .from(t.votes)
-            .where(inArray(t.votes.entryId, ids));
-
-    const counts = new Map<string, number>();
-    const mine = new Set<string>();
-    for (const vote of voteRows) {
-      counts.set(vote.entryId, (counts.get(vote.entryId) ?? 0) + 1);
-      if (viewer && vote.userId === viewer.id) mine.add(vote.entryId);
-    }
-
     const all: QuoteCard[] = rows.map((row) => ({
       id: row.id,
       body: row.body,
@@ -93,8 +74,6 @@ export function getQuotes(authorSlug: string | null, viewer: Viewer | null) {
       visibility: row.visibility,
       sessionId: row.sessionId,
       sessionNumber: row.sessionNumber,
-      votes: counts.get(row.id) ?? 0,
-      myVote: mine.has(row.id),
     }));
 
     const filtered = authorSlug ? all.filter((quote) => quote.authorSlug === authorSlug) : all;
@@ -111,7 +90,7 @@ export function getQuotes(authorSlug: string | null, viewer: Viewer | null) {
 
 /** Случайная цитата для «Хроники». Выбор делается на сервере при каждом
  *  запросе, поэтому обновление страницы показывает другую. */
-export function getRandomQuote(viewer: Viewer | null): Promise<QuoteCard | null> {
+export function getRandomQuote(): Promise<QuoteCard | null> {
   return runDb(async (db) => {
     const rows = await db
       .select({
@@ -141,11 +120,6 @@ export function getRandomQuote(viewer: Viewer | null): Promise<QuoteCard | null>
     if (rows.length === 0) return null;
     const row = rows[Math.floor(Math.random() * rows.length)];
 
-    const votes = await db
-      .select({ userId: t.votes.userId })
-      .from(t.votes)
-      .where(eq(t.votes.entryId, row.id));
-
     return {
       id: row.id,
       body: row.body,
@@ -156,8 +130,6 @@ export function getRandomQuote(viewer: Viewer | null): Promise<QuoteCard | null>
       visibility: row.visibility,
       sessionId: row.sessionId,
       sessionNumber: row.sessionNumber,
-      votes: votes.length,
-      myVote: viewer ? votes.some((vote) => vote.userId === viewer.id) : false,
     };
   });
 }

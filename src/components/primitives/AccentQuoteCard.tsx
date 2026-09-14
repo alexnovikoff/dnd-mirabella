@@ -8,26 +8,15 @@ export type AccentQuoteCardProps = {
   quote: string;
   /** Слева в футере: «— ОГЕН, СЕССИЯ 13». */
   author?: React.ReactNode;
-  /** Справа в футере: «ЦИТАТА НЕДЕЛИ · 7 ГОЛОСОВ». */
+  /** Справа в футере: «СЕССИЯ 13». */
   meta?: React.ReactNode;
-  /** Надстрочник над цитатой недели: «ЦИТАТА НЕДЕЛИ · СЕССИЯ 13». */
+  /** Надстрочник над цитатой: «СЛУЧАЙНАЯ ЦИТАТА». */
   eyebrow?: React.ReactNode;
-  /** 'feature' — цитата недели: крупнее, span 2 в сетке. */
-  variant?: 'default' | 'feature';
   className?: string;
 };
 
-export function AccentQuoteCard({
-  quote,
-  author,
-  meta,
-  eyebrow,
-  variant = 'default',
-  className,
-}: AccentQuoteCardProps) {
-  const classes = [styles.card, variant === 'feature' ? styles.feature : undefined, className]
-    .filter(Boolean)
-    .join(' ');
+export function AccentQuoteCard({ quote, author, meta, eyebrow, className }: AccentQuoteCardProps) {
+  const classes = [styles.card, className].filter(Boolean).join(' ');
 
   return (
     <figure className={classes}>

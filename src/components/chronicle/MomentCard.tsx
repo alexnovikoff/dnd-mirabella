@@ -5,13 +5,11 @@ import { EntryActions } from '@/components/entry/EntryActions';
 import type { FeedEntry } from '@/lib/queries/chronicle';
 import styles from './MomentCard.module.css';
 
-/** Строка меты: «СЕССИЯ 26 · ТА САМАЯ ТАВЕРНА · ПРОВАЛ 1».
- *  Разделители — цветом линии, провал — акцентом. */
+/** Строка меты: «СЕССИЯ 26 · ТА САМАЯ ТАВЕРНА». Разделители — цветом линии. */
 function Meta({ entry }: { entry: FeedEntry }) {
-  const parts: { text: string; accent?: boolean }[] = [];
-  if (entry.sessionNumber !== null) parts.push({ text: `Сессия ${entry.sessionNumber}` });
-  if (entry.sessionTitle) parts.push({ text: entry.sessionTitle });
-  if (entry.isFail) parts.push({ text: `Провал ${entry.roll ?? 1}`, accent: true });
+  const parts: string[] = [];
+  if (entry.sessionNumber !== null) parts.push(`Сессия ${entry.sessionNumber}`);
+  if (entry.sessionTitle) parts.push(entry.sessionTitle);
 
   return (
     <div className={styles.meta}>
@@ -19,7 +17,7 @@ function Meta({ entry }: { entry: FeedEntry }) {
         {parts.map((part, i) => (
           <Fragment key={i}>
             {i > 0 ? <span className={styles.sep}> · </span> : null}
-            <span style={part.accent ? { color: 'var(--accent)' } : undefined}>{part.text}</span>
+            <span>{part}</span>
           </Fragment>
         ))}
       </MonoLabel>

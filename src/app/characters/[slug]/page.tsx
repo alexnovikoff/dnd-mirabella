@@ -89,12 +89,7 @@ export default async function CharacterPage({ params }: { params: Promise<{ slug
           {character.moments.map((moment) => (
             <ParchmentCard key={moment.id} as="article" padding="tight">
               <MonoLabel size={10} tracking="0.06em" tone="faint">
-                {[
-                  moment.sessionNumber ? `Сессия ${moment.sessionNumber}` : null,
-                  moment.isFail ? `Провал ${moment.roll ?? 1}` : null,
-                ]
-                  .filter(Boolean)
-                  .join(' · ')}
+                {moment.sessionNumber ? `Сессия ${moment.sessionNumber}` : null}
               </MonoLabel>
               {moment.title ? <h3 className={styles.momentTitle}>{moment.title}</h3> : null}
               {moment.body ? (
@@ -122,7 +117,6 @@ export default async function CharacterPage({ params }: { params: Promise<{ slug
               <AccentQuoteCard
                 quote={quote.body ?? ''}
                 author={`— ${character.name}${quote.sessionNumber ? `, сессия ${quote.sessionNumber}` : ''}`}
-                meta={quote.votes > 0 ? `♦ ${quote.votes}` : undefined}
               />
               <EntryActions
                 canEdit={canEditEntry(viewer, quote)}

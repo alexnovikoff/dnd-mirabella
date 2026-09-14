@@ -63,7 +63,7 @@ describe('deleteSession', () => {
       const [entry] = await db
         .select({ id: t.entries.id, sessionId: t.entries.sessionId })
         .from(t.entries)
-        .where(eq(t.entries.id, FIXTURE.entries.fail));
+        .where(eq(t.entries.id, FIXTURE.entries.loot));
       const [image] = await db
         .select({ id: t.images.id, sessionId: t.images.sessionId })
         .from(t.images)
@@ -71,7 +71,7 @@ describe('deleteSession', () => {
       return { entry, image };
     });
 
-    expect(orphans.entry).toEqual({ id: FIXTURE.entries.fail, sessionId: null });
+    expect(orphans.entry).toEqual({ id: FIXTURE.entries.loot, sessionId: null });
     expect(orphans.image).toEqual({ id: FIXTURE.images.map, sessionId: null });
   });
 

@@ -11,8 +11,6 @@ export const FIXTURE = {
   nodes: { hero: 'n-hero', tavern: 'n-tavern', ghost: 'n-ghost', dead: 'n-dead' },
   entries: {
     moment: 'e-moment',
-    crit: 'e-crit',
-    fail: 'e-fail',
     loot: 'e-loot',
     quote: 'e-quote',
     quoteOld: 'e-quote-old',
@@ -111,32 +109,6 @@ export async function seedFixture(db: Db) {
       createdAt: recent,
     },
     {
-      id: FIXTURE.entries.crit,
-      campaignId: CAMPAIGN_ID,
-      sessionId: 's-2',
-      kind: 'moment',
-      title: 'Крит',
-      body: 'Двадцатка.',
-      authorId: FIXTURE.users.player,
-      subjectId: FIXTURE.nodes.hero,
-      roll: 20,
-      isCrit: true,
-      visibility: 'public',
-      createdAt: recent,
-    },
-    {
-      id: FIXTURE.entries.fail,
-      campaignId: CAMPAIGN_ID,
-      sessionId: 's-1',
-      kind: 'moment',
-      title: 'Провал',
-      body: 'Единица.',
-      authorId: FIXTURE.users.other,
-      isFail: true,
-      visibility: 'public',
-      createdAt: old,
-    },
-    {
       id: FIXTURE.entries.loot,
       campaignId: CAMPAIGN_ID,
       sessionId: 's-1',
@@ -202,15 +174,6 @@ export async function seedFixture(db: Db) {
       visibility: 'dm_only',
       createdAt: recent,
     },
-  ]);
-
-  /* Голоса: у старой цитаты их больше, но цитата недели считается только
-   * среди свежих — это и проверяем. */
-  await db.insert(t.votes).values([
-    { entryId: FIXTURE.entries.quote, userId: FIXTURE.users.player },
-    { entryId: FIXTURE.entries.quoteOld, userId: FIXTURE.users.player },
-    { entryId: FIXTURE.entries.quoteOld, userId: FIXTURE.users.other },
-    { entryId: FIXTURE.entries.quoteOld, userId: FIXTURE.users.dm },
   ]);
 
   await db.insert(t.links).values([

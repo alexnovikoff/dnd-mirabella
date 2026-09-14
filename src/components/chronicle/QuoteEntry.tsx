@@ -1,7 +1,6 @@
 import { AccentQuoteCard } from '@/components/primitives';
 import { EntryActions } from '@/components/entry/EntryActions';
 import { toEditable } from './MomentCard';
-import { plural } from '@/lib/plural';
 import type { FeedEntry } from '@/lib/queries/chronicle';
 
 /** Цитата в ленте — акцентная карточка. README «Карточка цитаты (акцентная)». */
@@ -17,15 +16,7 @@ export function QuoteEntry({ entry, canEdit = false }: { entry: FeedEntry; canEd
 
   return (
     <>
-      <AccentQuoteCard
-        quote={entry.body ?? ''}
-        author={`— ${author}`}
-        meta={
-          entry.votes > 0
-            ? `♦ ${entry.votes} ${plural(entry.votes, 'голос', 'голоса', 'голосов')}`
-            : undefined
-        }
-      />
+      <AccentQuoteCard quote={entry.body ?? ''} author={`— ${author}`} />
       <EntryActions entry={toEditable(entry)} canEdit={canEdit} />
     </>
   );

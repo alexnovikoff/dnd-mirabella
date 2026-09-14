@@ -123,8 +123,6 @@ export function getSession(number: number, viewer: Viewer | null) {
         title: t.entries.title,
         body: t.entries.body,
         sessionId: t.entries.sessionId,
-        roll: t.entries.roll,
-        isFail: t.entries.isFail,
         visibility: t.entries.visibility,
         authorId: t.entries.authorId,
         subjectId: t.entries.subjectId,

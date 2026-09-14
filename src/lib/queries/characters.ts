@@ -1,6 +1,6 @@
 /* Запросы страницы персонажа: метрики, его записи, связи, личная заметка. */
 
-import { and, desc, eq, inArray, isNotNull, notInArray, or, sql } from 'drizzle-orm';
+import { and, desc, eq, isNotNull, notInArray, or } from 'drizzle-orm';
 import { runDb } from '@/lib/db/client';
 import { nameMatcher } from '@/lib/name-mentions';
 import * as t from '@/lib/db/schema';
@@ -12,11 +12,8 @@ export type CharacterEntry = {
   kind: t.EntryKind;
   title: string | null;
   body: string | null;
-  roll: number | null;
-  isFail: boolean;
   sessionId: string | null;
   sessionNumber: number | null;
-  votes: number;
   visibility: t.Visibility;
   authorId: string | null;
   subjectId: string | null;
@@ -52,8 +49,6 @@ export function getCharacter(slug: string, viewer: Viewer | null) {
         kind: t.entries.kind,
         title: t.entries.title,
         body: t.entries.body,
-        roll: t.entries.roll,
-        isFail: t.entries.isFail,
         visibility: t.entries.visibility,
         authorId: t.entries.authorId,
         sessionId: t.entries.sessionId,
@@ -64,27 +59,13 @@ export function getCharacter(slug: string, viewer: Viewer | null) {
       .where(and(eq(t.entries.campaignId, CAMPAIGN_ID), eq(t.entries.subjectId, row.id)))
       .orderBy(desc(t.entries.createdAt), desc(t.entries.id));
 
-    const ids = entryRows.map((entry) => entry.id);
-    const voteRows =
-      ids.length === 0
-        ? []
-        : await db
-            .select({ entryId: t.votes.entryId, n: sql<number>`count(*)::int` })
-            .from(t.votes)
-            .where(inArray(t.votes.entryId, ids))
-            .groupBy(t.votes.entryId);
-    const votes = new Map(voteRows.map((v) => [v.entryId, v.n]));
-
-    const withVotes = (entry: (typeof entryRows)[number]): CharacterEntry => ({
+    const toEntry = (entry: (typeof entryRows)[number]): CharacterEntry => ({
       id: entry.id,
       kind: entry.kind,
       title: entry.title,
       body: entry.body,
-      roll: entry.roll,
-      isFail: entry.isFail,
       sessionId: entry.sessionId,
       sessionNumber: entry.sessionNumber,
-      votes: votes.get(entry.id) ?? 0,
       visibility: entry.visibility,
       authorId: entry.authorId,
       subjectId: row.id,
@@ -99,7 +80,7 @@ export function getCharacter(slug: string, viewer: Viewer | null) {
     const privateNotes = entryRows
       .filter((entry) => entry.visibility === 'private' && entry.kind === 'note')
       .filter((entry) => viewer !== null && (viewer.role === 'dm' || entry.authorId === viewer.id))
-      .map(withVotes);
+      .map(toEntry);
 
     const manual = await db
       .select({
@@ -175,8 +156,8 @@ export function getCharacter(slug: string, viewer: Viewer | null) {
 
     return {
       ...row,
-      moments: publicEntries.filter((entry) => entry.kind === 'moment').map(withVotes),
-      quotes: publicEntries.filter((entry) => entry.kind === 'quote').map(withVotes),
+      moments: publicEntries.filter((entry) => entry.kind === 'moment').map(toEntry),
+      quotes: publicEntries.filter((entry) => entry.kind === 'quote').map(toEntry),
       privateNotes,
       relations,
       images,
