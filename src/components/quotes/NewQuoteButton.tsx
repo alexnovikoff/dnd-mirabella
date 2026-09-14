@@ -14,7 +14,7 @@ export function NewQuoteButton() {
   return (
     <button type="button" className={styles.add} onClick={() => open('quote')}>
       <MonoLabel size={10} tracking="0.08em">
-        Новая цитата
+        + Цитата
       </MonoLabel>
     </button>
   );

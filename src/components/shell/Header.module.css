@@ -107,6 +107,22 @@
   border-color: var(--accent-hover);
 }
 
+/* Все подписи в одной ячейке: ширина кнопки не зависит от экрана,
+ * и вкладки слева от неё не сдвигаются при переходах. */
+.actionLabels {
+  display: grid;
+  justify-items: center;
+}
+
+.actionLabel,
+.actionLabelIdle {
+  grid-area: 1 / 1;
+}
+
+.actionLabelIdle {
+  visibility: hidden;
+}
+
 /* Мобильный паттерн — README §7: печать и название 16px, компактный чип
  * справа, ряд табов mono 10px горизонтальным скроллом под ними. Кнопка
  * записи уезжает в закреплённую полосу снизу (QuickEntryBar). */
