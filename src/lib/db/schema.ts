@@ -17,6 +17,7 @@ import {
   jsonb,
   pgEnum,
   pgTable,
+  real,
   text,
   timestamp,
   unique,
@@ -264,11 +265,15 @@ export const boardPositions = pgTable('board_positions', {
   nodeId: text('node_id')
     .primaryKey()
     .references(() => nodes.id, { onDelete: 'cascade' }),
-  x: integer('x').notNull(),
-  y: integer('y').notNull(),
-  /** Размер плитки в процентах от обычной. Общий на кампанию, как координаты:
-   *  крупной плиткой выделяют главное. Пределы — lib/board-tile. */
-  size: integer('size').notNull().default(100),
+  /** Центр плитки. Дробный: при растягивании левый верхний угол стоит на
+   *  месте, а центр сдвигается на доли процента — целые уводили бы угол. */
+  x: real('x').notNull(),
+  y: real('y').notNull(),
+  /** Размер плитки в пикселях полотна на 100%. Общий на кампанию, как
+   *  координаты. null — плитка по умолчанию; высота — не меньше содержимого.
+   *  Пределы — lib/board-tile. */
+  width: integer('width'),
+  height: integer('height'),
 });
 
 /* ── Связи для реляционных запросов ──────────────────────────────── */

@@ -1,43 +1,96 @@
-/* Размер плиток на доске связей. Их два, и они перемножаются:
- * - размер узла — общий на кампанию, хранится рядом с координатами;
+/* Размер плиток на доске связей. Их два, и они складываются:
+ * - размер узла — общий на кампанию, хранится рядом с координатами. Плитку
+ *   тянут за нижний правый угол, как окно: ширина и высота независимы,
+ *   левый верхний угол стоит на месте, текст переносится по новой ширине;
  * - множитель зрителя — у каждого свой, живёт в куке браузера. Им подгоняют
  *   доску под свой экран и масштаб, не трогая чужую раскладку. Кука, а не
  *   localStorage: её читает сервер, и доска сразу приходит с нужными
  *   плитками, а не перескакивает на них после гидрации.
- * Ни то, ни другое не двигает узлы: координаты — центр плитки. */
+ * Координаты узла — центр плитки: от него идут линии. */
 
-/** Пределы размера узла, в процентах от обычной плитки. */
-export const NODE_SIZE_MIN = 50;
-export const NODE_SIZE_MAX = 300;
-export const NODE_SIZE_DEFAULT = 100;
-/** Шаг стрелок на ручке. */
-export const NODE_SIZE_STEP = 10;
+/** Ширина плитки по умолчанию — та же, что у .node в Board.module.css. */
+export const NODE_WIDTH_DEFAULT = 140;
+export const NODE_WIDTH_MIN = 90;
+export const NODE_WIDTH_MAX = 600;
+/** Высота — нижняя граница: содержимое всё равно не обрежется. */
+export const NODE_HEIGHT_MIN = 40;
+export const NODE_HEIGHT_MAX = 600;
 
 /** Множитель зрителя: те же ступени по 20%, что у масштаба доски. */
 export const TILE_SCALE_STEPS = [0.6, 0.8, 1, 1.2, 1.4, 1.6, 1.8, 2] as const;
 export const TILE_SCALE_DEFAULT = TILE_SCALE_STEPS.indexOf(1);
 export const TILE_SCALE_COOKIE = 'board-tile-scale';
 
-export function clampNodeSize(size: number): number {
-  if (!Number.isFinite(size)) return NODE_SIZE_DEFAULT;
-  return Math.min(NODE_SIZE_MAX, Math.max(NODE_SIZE_MIN, Math.round(size)));
+type Point = { x: number; y: number };
+export type TileBox = { width: number; height: number };
+
+/** Где ухватили угол. Всё в пикселях полотна на 100%, кроме offset: это
+ *  промах мимо самого угла в пикселях плитки — без него она прыгала бы
+ *  под указатель, если взяли не ровно за край. */
+export type ResizeGrip = {
+  left: number;
+  top: number;
+  offsetX: number;
+  offsetY: number;
+  /** Множитель зрителя: плитка нарисована во столько раз крупнее. */
+  scale: number;
+};
+
+function clampInt(value: number, min: number, max: number, fallback: number) {
+  if (!Number.isFinite(value)) return fallback;
+  return Math.min(max, Math.max(min, Math.round(value)));
 }
 
-/**
- * Размер узла, пока тянут ручку.
- *
- * Считается отношением расстояний от центра плитки: где указатель сейчас
- * и где его прижали. Абсолютную ширину брать нельзя — она зависит от длины
- * имени, масштаба доски и множителя зрителя, а отношение от них свободно.
- * К тому же плитка не прыгает, если ручку взяли не ровно за угол.
- */
-export function resizedNodeSize(
-  startSize: number,
-  startDistance: number,
-  distance: number,
-): number {
-  if (startDistance <= 0) return clampNodeSize(startSize);
-  return clampNodeSize((startSize * distance) / startDistance);
+export function clampNodeBox(width: number, height: number): TileBox {
+  return {
+    width: clampInt(width, NODE_WIDTH_MIN, NODE_WIDTH_MAX, NODE_WIDTH_DEFAULT),
+    height: clampInt(height, NODE_HEIGHT_MIN, NODE_HEIGHT_MAX, NODE_HEIGHT_MIN),
+  };
+}
+
+/** Координата центра в процентах: не у самого края полотна и с точностью
+ *  до сотой — сотая процента меньше пикселя, угол не уходит. */
+export function clampBoardPercent(value: number): number {
+  if (!Number.isFinite(value)) return 50;
+  return Math.min(97, Math.max(3, Math.round(value * 100) / 100));
+}
+
+/** Хватка в момент нажатия: плитка с левым верхним углом и размером
+ *  (в пикселях плитки) и указатель — в пикселях полотна. */
+export function gripOf(
+  tile: { left: number; top: number; width: number; height: number },
+  pointer: Point,
+  scale: number,
+): ResizeGrip {
+  return {
+    left: tile.left,
+    top: tile.top,
+    offsetX: (pointer.x - tile.left) / scale - tile.width,
+    offsetY: (pointer.y - tile.top) / scale - tile.height,
+    scale,
+  };
+}
+
+/** Размер плитки под указателем: левый верхний угол стоит, нижний правый
+ *  идёт за рукой. */
+export function resizedBox(grip: ResizeGrip, pointer: Point): TileBox {
+  return clampNodeBox(
+    (pointer.x - grip.left) / grip.scale - grip.offsetX,
+    (pointer.y - grip.top) / grip.scale - grip.offsetY,
+  );
+}
+
+/** Центр плитки в процентах полотна по её левому верхнему углу и
+ *  нарисованному размеру. */
+export function tileCenter(
+  grip: Pick<ResizeGrip, 'left' | 'top' | 'scale'>,
+  box: TileBox,
+  board: TileBox,
+): Point {
+  return {
+    x: ((grip.left + (box.width * grip.scale) / 2) / board.width) * 100,
+    y: ((grip.top + (box.height * grip.scale) / 2) / board.height) * 100,
+  };
 }
 
 /** Ступень множителя из куки; всё незнакомое — обычный размер. */

@@ -3,18 +3,18 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { MonoLabel } from '@/components/primitives';
-import { saveNodePosition, saveNodeSize } from '@/lib/actions/board';
+import { saveNodeBox, saveNodePosition } from '@/lib/actions/board';
 import { useQuickEntry } from '@/components/editor/QuickEntryProvider';
 import { LinkTypeDialog } from './LinkTypeDialog';
 import { nodeAt, type NodeBox } from '@/lib/board-drag';
 import {
-  NODE_SIZE_DEFAULT,
-  NODE_SIZE_STEP,
   TILE_SCALE_COOKIE,
   TILE_SCALE_DEFAULT,
   TILE_SCALE_STEPS,
-  clampNodeSize,
-  resizedNodeSize,
+  gripOf,
+  resizedBox,
+  tileCenter,
+  type ResizeGrip,
 } from '@/lib/board-tile';
 import { centerOf, scrollToCenter } from '@/lib/board-view';
 import { NODE_KIND_LABEL } from '@/lib/nodes';
@@ -37,6 +37,7 @@ const ZOOM_DEFAULT = ZOOM_STEPS.indexOf(1);
  * но там доска и не двигалась. */
 const BOARD_WIDTH = 1500;
 const BOARD_HEIGHT = 900;
+const BOARD = { width: BOARD_WIDTH, height: BOARD_HEIGHT };
 
 /* Пустое поле вокруг полотна со всех сторон. Без него прокрутка начиналась
  * ровно с угла полотна, и доску можно было потянуть только вправо и вниз:
@@ -68,22 +69,16 @@ type Pan = {
   top: number;
   movedFar: boolean;
 };
-/** Ручку размера прижали: центр плитки и расстояние до него — в пикселях окна. */
+/** Размер плитки; null — по умолчанию из CSS. */
+type NodeSize = { width: number | null; height: number | null };
+/** Плитку тянут за нижний правый угол. */
 type Resize = {
   id: string;
   pointerId: number;
-  centerX: number;
-  centerY: number;
-  distance: number;
-  size: number;
-};
-
-/* Размер плитки стрелками на ручке. */
-const RESIZE_KEYS: Record<string, number> = {
-  ArrowUp: NODE_SIZE_STEP,
-  ArrowRight: NODE_SIZE_STEP,
-  ArrowDown: -NODE_SIZE_STEP,
-  ArrowLeft: -NODE_SIZE_STEP,
+  grip: ResizeGrip;
+  moved: boolean;
+  /** Что вернуть, если жест прервут. */
+  before: { size: NodeSize; position: { x: number; y: number } };
 };
 
 export function BoardCanvas({
@@ -117,7 +112,7 @@ export function BoardCanvas({
   /* Локальные координаты на время перетаскивания — линии едут за узлом. */
   const [positions, setPositions] = useState<Record<string, { x: number; y: number }>>({});
   /* Так же и размеры: плитка растёт под рукой, в базу уходит итог. */
-  const [sizes, setSizes] = useState<Record<string, number>>({});
+  const [sizes, setSizes] = useState<Record<string, NodeSize>>({});
   const [tileStep, setTileStep] = useState<number>(initialTileStep);
 
   const zoom = ZOOM_STEPS[zoomStep];
@@ -132,14 +127,24 @@ export function BoardCanvas({
     document.cookie = `${TILE_SCALE_COOKIE}=${TILE_SCALE_STEPS[step]}; path=/board; max-age=31536000; samesite=lax`;
   }
 
-  const sizeOf = (node: BoardNode) => sizes[node.id] ?? node.size;
+  const sizeOf = (node: BoardNode): NodeSize =>
+    sizes[node.id] ?? { width: node.width, height: node.height };
 
-  /** Стрелки и двойной щелчок на ручке: размер меняется сразу и сохраняется. */
-  function changeSize(node: BoardNode, size: number) {
-    const next = clampNodeSize(size);
-    if (next === sizeOf(node)) return;
-    setSizes((current) => ({ ...current, [node.id]: next }));
-    void saveNodeSize(node.id, next);
+  /** Точка окна в пикселях полотна на 100%. */
+  function toCanvas(clientX: number, clientY: number) {
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (!rect) return null;
+    return {
+      x: ((clientX - rect.left) / rect.width) * BOARD_WIDTH,
+      y: ((clientY - rect.top) / rect.height) * BOARD_HEIGHT,
+    };
+  }
+
+  /** Нарисованный размер плитки в её пикселях: высота бывает больше
+   *  заданной, если содержимое не помещается. */
+  function drawnSize(id: string) {
+    const element = nodeRefs.current.get(id);
+    return element ? { width: element.offsetWidth, height: element.offsetHeight } : null;
   }
 
   /* Масштаб, при котором поле сейчас отрисовано. */
@@ -469,10 +474,16 @@ export function BoardCanvas({
               const position = positionOf(node);
               const selected = node.slug === selectedSlug;
               const size = sizeOf(node);
-              const active = drag?.id === node.id || resize?.id === node.id;
+              const resizing = resize?.id === node.id ? resize : null;
               const wrapClassName = [
                 styles.nodeWrap,
-                active ? styles.wrapActive : selected ? styles.wrapSelected : undefined,
+                resizing
+                  ? styles.wrapResizing
+                  : drag?.id === node.id
+                    ? styles.wrapActive
+                    : selected
+                      ? styles.wrapSelected
+                      : undefined,
               ]
                 .filter(Boolean)
                 .join(' ');
@@ -494,15 +505,21 @@ export function BoardCanvas({
                   className={wrapClassName}
                   style={
                     {
-                      left: `${position.x}%`,
-                      top: `${position.y}%`,
-                      '--tile-scale': (tileScale * size) / 100,
+                      /* Пока тянут угол, плитка привязана к левому верхнему
+                         углу: он и должен стоять, а размер растёт вправо-вниз. */
+                      left: resizing ? `${resizing.grip.left}px` : `${position.x}%`,
+                      top: resizing ? `${resizing.grip.top}px` : `${position.y}%`,
+                      '--tile-scale': tileScale,
                     } as React.CSSProperties
                   }
                 >
                   <button
                     type="button"
                     className={className}
+                    style={{
+                      width: size.width ?? undefined,
+                      minHeight: size.height ?? undefined,
+                    }}
                     aria-pressed={selected}
                     ref={(element) => {
                       if (element) nodeRefs.current.set(node.id, element);
@@ -615,47 +632,62 @@ export function BoardCanvas({
                     </button>
                   ) : null}
 
-                  {/* Размер плитки — у выбранной, напротив крестика: на каждой
-                      плитке ручки мешали бы брать узел за угол. */}
-                  {selected && canWrite ? (
-                    <button
-                      type="button"
-                      className={styles.resize}
-                      title="Размер плитки: тяните за угол. Двойной щелчок — 100%"
-                      aria-label={`Размер плитки ${size}%, стрелки меняют по ${NODE_SIZE_STEP}%`}
+                  {/* Нижний правый угол тянут, как у окна. Зона невидима, пока
+                      над ней нет курсора, — иначе ручки на каждой плитке. */}
+                  {canWrite ? (
+                    <div
+                      className={styles.resizeCorner}
+                      title="Потяните, чтобы изменить размер"
+                      aria-hidden="true"
                       onPointerDown={(event) => {
+                        /* Угол — свой жест: ни перетаскивания узла, ни доски. */
                         event.stopPropagation();
                         if (event.button !== 0) return;
-                        const rect = nodeRefs.current.get(node.id)?.getBoundingClientRect();
-                        if (!rect) return;
+                        const canvas = canvasRef.current?.getBoundingClientRect();
+                        const element = nodeRefs.current.get(node.id);
+                        const drawn = drawnSize(node.id);
+                        const pointer = toCanvas(event.clientX, event.clientY);
+                        if (!canvas || !element || !drawn || !pointer) return;
                         try {
                           event.currentTarget.setPointerCapture(event.pointerId);
                         } catch {
                           /* пусто */
                         }
-                        /* Масштаб растягивает плитку от центра — от него и меряем. */
-                        const centerX = rect.left + rect.width / 2;
-                        const centerY = rect.top + rect.height / 2;
+                        const rect = element.getBoundingClientRect();
                         setResize({
                           id: node.id,
                           pointerId: event.pointerId,
-                          centerX,
-                          centerY,
-                          distance: Math.hypot(event.clientX - centerX, event.clientY - centerY),
-                          size,
+                          grip: gripOf(
+                            {
+                              left: ((rect.left - canvas.left) / canvas.width) * BOARD_WIDTH,
+                              top: ((rect.top - canvas.top) / canvas.height) * BOARD_HEIGHT,
+                              ...drawn,
+                            },
+                            pointer,
+                            tileScale,
+                          ),
+                          moved: false,
+                          before: { size, position },
                         });
                       }}
                       onPointerMove={(event) => {
                         if (resize?.id !== node.id || resize.pointerId !== event.pointerId) return;
-                        const next = resizedNodeSize(
-                          resize.size,
-                          resize.distance,
-                          Math.hypot(
-                            event.clientX - resize.centerX,
-                            event.clientY - resize.centerY,
+                        const pointer = toCanvas(event.clientX, event.clientY);
+                        if (!pointer) return;
+                        const box = resizedBox(resize.grip, pointer);
+                        if (!resize.moved) setResize({ ...resize, moved: true });
+                        setSizes((current) => ({ ...current, [node.id]: box }));
+                        /* Линии идут к центру. Высота — нарисованная, с прошлого
+                         * кадра: содержимое может не пустить плитку ниже. */
+                        const drawn = drawnSize(node.id);
+                        setPositions((current) => ({
+                          ...current,
+                          [node.id]: tileCenter(
+                            resize.grip,
+                            { width: box.width, height: drawn?.height ?? box.height },
+                            BOARD,
                           ),
-                        );
-                        setSizes((current) => ({ ...current, [node.id]: next }));
+                        }));
                       }}
                       onPointerUp={(event) => {
                         event.stopPropagation();
@@ -666,24 +698,32 @@ export function BoardCanvas({
                           /* пусто */
                         }
                         setResize(null);
-                        if (size !== resize.size) void saveNodeSize(node.id, size);
+                        const drawn = drawnSize(node.id);
+                        if (
+                          !resize.moved ||
+                          !drawn ||
+                          size.width === null ||
+                          size.height === null
+                        ) {
+                          return;
+                        }
+                        /* Центр — по тому, что нарисовано сейчас: плитка вернётся
+                         * к привязке по центру, и угол не должен дрогнуть. */
+                        const center = tileCenter(resize.grip, drawn, BOARD);
+                        setPositions((current) => ({ ...current, [node.id]: center }));
+                        void saveNodeBox(node.id, {
+                          ...center,
+                          width: size.width,
+                          height: size.height,
+                        });
                       }}
                       onPointerCancel={() => {
                         if (resize?.id !== node.id) return;
-                        /* Жест прервали — плитка возвращается к прежнему размеру. */
-                        const start = resize.size;
-                        setSizes((current) => ({ ...current, [node.id]: start }));
+                        /* Жест прервали — плитка возвращается как была. */
+                        const { before } = resize;
+                        setSizes((current) => ({ ...current, [node.id]: before.size }));
+                        setPositions((current) => ({ ...current, [node.id]: before.position }));
                         setResize(null);
-                      }}
-                      onDoubleClick={(event) => {
-                        event.stopPropagation();
-                        changeSize(node, NODE_SIZE_DEFAULT);
-                      }}
-                      onKeyDown={(event) => {
-                        const delta = RESIZE_KEYS[event.key];
-                        if (!delta) return;
-                        event.preventDefault();
-                        changeSize(node, size + delta);
                       }}
                     />
                   ) : null}

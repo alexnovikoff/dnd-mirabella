@@ -1,5 +1,5 @@
 {
-  "id": "d1b8d836-a523-4da4-9d83-41d3e5c2985e",
+  "id": "37f95086-5642-4b89-be67-b0e3a9ebbbb5",
   "prevId": "71be768c-fb20-4e6e-b728-39a391458dea",
   "version": "7",
   "dialect": "postgresql",
@@ -16,22 +16,27 @@
         },
         "x": {
           "name": "x",
-          "type": "integer",
+          "type": "real",
           "primaryKey": false,
           "notNull": true
         },
         "y": {
           "name": "y",
-          "type": "integer",
+          "type": "real",
           "primaryKey": false,
           "notNull": true
         },
-        "size": {
-          "name": "size",
+        "width": {
+          "name": "width",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true,
-          "default": 100
+          "notNull": false
+        },
+        "height": {
+          "name": "height",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},

@@ -275,9 +275,8 @@
   opacity: 0.4;
 }
 
-/* Обёртка узла: сам узел плюс крестик снятия выделения и ручка размера.
- * Размер — масштабом от центра: координаты узла остаются центром плитки,
- * а имя и подпись растут вместе с рамкой. */
+/* Обёртка узла: сам узел плюс крестик снятия выделения и угол размера.
+ * Координаты узла — центр плитки, множитель зрителя увеличивает её от него. */
 .nodeWrap {
   position: absolute;
   transform: translate(-50%, -50%) scale(var(--tile-scale, 1));
@@ -285,7 +284,7 @@
 
 /* transform делает обёртку отдельным слоем, и z-index внутри неё соседей
  * не перекрывает — поднимать нужно саму обёртку. Выбранная плитка поверх
- * соседей: увеличенная, она иначе прятала бы ручку под ними. */
+ * соседей: растянутая, она иначе уходила бы под них вместе с углом. */
 .wrapSelected {
   z-index: 2;
 }
@@ -294,32 +293,69 @@
   z-index: 3;
 }
 
-/* Крестик и ручка не растут с плиткой: на крупной они стали бы кнопками
- * в полплитки. Масштаб доски их по-прежнему увеличивает — как всё полотно. */
-.deselect,
-.resize {
+/* Пока тянут угол, обёртка стоит левым верхним углом (left/top задаёт
+ * BoardCanvas) и растёт вправо-вниз, как окно. */
+.wrapResizing {
+  z-index: 3;
+  transform: scale(var(--tile-scale, 1));
+  transform-origin: 0 0;
+}
+
+/* Крестик и угол не растут с множителем плиток: на крупных они стали бы
+ * кнопками в полплитки. Масштаб доски их по-прежнему увеличивает. */
+.deselect {
   transform: scale(calc(1 / var(--tile-scale, 1)));
 }
 
-/* Ручка размера — напротив крестика. Квадратная, чтобы не спутать с ним. */
-.resize {
+/* Нижний правый угол плитки. Значок — три косых штриха, как у окна, — виден
+ * только под курсором и пока тянут: на каждой плитке постоянно он был бы
+ * шумом. */
+.resizeCorner {
+  --grip: var(--accent);
   position: absolute;
-  right: -9px;
-  bottom: -9px;
-  width: 18px;
-  height: 18px;
-  padding: 0;
-  background: linear-gradient(135deg, var(--card) 50%, var(--accent) 50%);
-  border: 1px solid var(--accent);
-  border-radius: var(--radius);
+  right: 0;
+  bottom: 0;
+  width: 14px;
+  height: 14px;
+  transform: scale(calc(1 / var(--tile-scale, 1)));
+  transform-origin: 100% 100%;
+  background: linear-gradient(
+    135deg,
+    transparent 50%,
+    var(--grip) 50% 58%,
+    transparent 58% 68%,
+    var(--grip) 68% 76%,
+    transparent 76% 86%,
+    var(--grip) 86% 94%,
+    transparent 94%
+  );
   cursor: nwse-resize;
   touch-action: none;
-  transition: background var(--hover-fast);
+  opacity: 0;
+  transition: opacity var(--hover-fast);
 }
 
-.resize:hover,
-.resize:focus-visible {
-  background: var(--accent);
+.resizeCorner:hover,
+.wrapResizing .resizeCorner {
+  opacity: 1;
+}
+
+/* На тёмной плитке акцентные штрихи не видны. */
+.selected ~ .resizeCorner,
+.resolved ~ .resizeCorner {
+  --grip: var(--accent-on);
+}
+
+/* Без мыши наводить нечем: угол крупнее под палец, значок — у выбранной. */
+@media (hover: none) {
+  .resizeCorner {
+    width: 22px;
+    height: 22px;
+  }
+
+  .selected ~ .resizeCorner {
+    opacity: 1;
+  }
 }
 
 .deselect {
@@ -346,9 +382,15 @@
   color: var(--accent-on-warm);
 }
 
+/* Ширину и высоту растянутой плитки BoardCanvas задаёт инлайном: width —
+ * текст переносится по ней, min-height — ниже содержимого плитка не станет.
+ * Колонкой, чтобы в высокой плитке текст стоял сверху, а не посередине,
+ * как у кнопки по умолчанию. */
 .node {
-  display: block;
+  display: flex;
+  flex-direction: column;
   width: 140px;
+  overflow-wrap: break-word;
   background: var(--card);
   border: 1px solid var(--rule);
   border-radius: var(--radius);

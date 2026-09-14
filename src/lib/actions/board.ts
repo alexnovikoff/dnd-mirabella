@@ -3,7 +3,7 @@
 import { randomUUID } from 'node:crypto';
 import { revalidatePath } from 'next/cache';
 import { and, eq } from 'drizzle-orm';
-import { clampNodeSize } from '@/lib/board-tile';
+import { clampBoardPercent, clampNodeBox } from '@/lib/board-tile';
 import { runDb } from '@/lib/db/client';
 import * as t from '@/lib/db/schema';
 import { CAMPAIGN_ID } from '@/lib/db/seed';
@@ -13,7 +13,6 @@ import { requireViewer } from './guard';
 /** Позиция в процентах — доска общая на кампанию (решение в docs/plan.md). */
 export async function saveNodePosition(nodeId: string, x: number, y: number) {
   await requireViewer();
-  const clamp = (value: number) => Math.min(97, Math.max(3, Math.round(value)));
 
   await runDb(async (db) => {
     const existing = await db
@@ -25,10 +24,12 @@ export async function saveNodePosition(nodeId: string, x: number, y: number) {
     if (existing.length > 0) {
       await db
         .update(t.boardPositions)
-        .set({ x: clamp(x), y: clamp(y) })
+        .set({ x: clampBoardPercent(x), y: clampBoardPercent(y) })
         .where(eq(t.boardPositions.nodeId, nodeId));
     } else {
-      await db.insert(t.boardPositions).values({ nodeId, x: clamp(x), y: clamp(y) });
+      await db
+        .insert(t.boardPositions)
+        .values({ nodeId, x: clampBoardPercent(x), y: clampBoardPercent(y) });
     }
   });
 
@@ -37,19 +38,29 @@ export async function saveNodePosition(nodeId: string, x: number, y: number) {
   revalidatePath('/');
 }
 
-/** Размер плитки узла в процентах. Общий на кампанию, как позиция. Превью
- *  на «Хронике» его не показывает, поэтому обновляется только доска. */
-export async function saveNodeSize(nodeId: string, size: number) {
+/** Плитку растянули: новый размер и новый центр одной записью. Левый верхний
+ *  угол при растягивании стоит, значит центр сдвинулся — сохраняя одно без
+ *  другого, плитка уехала бы. Превью на «Хронике» размер не показывает, но
+ *  центр берёт тот же. */
+export async function saveNodeBox(
+  nodeId: string,
+  box: { x: number; y: number; width: number; height: number },
+) {
   await requireViewer();
 
   await runDb(async (db) => {
     await db
       .update(t.boardPositions)
-      .set({ size: clampNodeSize(size) })
+      .set({
+        x: clampBoardPercent(box.x),
+        y: clampBoardPercent(box.y),
+        ...clampNodeBox(box.width, box.height),
+      })
       .where(eq(t.boardPositions.nodeId, nodeId));
   });
 
   revalidatePath('/board');
+  revalidatePath('/');
 }
 
 /** Кнопка «+ УЗЕЛ» на тулбаре доски и «+ Добавить» в базе знаний. Тип

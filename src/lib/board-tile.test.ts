@@ -1,44 +1,82 @@
 import { describe, expect, it } from 'vitest';
 import {
-  NODE_SIZE_MAX,
-  NODE_SIZE_MIN,
+  NODE_HEIGHT_MAX,
+  NODE_HEIGHT_MIN,
+  NODE_WIDTH_MAX,
+  NODE_WIDTH_MIN,
   TILE_SCALE_DEFAULT,
   TILE_SCALE_STEPS,
-  clampNodeSize,
-  resizedNodeSize,
+  clampBoardPercent,
+  clampNodeBox,
+  gripOf,
+  resizedBox,
+  tileCenter,
   tileScaleStepFrom,
 } from './board-tile';
 
-describe('clampNodeSize', () => {
-  it('держит размер в пределах и округляет до процента', () => {
-    expect(clampNodeSize(10)).toBe(NODE_SIZE_MIN);
-    expect(clampNodeSize(1000)).toBe(NODE_SIZE_MAX);
-    expect(clampNodeSize(142.6)).toBe(143);
+const BOARD = { width: 1500, height: 900 };
+
+describe('clampNodeBox', () => {
+  it('держит ширину и высоту в пределах независимо и округляет до пикселя', () => {
+    expect(clampNodeBox(10, 9999)).toEqual({ width: NODE_WIDTH_MIN, height: NODE_HEIGHT_MAX });
+    expect(clampNodeBox(9999, 1)).toEqual({ width: NODE_WIDTH_MAX, height: NODE_HEIGHT_MIN });
+    expect(clampNodeBox(240.6, 71.2)).toEqual({ width: 241, height: 71 });
   });
 
-  it('мусор превращает в обычный размер, а не в NaN в базе', () => {
-    expect(clampNodeSize(Number.NaN)).toBe(100);
-    expect(clampNodeSize(Number.POSITIVE_INFINITY)).toBe(100);
+  it('мусор превращает в размер по умолчанию, а не в NaN в базе', () => {
+    expect(clampNodeBox(Number.NaN, Number.POSITIVE_INFINITY)).toEqual({
+      width: 140,
+      height: NODE_HEIGHT_MIN,
+    });
   });
 });
 
-describe('resizedNodeSize', () => {
-  it('растёт вместе с расстоянием от центра', () => {
-    expect(resizedNodeSize(100, 80, 120)).toBe(150);
-    expect(resizedNodeSize(150, 120, 60)).toBe(75);
+describe('clampBoardPercent', () => {
+  it('держит центр у полотна с точностью до сотой', () => {
+    expect(clampBoardPercent(41.23456)).toBe(41.23);
+    expect(clampBoardPercent(-5)).toBe(3);
+    expect(clampBoardPercent(120)).toBe(97);
+    expect(clampBoardPercent(Number.NaN)).toBe(50);
+  });
+});
+
+describe('resizedBox', () => {
+  const tile = { left: 300, top: 200, width: 140, height: 60 };
+
+  it('без движения размер не меняется, даже если угол взяли с промахом', () => {
+    const grip = gripOf(tile, { x: 437, y: 262 }, 1);
+    expect(resizedBox(grip, { x: 437, y: 262 })).toEqual({ width: 140, height: 60 });
   });
 
-  it('без движения размер не меняется, даже если ручку взяли не за угол', () => {
-    expect(resizedNodeSize(120, 37, 37)).toBe(120);
+  it('ширина и высота идут за рукой каждая сама по себе', () => {
+    const grip = gripOf(tile, { x: 440, y: 260 }, 1);
+    expect(resizedBox(grip, { x: 600, y: 260 })).toEqual({ width: 300, height: 60 });
+    expect(resizedBox(grip, { x: 440, y: 340 })).toEqual({ width: 140, height: 140 });
+  });
+
+  it('на увеличенных плитках пиксель руки — меньше пикселя плитки', () => {
+    /* Плитка 140×60 нарисована вдвое крупнее: угол на 300+280, 200+120. */
+    const grip = gripOf(tile, { x: 580, y: 320 }, 2);
+    expect(resizedBox(grip, { x: 680, y: 360 })).toEqual({ width: 190, height: 80 });
   });
 
   it('не выходит за пределы', () => {
-    expect(resizedNodeSize(100, 50, 5)).toBe(NODE_SIZE_MIN);
-    expect(resizedNodeSize(100, 50, 5000)).toBe(NODE_SIZE_MAX);
+    const grip = gripOf(tile, { x: 440, y: 260 }, 1);
+    expect(resizedBox(grip, { x: 0, y: 0 })).toEqual({
+      width: NODE_WIDTH_MIN,
+      height: NODE_HEIGHT_MIN,
+    });
   });
+});
 
-  it('нулевое начальное расстояние не делит на ноль', () => {
-    expect(resizedNodeSize(130, 0, 40)).toBe(130);
+describe('tileCenter', () => {
+  it('центр — левый верхний угол плюс половина нарисованного размера', () => {
+    expect(
+      tileCenter({ left: 300, top: 180, scale: 1 }, { width: 300, height: 90 }, BOARD),
+    ).toEqual({ x: 30, y: 25 });
+    expect(
+      tileCenter({ left: 300, top: 180, scale: 2 }, { width: 150, height: 45 }, BOARD),
+    ).toEqual({ x: 30, y: 25 });
   });
 });
 
