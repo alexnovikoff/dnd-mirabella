@@ -16,7 +16,7 @@ export default async function QuotesPage({
   const { author } = await searchParams;
   const viewer = await getViewer();
 
-  const [authors, data] = await Promise.all([getQuoteAuthors(), getQuotes(author ?? null, viewer)]);
+  const [authors, data] = await Promise.all([getQuoteAuthors(), getQuotes(author ?? null)]);
 
   return (
     <Screen

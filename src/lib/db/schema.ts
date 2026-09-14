@@ -17,7 +17,6 @@ import {
   jsonb,
   pgEnum,
   pgTable,
-  primaryKey,
   text,
   timestamp,
   unique,
@@ -28,7 +27,8 @@ import type { CropRect } from '../crop';
 
 export const roleEnum = pgEnum('role', ['player', 'dm']);
 
-/** Типы узлов графа. 'character' — игровой персонаж, остальные из README.
+/** Типы узлов графа. 'character' — персонаж: у такого узла всегда есть
+ *  строка в `characters`, основной он или гостевой. Остальные из README.
  *  'unknown' — черновая сущность, созданная прямо из редактора опцией
  *  «+ создать»: тип проставят позже. */
 export const nodeKindEnum = pgEnum('node_kind', [
@@ -137,7 +137,8 @@ export const nodes = pgTable(
   ],
 );
 
-/** Детали игрового персонажа. 1:1 к узлу с kind = 'character'. */
+/** Детали персонажа. 1:1 к узлу с kind = 'character' — строка есть у каждого
+ *  такого узла (миграция 0011, updateNode, createBoardNode). */
 export const characters = pgTable('characters', {
   nodeId: text('node_id')
     .primaryKey()
@@ -155,7 +156,12 @@ export const characters = pgTable('characters', {
    *  По ней диалог открывается там, где его закрыли. */
   portraitCrop: jsonb('portrait_crop').$type<CropRect>(),
   bio: text('bio'),
+  /** Основной персонаж — true: виден в «Партии», в hero «Хроники» и среди
+   *  авторов цитат. Гостевой — false: в «Партии» только по кнопке «Показать
+   *  гостевых». Узел, ставший персонажем с доски или сменой типа, — гость. */
   isPc: boolean('is_pc').notNull().default(true),
+  /** Игрок, который ведёт персонажа. Пока он задан, узлу не меняют тип
+   *  и не удаляют его. */
   playerId: text('player_id').references(() => users.id, { onDelete: 'set null' }),
   /** С какой сессии играет — мета «ИГРАЕТ С СЕССИИ 1». */
   sinceSession: integer('since_session'),
@@ -176,9 +182,6 @@ export const entries = pgTable(
     authorId: text('author_id').references(() => users.id, { onDelete: 'set null' }),
     /** О ком запись — узел-персонаж; для цитат это её автор. */
     subjectId: text('subject_id').references(() => nodes.id, { onDelete: 'set null' }),
-    roll: integer('roll'),
-    isCrit: boolean('is_crit').notNull().default(false),
-    isFail: boolean('is_fail').notNull().default(false),
     /** Теги вида «#лут»; по ним работает фильтр ЛУТ в ленте. */
     tags: text('tags')
       .array()
@@ -255,21 +258,6 @@ export const links = pgTable(
   ],
 );
 
-/** Один голос на пользователя на цитату. */
-export const votes = pgTable(
-  'votes',
-  {
-    entryId: text('entry_id')
-      .notNull()
-      .references(() => entries.id, { onDelete: 'cascade' }),
-    userId: text('user_id')
-      .notNull()
-      .references(() => users.id, { onDelete: 'cascade' }),
-    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-  },
-  (t) => [primaryKey({ columns: [t.entryId, t.userId] })],
-);
-
 /** Позиция узла на доске в процентах, чтобы граф масштабировался.
  *  Доска общая на кампанию — решение зафиксировано в docs/plan.md. */
 export const boardPositions = pgTable('board_positions', {
@@ -314,7 +302,6 @@ export const entryRelations = relations(entries, ({ one, many }) => ({
   subject: one(nodes, { fields: [entries.subjectId], references: [nodes.id] }),
   images: many(images),
   mentions: many(links, { relationName: 'linkFromEntry' }),
-  votes: many(votes),
 }));
 
 export const imageRelations = relations(images, ({ one }) => ({
@@ -341,11 +328,6 @@ export const linkRelations = relations(links, ({ one }) => ({
     references: [nodes.id],
     relationName: 'linkTo',
   }),
-}));
-
-export const voteRelations = relations(votes, ({ one }) => ({
-  entry: one(entries, { fields: [votes.entryId], references: [entries.id] }),
-  user: one(users, { fields: [votes.userId], references: [users.id] }),
 }));
 
 /* ── Типы ────────────────────────────────────────────────────────── */

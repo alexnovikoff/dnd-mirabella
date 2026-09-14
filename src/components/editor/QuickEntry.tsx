@@ -92,6 +92,15 @@ export function QuickEntry({
   const [body, setBody] = useState(editing?.body ?? '');
   const [caption, setCaption] = useState(editing?.caption ?? '');
   const [subjectId, setSubjectId] = useState(editing?.subjectId ?? characters[0]?.id ?? '');
+  /* В списке авторов — основные персонажи. Цитату, приписанную гостю или
+   * узлу, который перестал быть персонажем, правят не меняя автора: иначе
+   * select показал бы первого из партии, и сохранение переписало бы цитату. */
+  const current = editing?.subjectId
+    ? nodes.find(
+        (node) => node.id === editing.subjectId && !characters.some((c) => c.id === node.id),
+      )
+    : undefined;
+  const authors = current ? [...characters, current] : characters;
   /* При правке — сессия самой записи; при создании список отсортирован
    * по убыванию номера, поэтому первая в нём и есть активная. */
   const [sessionId, setSessionId] = useState(
@@ -385,7 +394,7 @@ export function QuickEntry({
                 onChange={(e) => setSubjectId(e.currentTarget.value)}
                 aria-label="Автор цитаты"
               >
-                {characters.map((character) => (
+                {authors.map((character) => (
                   <option key={character.id} value={character.id}>
                     {character.name}
                   </option>
@@ -543,7 +552,7 @@ export function QuickEntry({
       {confirmingDelete && editing ? (
         <ConfirmDialog
           title="Удалить запись?"
-          body="Вместе с ней исчезнут её связи в графе и голоса. Изображения останутся в галерее."
+          body="Вместе с ней исчезнут её связи в графе. Изображения останутся в галерее."
           quoted={editing.title ?? editing.body ?? editing.caption ?? null}
           confirmLabel="УДАЛИТЬ"
           pending={pending}

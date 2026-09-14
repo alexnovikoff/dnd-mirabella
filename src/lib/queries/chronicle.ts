@@ -14,12 +14,11 @@ import { CAMPAIGN_ID } from '@/lib/db/seed';
 import type { Viewer } from '@/lib/auth-shared';
 import { visibleEntries } from '@/lib/visibility';
 
-export type FeedFilter = 'all' | 'quotes' | 'fails' | 'loot';
+export type FeedFilter = 'all' | 'quotes' | 'loot';
 
 export const FEED_FILTERS: { id: FeedFilter; label: string }[] = [
   { id: 'all', label: 'ВСЁ' },
   { id: 'quotes', label: 'ЦИТАТЫ' },
-  { id: 'fails', label: 'ПРОВАЛЫ' },
   { id: 'loot', label: 'ЛУТ' },
 ];
 
@@ -81,7 +80,6 @@ export function getFeed(filter: FeedFilter = 'all', viewer: Viewer | null = null
       ...(visible ? [visible] : []),
     ];
     if (filter === 'quotes') conditions.push(eq(t.entries.kind, 'quote'));
-    if (filter === 'fails') conditions.push(eq(t.entries.isFail, true));
     if (filter === 'loot') conditions.push(sql`${t.entries.tags} && ARRAY['#лут']::text[]`);
 
     const rows = await db
@@ -90,8 +88,6 @@ export function getFeed(filter: FeedFilter = 'all', viewer: Viewer | null = null
         kind: t.entries.kind,
         title: t.entries.title,
         body: t.entries.body,
-        roll: t.entries.roll,
-        isFail: t.entries.isFail,
         tags: t.entries.tags,
         visibility: t.entries.visibility,
         authorId: t.entries.authorId,
@@ -115,7 +111,6 @@ export function getFeed(filter: FeedFilter = 'all', viewer: Viewer | null = null
     if (rows.length === 0) {
       return [] as ((typeof rows)[number] & {
         image: { caption: string | null; url: string | null } | null;
-        votes: number;
       })[];
     }
 
@@ -126,19 +121,11 @@ export function getFeed(filter: FeedFilter = 'all', viewer: Viewer | null = null
       .from(t.images)
       .where(inArray(t.images.entryId, ids));
 
-    const voteRows = await db
-      .select({ entryId: t.votes.entryId, count: sql<number>`count(*)::int` })
-      .from(t.votes)
-      .where(inArray(t.votes.entryId, ids))
-      .groupBy(t.votes.entryId);
-
     const images = new Map(imageRows.map((r) => [r.entryId, r]));
-    const votes = new Map(voteRows.map((r) => [r.entryId, r.count]));
 
     return rows.map((row) => ({
       ...row,
       image: images.get(row.id) ?? null,
-      votes: votes.get(row.id) ?? 0,
     }));
   });
 }

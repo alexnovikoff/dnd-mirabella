@@ -38,7 +38,10 @@ export async function saveNodePosition(nodeId: string, x: number, y: number) {
 
 /** Кнопка «+ УЗЕЛ» на тулбаре доски и «+ Добавить» в базе знаний. Тип
  *  выбирается сразу — иначе узлы копятся с типом «неизвестно», а исправить
- *  его в интерфейсе нечем. */
+ *  его в интерфейсе нечем.
+ *
+ *  Персонаж заводится сразу со строкой в characters — гостевым: в «Партию»
+ *  и hero его переводят тумблером на карточке. */
 export async function createBoardNode(name: string, kind: t.NodeKind = 'unknown') {
   await requireViewer();
   const trimmed = name.trim();
@@ -65,12 +68,16 @@ export async function createBoardNode(name: string, kind: t.NodeKind = 'unknown'
       slug,
       aliases: [],
     });
+    if (kind === 'character') {
+      await db.insert(t.characters).values({ nodeId: id, isPc: false });
+    }
     /* Новый узел появляется в центре — дальше его перетащат. */
     await db.insert(t.boardPositions).values({ nodeId: id, x: 50, y: 50 });
   });
 
   revalidatePath('/board');
   revalidatePath('/kb');
+  if (kind === 'character') revalidatePath('/party');
   revalidatePath('/entities/[slug]', 'page');
   return { ok: true as const };
 }

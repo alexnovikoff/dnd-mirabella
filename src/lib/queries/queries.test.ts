@@ -37,14 +37,7 @@ const titles = (rows: { title: string | null; body: string | null }[]) =>
 describe('getFeed', () => {
   it('гостю показывает только опубликованное', async () => {
     const feed = await getFeed('all', null);
-    expect(titles(feed).sort()).toEqual([
-      'Крит',
-      'Лут',
-      'Момент',
-      'Провал',
-      'Свежая цитата.',
-      'Старая цитата.',
-    ]);
+    expect(titles(feed).sort()).toEqual(['Лут', 'Момент', 'Свежая цитата.', 'Старая цитата.']);
   });
 
   it('автору добавляет его черновик, но не чужой скрытый', async () => {
@@ -69,10 +62,6 @@ describe('getFeed', () => {
     expect(feed.every((entry) => entry.kind === 'quote')).toBe(true);
   });
 
-  it('фильтр «провалы» смотрит на флаг, а не на текст', async () => {
-    expect(titles(await getFeed('fails', null))).toEqual(['Провал']);
-  });
-
   it('фильтр «лут» смотрит на тег', async () => {
     expect(titles(await getFeed('loot', null))).toEqual(['Лут']);
   });
@@ -82,11 +71,10 @@ describe('getFeed', () => {
     expect(feed[0].sessionNumber).toBe(2);
   });
 
-  it('подтягивает изображение и голоса записи', async () => {
+  it('подтягивает изображение записи', async () => {
     const feed = await getFeed('all', null);
     const moment = feed.find((entry) => entry.title === 'Момент');
     expect(moment?.image?.caption).toBe('Кадр');
-    expect(feed.find((entry) => entry.body === 'Старая цитата.')?.votes).toBe(3);
   });
 });
 
@@ -186,24 +174,16 @@ describe('getFreeNotes', () => {
 
 describe('getQuotes', () => {
   it('в цитатнике все цитаты равноценны — ни одна не вынесена наверх', async () => {
-    const data = await getQuotes(null, null);
+    const data = await getQuotes(null);
     expect(data.total).toBe(2);
     expect(data.quotes).toHaveLength(2);
-  });
-
-  it('отмечает голос текущего пользователя', async () => {
-    const mine = await getQuotes(null, player);
-    expect(mine.quotes.find((quote) => quote.body === 'Свежая цитата.')?.myVote).toBe(true);
-
-    const theirs = await getQuotes(null, other);
-    expect(theirs.quotes.find((quote) => quote.body === 'Свежая цитата.')?.myVote).toBe(false);
   });
 
   it('фильтр по автору отбирает по слагу персонажа', async () => {
     /* Обе цитаты фикстуры принадлежат Герою, поэтому фильтр их не сужает,
      * а вот несуществующий автор не даёт ничего. */
-    expect((await getQuotes('geroy', null)).quotes).toHaveLength(2);
-    expect((await getQuotes('nikto', null)).quotes).toHaveLength(0);
+    expect((await getQuotes('geroy')).quotes).toHaveLength(2);
+    expect((await getQuotes('nikto')).quotes).toHaveLength(0);
   });
 });
 
@@ -211,20 +191,9 @@ describe('getRandomQuote', () => {
   it('со временем показывает разные цитаты', async () => {
     const seen = new Set<string>();
     for (let i = 0; i < 40; i += 1) {
-      seen.add((await getRandomQuote(null))?.id ?? '');
+      seen.add((await getRandomQuote())?.id ?? '');
     }
     expect(seen.size).toBe(2);
-  });
-
-  it('отдаёт голос текущего пользователя', async () => {
-    for (let i = 0; i < 10; i += 1) {
-      const quote = await getRandomQuote(player);
-      if (quote?.body === 'Свежая цитата.') {
-        expect(quote.myVote).toBe(true);
-        return;
-      }
-    }
-    throw new Error('свежая цитата ни разу не выпала за десять попыток');
   });
 });
 

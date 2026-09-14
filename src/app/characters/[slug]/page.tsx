@@ -6,6 +6,7 @@ import { WikiText } from '@/components/wiki/WikiText';
 import { EntryActions } from '@/components/entry/EntryActions';
 import { Achievements } from '@/components/character/Achievements';
 import { CharacterEditor } from '@/components/character/CharacterEditor';
+import { GuestToggle } from '@/components/character/GuestToggle';
 import { PersonalNotes } from '@/components/character/PersonalNotes';
 import { PortraitEditor } from '@/components/character/PortraitEditor';
 import { RelationsEditor } from '@/components/entity/RelationsEditor';
@@ -72,6 +73,8 @@ export default async function CharacterPage({ params }: { params: Promise<{ slug
               <Metric value={character.metrics.quotes} label="ЦИТАТ" />
               <Metric value={character.metrics.links} label="СВЯЗЕЙ" />
             </div>
+            {/* Гостевой персонаж не виден в «Партии», hero и авторах цитат. */}
+            <GuestToggle nodeId={character.id} guest={!character.isPc} />
           </div>
         </div>
       </header>
@@ -89,12 +92,7 @@ export default async function CharacterPage({ params }: { params: Promise<{ slug
           {character.moments.map((moment) => (
             <ParchmentCard key={moment.id} as="article" padding="tight">
               <MonoLabel size={10} tracking="0.06em" tone="faint">
-                {[
-                  moment.sessionNumber ? `Сессия ${moment.sessionNumber}` : null,
-                  moment.isFail ? `Провал ${moment.roll ?? 1}` : null,
-                ]
-                  .filter(Boolean)
-                  .join(' · ')}
+                {moment.sessionNumber ? `Сессия ${moment.sessionNumber}` : null}
               </MonoLabel>
               {moment.title ? <h3 className={styles.momentTitle}>{moment.title}</h3> : null}
               {moment.body ? (
@@ -122,7 +120,6 @@ export default async function CharacterPage({ params }: { params: Promise<{ slug
               <AccentQuoteCard
                 quote={quote.body ?? ''}
                 author={`— ${character.name}${quote.sessionNumber ? `, сессия ${quote.sessionNumber}` : ''}`}
-                meta={quote.votes > 0 ? `♦ ${quote.votes}` : undefined}
               />
               <EntryActions
                 canEdit={canEditEntry(viewer, quote)}

@@ -1,9 +1,11 @@
-/* Перенос данных в 0006: кадр уезжает из portrait в свою колонку.
+/* Миграции, которые переносят данные, а не только меняют схему:
+ * 0006 — кадр уезжает из portrait в свою колонку, 0011 — узел-персонаж
+ * без строки в characters становится гостевым.
  *
  * Обычные тесты поднимают базу сразу со всеми миграциями и такой перенос
  * не видят — здесь мы останавливаемся перед ним, кладём строки в старой
- * форме и смотрим, во что они превратятся. Проверять это стоит: миграция
- * трогает боевые портреты, а не пустую таблицу.
+ * форме и смотрим, во что они превратятся. Проверять это стоит: миграции
+ * трогают боевые данные, а не пустые таблицы.
  */
 
 import { readFile } from 'node:fs/promises';
@@ -103,5 +105,57 @@ describe('0006: кадр переезжает в portrait_crop_url', () => {
       portrait_crop_url: null,
       portrait_crop: null,
     });
+  });
+});
+
+/** Тег миграции, после которой у каждого персонажа есть строка в characters. */
+const GUESTS = '0011_guest_characters';
+
+describe('0011: узел-персонаж без строки становится гостевым', () => {
+  type Character = { node_id: string; is_pc: boolean };
+  let characters: Record<string, Character>;
+  let kinds: Record<string, string>;
+
+  beforeAll(async () => {
+    const client = await PGlite.create();
+    const all = await tags();
+    const upto = all.indexOf(GUESTS);
+    expect(upto).toBeGreaterThan(0);
+
+    for (const tag of all.slice(0, upto)) await apply(client, tag);
+
+    await client.exec(`
+      INSERT INTO campaigns (id, title) VALUES ('c', 'Кампания');
+      INSERT INTO nodes (id, campaign_id, kind, name, slug) VALUES
+        ('n-party', 'c', 'character', 'Из партии', 'party'),
+        ('n-board', 'c', 'character', 'С доски', 'board'),
+        ('n-npc', 'c', 'npc', 'NPC', 'npc'),
+        ('n-odd', 'c', 'npc', 'Строка без типа', 'odd');
+      INSERT INTO characters (node_id, is_pc) VALUES ('n-party', true), ('n-odd', true);
+    `);
+
+    await apply(client, GUESTS);
+
+    const rows = await client.query<Character>('SELECT node_id, is_pc FROM characters');
+    characters = Object.fromEntries(rows.rows.map((row) => [row.node_id, row]));
+    const nodes = await client.query<{ id: string; kind: string }>('SELECT id, kind FROM nodes');
+    kinds = Object.fromEntries(nodes.rows.map((row) => [row.id, row.kind]));
+    await client.close();
+  });
+
+  it('персонажу с доски заводит строку гостя', () => {
+    expect(characters['n-board']).toEqual({ node_id: 'n-board', is_pc: false });
+  });
+
+  it('персонажа партии не трогает', () => {
+    expect(characters['n-party']).toEqual({ node_id: 'n-party', is_pc: true });
+  });
+
+  it('узлу другого типа строку не заводит', () => {
+    expect(characters['n-npc']).toBeUndefined();
+  });
+
+  it('узлу со строкой возвращает тип «Персонаж»', () => {
+    expect(kinds['n-odd']).toBe('character');
   });
 });

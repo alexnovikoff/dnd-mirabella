@@ -50,7 +50,7 @@ export default async function ChroniclePage({
 
   /* Случайная цитата над лентой: в цитатнике все равноценны, а здесь одна
    * вытаскивается наугад. Меняется на каждое обновление страницы. */
-  const randomQuote = await getRandomQuote(viewer);
+  const randomQuote = await getRandomQuote();
 
   /* Свежие записи идут полными карточками, ранние — компактными:
    * так лента держит ритм макета, а не превращается в стену. */

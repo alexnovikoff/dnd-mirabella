@@ -124,15 +124,19 @@ export type NodeDetail = {
   description: string | null;
   /** Прежние имена: по ним резолвятся [[ссылки]] в старых записях. */
   aliases: string[];
-  /** Персонаж партии: тип не меняется, удалить нельзя. */
+  /** Персонаж: у узла есть строка в characters и страница /characters/…. */
   isCharacter: boolean;
+  /** Гостевой персонаж: не виден в «Партии», hero и среди авторов цитат. */
+  isGuest: boolean;
+  /** К персонажу привязан игрок: тип не меняется, удалить нельзя. */
+  hasPlayer: boolean;
   /** Кадры, приложенные к самой карточке: их грузят и снимают прямо здесь.
    *  Не путать с mentions.images — там счётчик записей-фото, где узел назван
    *  в тексте. */
   images: { id: string; url: string | null; caption: string | null; uploaderName: string | null }[];
-  /** Портрет персонажа партии как его загрузили, без кадрирования. У персонажа
+  /** Портрет персонажа как его загрузили, без кадрирования. У персонажа
    *  лицо живёт здесь, а не в images: страница персонажа кадров карточки не
-   *  грузит. null — не персонаж партии или портрета нет. */
+   *  грузит. null — не персонаж или портрета нет. */
   portrait: string | null;
   relations: {
     /** id ребра — по нему связь правят и удаляют. */
@@ -234,7 +238,12 @@ export function getNodeDetail(slug: string): Promise<NodeDetail | null> {
       .orderBy(desc(t.images.createdAt), desc(t.images.id));
 
     const [character] = await db
-      .select({ nodeId: t.characters.nodeId, portrait: t.characters.portrait })
+      .select({
+        nodeId: t.characters.nodeId,
+        portrait: t.characters.portrait,
+        isPc: t.characters.isPc,
+        playerId: t.characters.playerId,
+      })
       .from(t.characters)
       .where(eq(t.characters.nodeId, node.id))
       .limit(1);
@@ -248,6 +257,8 @@ export function getNodeDetail(slug: string): Promise<NodeDetail | null> {
       description: node.description,
       aliases: node.aliases,
       isCharacter: Boolean(character),
+      isGuest: character ? !character.isPc : false,
+      hasPlayer: Boolean(character?.playerId),
       images,
       portrait: character?.portrait ?? null,
       relations,

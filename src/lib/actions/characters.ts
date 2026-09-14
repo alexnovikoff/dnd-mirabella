@@ -203,3 +203,28 @@ export async function deletePersonalNote(entryId: string): Promise<NoteResult> {
   revalidatePath('/kb');
   return { ok: true };
 }
+
+export type GuestResult = { ok: true } | { ok: false; error: string };
+
+/** Тумблер «Гостевой персонаж» на карточке. Основной (is_pc) виден в
+ *  «Партии», в hero «Хроники» и среди авторов цитат; гостевой — только
+ *  по кнопке «Показать гостевых» в «Партии». Переключает любой вошедший:
+ *  состав партии за столом решают вместе. */
+export async function setCharacterGuest(nodeId: string, guest: boolean): Promise<GuestResult> {
+  await requireViewer();
+
+  const updated = await runDb(async (db) => {
+    const rows = await db
+      .update(t.characters)
+      .set({ isPc: !guest })
+      .where(eq(t.characters.nodeId, nodeId))
+      .returning({ nodeId: t.characters.nodeId });
+    return rows.length > 0;
+  });
+
+  if (!updated) return { ok: false, error: 'Персонаж не найден' };
+
+  /* Список авторов цитат живёт в корневом layout — в шите быстрой записи. */
+  revalidatePath('/', 'layout');
+  return { ok: true };
+}

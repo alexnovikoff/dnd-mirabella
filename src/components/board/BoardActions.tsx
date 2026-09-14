@@ -15,9 +15,9 @@ import type { NodeKind } from '@/lib/db/schema';
 import picker from '@/components/editor/Picker.module.css';
 import styles from './Board.module.css';
 
-/** Типы, которые имеет смысл заводить с доски. «Персонаж» здесь — обычный узел
- *  графа: карточка персонажа партии (раса, класс, портрет, игрок) заводится
- *  не здесь, и такой узел в «Партию» не попадёт. */
+/** Типы, которые имеет смысл заводить с доски. «Персонаж» заводится гостевым
+ *  персонажем — со своей страницей, портретом и достижениями; в «Партию» его
+ *  переводит тумблер на карточке. */
 const KINDS: NodeKind[] = [
   'character',
   'npc',
@@ -249,16 +249,16 @@ export function LinkNodeButton({
   );
 }
 
-/** Убрать выбранный узел прямо с доски. Персонажа партии удалить нельзя —
- *  у него своя строка в characters и своя страница. */
+/** Убрать выбранный узел прямо с доски. Персонажа, к которому привязан
+ *  игрок, удалить нельзя — гостевого и персонажа без игрока можно. */
 export function DeleteNodeButton({
   nodeId,
   name,
-  isCharacter,
+  hasPlayer,
 }: {
   nodeId: string;
   name: string;
-  isCharacter: boolean;
+  hasPlayer: boolean;
 }) {
   const router = useRouter();
   const { canWrite } = useQuickEntry();
@@ -266,7 +266,7 @@ export function DeleteNodeButton({
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  if (!canWrite || isCharacter) return null;
+  if (!canWrite || hasPlayer) return null;
 
   return (
     <>

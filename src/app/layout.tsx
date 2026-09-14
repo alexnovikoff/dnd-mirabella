@@ -5,6 +5,7 @@ import { Header } from '@/components/shell/Header';
 import { QuickEntryProvider } from '@/components/editor/QuickEntryProvider';
 import { getCampaign } from '@/lib/queries/chronicle';
 import { getPickerNodes } from '@/lib/queries/nodes';
+import { getQuoteAuthors } from '@/lib/queries/quotes';
 import { getSessionOptions } from '@/lib/queries/sessions';
 import { getViewer } from '@/lib/viewer';
 import { shortRuDate } from '@/lib/dates';
@@ -49,10 +50,11 @@ export const viewport: Viewport = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const [campaign, sessions, nodes, viewer] = await Promise.all([
+  const [campaign, sessions, nodes, authors, viewer] = await Promise.all([
     getCampaign(),
     getSessionOptions(),
     getPickerNodes(),
+    getQuoteAuthors(),
     getViewer(),
   ]);
   /* Список идёт от последней сессии — она же активная, её и показывает шапка. */
@@ -63,7 +65,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     ? [`Сессия ${session.number}`, shortRuDate(session.date)].filter(Boolean).join(' · ')
     : '';
   const sessionShort = session ? `С${session.number}` : '';
-  const characters = nodes.filter((node) => node.kind === 'character');
+  /* Авторы цитат в шите — основные персонажи; гостевых среди них нет. */
+  const characters = authors.map((author) => ({ ...author, kind: 'character' as const }));
 
   return (
     <html lang="ru" className={`${cormorant.variable} ${spectral.variable} ${plexMono.variable}`}>

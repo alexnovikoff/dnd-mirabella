@@ -30,7 +30,7 @@ export function EntryActions({ entry, canEdit }: { entry: EditableEntry; canEdit
       {confirming ? (
         <ConfirmDialog
           title="Удалить запись?"
-          body="Вместе с ней исчезнут её связи в графе и голоса. Изображения останутся в галерее."
+          body="Вместе с ней исчезнут её связи в графе. Изображения останутся в галерее."
           quoted={entry.title ?? entry.body ?? entry.caption ?? null}
           confirmLabel="УДАЛИТЬ"
           pending={pending}
