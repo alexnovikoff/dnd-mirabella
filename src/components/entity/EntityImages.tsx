@@ -2,8 +2,8 @@
 
 /* Изображения карточки сущности: портрет NPC, вид локации, герб фракции.
  *
- * Устроено как «Достижения» персонажа — та же плитка, тот же лайтбокс,
- * то же перетаскивание на сам блок, а не на окно: карточка не про загрузку
+ * Устроено как «Достижения» персонажа — тот же лайтбокс, то же
+ * перетаскивание на сам блок, а не на окно: карточка не про загрузку
  * файлов, и оверлей во весь экран здесь мешал бы. Подпись берётся из имени
  * файла и дальше живёт в базе: править её отсюда пока нечем.
  */
@@ -17,6 +17,9 @@ import { useQuickEntry } from '@/components/editor/QuickEntryProvider';
 import { deleteEntityImage, uploadEntityImages } from '@/lib/actions/entity-images';
 import { describeFailures, uploadEach } from '@/lib/uploads';
 import styles from './EntityImages.module.css';
+
+/** Плитка до загрузки кадра и у строки без файла — прежние 16:9. */
+const FALLBACK_RATIO = 16 / 9;
 
 export type EntityImage = {
   id: string;
@@ -42,6 +45,9 @@ export function EntityImages({
   const [error, setError] = useState<string | null>(null);
   const [opened, setOpened] = useState<number | null>(null);
   const [removing, setRemoving] = useState<EntityImage | null>(null);
+  /* Пропорции кадров по id. Размеров файла в базе нет — узнаём по загрузке,
+   * как лайтбокс. */
+  const [ratios, setRatios] = useState<Record<string, number>>({});
   /* «Загружаем 2 из 5…» — пачка едет по файлу, и без счёта долгая загрузка
    * выглядит зависшей. */
   const [progress, setProgress] = useState<string | null>(null);
@@ -115,42 +121,62 @@ export function EntityImages({
     <div className={styles.images} {...dropHandlers}>
       {images.length > 0 ? (
         <div className={styles.grid}>
-          {images.map((image, index) => (
-            <div key={image.id} className={styles.item}>
-              <button
-                type="button"
-                className={styles.tile}
-                aria-label={`Открыть: ${image.caption ?? 'изображение'}`}
-                onClick={() => setOpened(index)}
+          {images.map((image, index) => {
+            const ratio = image.url ? ratios[image.id] : undefined;
+            return (
+              <div
+                key={image.id}
+                className={styles.item}
+                style={{ '--ratio': ratio ?? FALLBACK_RATIO } as React.CSSProperties}
               >
-                {image.url ? (
-                  <Image
-                    src={image.url}
-                    alt={image.caption ?? name}
-                    fill
-                    className={styles.photo}
-                    sizes="(max-width: 767px) 50vw, (max-width: 1023px) 33vw, 25vw"
-                  />
-                ) : null}
-              </button>
-
-              {canWrite ? (
                 <button
                   type="button"
-                  className={styles.remove}
-                  aria-label="Убрать изображение"
-                  disabled={pending}
-                  onClick={() => setRemoving(image)}
+                  className={ratio ? `${styles.tile} ${styles.ready}` : styles.tile}
+                  aria-label={`Открыть: ${image.caption ?? 'изображение'}`}
+                  onClick={() => setOpened(index)}
                 >
-                  ×
+                  {image.url ? (
+                    <Image
+                      src={image.url}
+                      alt={image.caption ?? name}
+                      fill
+                      className={styles.photo}
+                      /* Ширина плитки зависит от пропорции, а файл выбирают
+                         до загрузки — берём с запасом на широкий кадр. */
+                      sizes="(max-width: 767px) 100vw, 640px"
+                      onLoad={(event) => {
+                        const { naturalWidth, naturalHeight } = event.currentTarget;
+                        if (naturalWidth && naturalHeight) {
+                          const loaded = naturalWidth / naturalHeight;
+                          setRatios((current) =>
+                            current[image.id] === loaded
+                              ? current
+                              : { ...current, [image.id]: loaded },
+                          );
+                        }
+                      }}
+                    />
+                  ) : null}
                 </button>
-              ) : null}
 
-              <MonoLabel size={9} tracking="0.06em" tone="faint" block>
-                {image.caption ?? 'Без подписи'}
-              </MonoLabel>
-            </div>
-          ))}
+                {canWrite ? (
+                  <button
+                    type="button"
+                    className={styles.remove}
+                    aria-label="Убрать изображение"
+                    disabled={pending}
+                    onClick={() => setRemoving(image)}
+                  >
+                    ×
+                  </button>
+                ) : null}
+
+                <MonoLabel size={9} tracking="0.06em" tone="faint" block className={styles.caption}>
+                  {image.caption ?? 'Без подписи'}
+                </MonoLabel>
+              </div>
+            );
+          })}
         </div>
       ) : (
         <MonoLabel size={9} tracking="0.08em" tone="faint" block>
