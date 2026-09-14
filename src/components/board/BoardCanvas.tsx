@@ -3,10 +3,19 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { MonoLabel } from '@/components/primitives';
-import { saveNodePosition } from '@/lib/actions/board';
+import { saveNodeBox, saveNodePosition } from '@/lib/actions/board';
 import { useQuickEntry } from '@/components/editor/QuickEntryProvider';
 import { LinkTypeDialog } from './LinkTypeDialog';
 import { nodeAt, type NodeBox } from '@/lib/board-drag';
+import {
+  TILE_SCALE_COOKIE,
+  TILE_SCALE_DEFAULT,
+  TILE_SCALE_STEPS,
+  gripOf,
+  resizedBox,
+  tileCenter,
+  type ResizeGrip,
+} from '@/lib/board-tile';
 import { centerOf, scrollToCenter } from '@/lib/board-view';
 import { NODE_KIND_LABEL } from '@/lib/nodes';
 import type { BoardEdge, BoardNode } from '@/lib/queries/board';
@@ -28,6 +37,7 @@ const ZOOM_DEFAULT = ZOOM_STEPS.indexOf(1);
  * но там доска и не двигалась. */
 const BOARD_WIDTH = 1500;
 const BOARD_HEIGHT = 900;
+const BOARD = { width: BOARD_WIDTH, height: BOARD_HEIGHT };
 
 /* Пустое поле вокруг полотна со всех сторон. Без него прокрутка начиналась
  * ровно с угла полотна, и доску можно было потянуть только вправо и вниз:
@@ -59,18 +69,32 @@ type Pan = {
   top: number;
   movedFar: boolean;
 };
+/** Размер плитки; null — по умолчанию из CSS. */
+type NodeSize = { width: number | null; height: number | null };
+/** Плитку тянут за нижний правый угол. */
+type Resize = {
+  id: string;
+  pointerId: number;
+  grip: ResizeGrip;
+  moved: boolean;
+  /** Что вернуть, если жест прервут. */
+  before: { size: NodeSize; position: { x: number; y: number } };
+};
 
 export function BoardCanvas({
   nodes,
   edges,
   labels,
   selectedSlug,
+  initialTileStep,
 }: {
   nodes: BoardNode[];
   edges: BoardEdge[];
   /** Уже использованные типы связи — подсказки в окне после дропа. */
   labels: string[];
   selectedSlug: string | null;
+  /** Ступень множителя плиток из куки зрителя. */
+  initialTileStep: number;
 }) {
   const router = useRouter();
   const { canWrite } = useQuickEntry();
@@ -84,11 +108,45 @@ export function BoardCanvas({
   const [dropTarget, setDropTarget] = useState<string | null>(null);
   const [linking, setLinking] = useState<Linking | null>(null);
   const [pan, setPan] = useState<Pan | null>(null);
+  const [resize, setResize] = useState<Resize | null>(null);
   /* Локальные координаты на время перетаскивания — линии едут за узлом. */
   const [positions, setPositions] = useState<Record<string, { x: number; y: number }>>({});
+  /* Так же и размеры: плитка растёт под рукой, в базу уходит итог. */
+  const [sizes, setSizes] = useState<Record<string, NodeSize>>({});
+  const [tileStep, setTileStep] = useState<number>(initialTileStep);
 
   const zoom = ZOOM_STEPS[zoomStep];
+  const tileScale = TILE_SCALE_STEPS[tileStep];
   const byId = new Map(nodes.map((node) => [node.id, node]));
+  const selectedId = nodes.find((node) => node.slug === selectedSlug)?.id ?? null;
+
+  /* Множитель плиток — настройка зрителя, а не кампании: у каждого свой
+   * экран. Кука на год; страница прочтёт её при следующем заходе. */
+  function tileScaleTo(step: number) {
+    setTileStep(step);
+    document.cookie = `${TILE_SCALE_COOKIE}=${TILE_SCALE_STEPS[step]}; path=/board; max-age=31536000; samesite=lax`;
+  }
+
+  const sizeOf = (node: BoardNode): NodeSize =>
+    sizes[node.id] ?? { width: node.width, height: node.height };
+
+  /** Точка окна в пикселях полотна на 100%. */
+  function toCanvas(clientX: number, clientY: number) {
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (!rect) return null;
+    return {
+      x: ((clientX - rect.left) / rect.width) * BOARD_WIDTH,
+      y: ((clientY - rect.top) / rect.height) * BOARD_HEIGHT,
+    };
+  }
+
+  /** Нарисованный размер плитки в её пикселях: он бывает больше заданного,
+   *  если содержимое не помещается ни по ширине, ни по высоте. */
+  function drawnSize(id: string) {
+    const element = nodeRefs.current.get(id);
+    return element ? { width: element.offsetWidth, height: element.offsetHeight } : null;
+  }
+
   /* Масштаб, при котором поле сейчас отрисовано. */
   const zoomRef = useRef(zoom);
   /* Точка поля, которую после смены масштаба надо вернуть в центр окна.
@@ -157,15 +215,23 @@ export function BoardCanvas({
     [positions],
   );
 
-  /** Узел под курсором, кроме самого перетаскиваемого: он под ним всегда. */
-  const targetUnder = useCallback((dragged: string, clientX: number, clientY: number) => {
-    const boxes: NodeBox[] = [];
-    for (const [id, element] of nodeRefs.current) {
-      if (id === dragged) continue;
-      boxes.push({ id, rect: element.getBoundingClientRect() });
-    }
-    return nodeAt(boxes, clientX, clientY);
-  }, []);
+  /** Узел под курсором, кроме самого перетаскиваемого: он под ним всегда.
+   *  Выбранный узел нарисован поверх соседей, поэтому и проверяется последним. */
+  const targetUnder = useCallback(
+    (dragged: string, clientX: number, clientY: number) => {
+      const boxes: NodeBox[] = [];
+      let raised: NodeBox | null = null;
+      for (const [id, element] of nodeRefs.current) {
+        if (id === dragged) continue;
+        const box = { id, rect: element.getBoundingClientRect() };
+        if (id === selectedId) raised = box;
+        else boxes.push(box);
+      }
+      if (raised) boxes.push(raised);
+      return nodeAt(boxes, clientX, clientY);
+    },
+    [selectedId],
+  );
 
   /** Ручное ребро этой пары, если оно уже есть. Направление не важно. */
   function manualLinkOf(a: string, b: string) {
@@ -223,33 +289,73 @@ export function BoardCanvas({
     >
       {/* Кнопки масштаба лежат вне прокручиваемой области и вне канвы,
           поэтому изменение масштаба их не двигает. */}
-      <div className={styles.zoomControls}>
-        <button
-          type="button"
-          className={styles.zoomButton}
-          aria-label="Уменьшить масштаб"
-          disabled={zoomStep === 0}
-          onClick={() => zoomTo(Math.max(0, zoomStep - 1))}
-        >
-          −
-        </button>
-        <button
-          type="button"
-          className={styles.zoomValue}
-          title="Вернуть 100%"
-          onClick={() => zoomTo(ZOOM_DEFAULT)}
-        >
-          {`${Math.round(zoom * 100)}%`}
-        </button>
-        <button
-          type="button"
-          className={styles.zoomButton}
-          aria-label="Увеличить масштаб"
-          disabled={zoomStep === ZOOM_STEPS.length - 1}
-          onClick={() => zoomTo(Math.min(ZOOM_STEPS.length - 1, zoomStep + 1))}
-        >
-          +
-        </button>
+      <div className={styles.viewControls}>
+        <div className={styles.zoomControls}>
+          <MonoLabel size={9} tone="faint" className={styles.zoomLabel}>
+            Масштаб
+          </MonoLabel>
+          <button
+            type="button"
+            className={styles.zoomButton}
+            aria-label="Уменьшить масштаб"
+            disabled={zoomStep === 0}
+            onClick={() => zoomTo(Math.max(0, zoomStep - 1))}
+          >
+            −
+          </button>
+          <button
+            type="button"
+            className={styles.zoomValue}
+            title="Вернуть 100%"
+            onClick={() => zoomTo(ZOOM_DEFAULT)}
+          >
+            {`${Math.round(zoom * 100)}%`}
+          </button>
+          <button
+            type="button"
+            className={styles.zoomButton}
+            aria-label="Увеличить масштаб"
+            disabled={zoomStep === ZOOM_STEPS.length - 1}
+            onClick={() => zoomTo(Math.min(ZOOM_STEPS.length - 1, zoomStep + 1))}
+          >
+            +
+          </button>
+        </div>
+
+        {/* Масштаб увеличивает доску целиком, а это — только плитки: узлы
+            стоят где стояли. Мелкие плитки разводят тесный граф, крупные
+            читаются на мелком масштабе. */}
+        <div className={styles.zoomControls}>
+          <MonoLabel size={9} tone="faint" className={styles.zoomLabel}>
+            Плитки
+          </MonoLabel>
+          <button
+            type="button"
+            className={styles.zoomButton}
+            aria-label="Уменьшить плитки"
+            disabled={tileStep === 0}
+            onClick={() => tileScaleTo(Math.max(0, tileStep - 1))}
+          >
+            −
+          </button>
+          <button
+            type="button"
+            className={styles.zoomValue}
+            title="Вернуть плитки 100%"
+            onClick={() => tileScaleTo(TILE_SCALE_DEFAULT)}
+          >
+            {`${Math.round(tileScale * 100)}%`}
+          </button>
+          <button
+            type="button"
+            className={styles.zoomButton}
+            aria-label="Увеличить плитки"
+            disabled={tileStep === TILE_SCALE_STEPS.length - 1}
+            onClick={() => tileScaleTo(Math.min(TILE_SCALE_STEPS.length - 1, tileStep + 1))}
+          >
+            +
+          </button>
+        </div>
       </div>
 
       <div className={styles.scroller} ref={scrollerRef}>
@@ -367,6 +473,20 @@ export function BoardCanvas({
             {nodes.map((node) => {
               const position = positionOf(node);
               const selected = node.slug === selectedSlug;
+              const size = sizeOf(node);
+              const resizing = resize?.id === node.id ? resize : null;
+              const wrapClassName = [
+                styles.nodeWrap,
+                resizing
+                  ? styles.wrapResizing
+                  : drag?.id === node.id
+                    ? styles.wrapActive
+                    : selected
+                      ? styles.wrapSelected
+                      : undefined,
+              ]
+                .filter(Boolean)
+                .join(' ');
               const className = [
                 styles.node,
                 node.status === 'open' ? styles.open : undefined,
@@ -382,12 +502,24 @@ export function BoardCanvas({
               return (
                 <div
                   key={node.id}
-                  className={styles.nodeWrap}
-                  style={{ left: `${position.x}%`, top: `${position.y}%` }}
+                  className={wrapClassName}
+                  style={
+                    {
+                      /* Пока тянут угол, плитка привязана к левому верхнему
+                         углу: он и должен стоять, а размер растёт вправо-вниз. */
+                      left: resizing ? `${resizing.grip.left}px` : `${position.x}%`,
+                      top: resizing ? `${resizing.grip.top}px` : `${position.y}%`,
+                      '--tile-scale': tileScale,
+                    } as React.CSSProperties
+                  }
                 >
                   <button
                     type="button"
                     className={className}
+                    style={{
+                      width: size.width ?? undefined,
+                      minHeight: size.height ?? undefined,
+                    }}
                     aria-pressed={selected}
                     ref={(element) => {
                       if (element) nodeRefs.current.set(node.id, element);
@@ -498,6 +630,97 @@ export function BoardCanvas({
                     >
                       ×
                     </button>
+                  ) : null}
+
+                  {/* Нижний правый угол тянут, как у окна. Зона невидима, пока
+                      над ней нет курсора, — иначе ручки на каждой плитке. */}
+                  {canWrite ? (
+                    <div
+                      className={styles.resizeCorner}
+                      title="Потяните, чтобы изменить размер"
+                      aria-hidden="true"
+                      onPointerDown={(event) => {
+                        /* Угол — свой жест: ни перетаскивания узла, ни доски. */
+                        event.stopPropagation();
+                        if (event.button !== 0) return;
+                        const canvas = canvasRef.current?.getBoundingClientRect();
+                        const element = nodeRefs.current.get(node.id);
+                        const drawn = drawnSize(node.id);
+                        const pointer = toCanvas(event.clientX, event.clientY);
+                        if (!canvas || !element || !drawn || !pointer) return;
+                        try {
+                          event.currentTarget.setPointerCapture(event.pointerId);
+                        } catch {
+                          /* пусто */
+                        }
+                        const rect = element.getBoundingClientRect();
+                        setResize({
+                          id: node.id,
+                          pointerId: event.pointerId,
+                          grip: gripOf(
+                            {
+                              left: ((rect.left - canvas.left) / canvas.width) * BOARD_WIDTH,
+                              top: ((rect.top - canvas.top) / canvas.height) * BOARD_HEIGHT,
+                              ...drawn,
+                            },
+                            pointer,
+                            tileScale,
+                          ),
+                          moved: false,
+                          before: { size, position },
+                        });
+                      }}
+                      onPointerMove={(event) => {
+                        if (resize?.id !== node.id || resize.pointerId !== event.pointerId) return;
+                        const pointer = toCanvas(event.clientX, event.clientY);
+                        if (!pointer) return;
+                        const box = resizedBox(resize.grip, pointer);
+                        if (!resize.moved) setResize({ ...resize, moved: true });
+                        setSizes((current) => ({ ...current, [node.id]: box }));
+                        /* Линии идут к центру. Размер — нарисованный, с прошлого
+                         * кадра: содержимое может не пустить плитку уже и ниже. */
+                        setPositions((current) => ({
+                          ...current,
+                          [node.id]: tileCenter(resize.grip, drawnSize(node.id) ?? box, BOARD),
+                        }));
+                      }}
+                      onPointerUp={(event) => {
+                        event.stopPropagation();
+                        if (resize?.id !== node.id || resize.pointerId !== event.pointerId) return;
+                        try {
+                          event.currentTarget.releasePointerCapture(event.pointerId);
+                        } catch {
+                          /* пусто */
+                        }
+                        setResize(null);
+                        const drawn = drawnSize(node.id);
+                        if (
+                          !resize.moved ||
+                          !drawn ||
+                          size.width === null ||
+                          size.height === null
+                        ) {
+                          return;
+                        }
+                        /* Центр — по тому, что нарисовано сейчас: плитка вернётся
+                         * к привязке по центру, и угол не должен дрогнуть. */
+                        const center = tileCenter(resize.grip, drawn, BOARD);
+                        setPositions((current) => ({ ...current, [node.id]: center }));
+                        void saveNodeBox(node.id, {
+                          ...center,
+                          width: size.width,
+                          height: size.height,
+                        });
+                      }}
+                      onPointerCancel={() => {
+                        if (resize?.id !== node.id) return;
+                        /* Жест прервали — плитка возвращается как была. */
+                        const { before } = resize;
+                        setSizes((current) => ({ ...current, [node.id]: before.size }));
+                        setPositions((current) => ({ ...current, [node.id]: before.position }));
+                        setResize(null);
+                      }}
+                    />
                   ) : null}
                 </div>
               );
