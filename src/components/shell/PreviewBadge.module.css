@@ -1,0 +1,34 @@
+/* Метка превью. Приклеена к углу окна и видна при прокрутке, но клики
+ * пропускает насквозь: сайт под ней должен работать как боевой.
+ * z-index выше диалогов (70) — метка не должна пропадать ни на каком экране. */
+
+.badge {
+  position: fixed;
+  top: 4px;
+  left: 4px;
+  z-index: 80;
+  padding: 5px 14px;
+  background: var(--accent);
+  box-shadow: var(--accent-inset), var(--node-shadow-sm);
+  border-radius: var(--radius);
+  color: var(--accent-on);
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* <768px стола вокруг листа нет, и шапка начинается у самого края окна.
+ * Метка прижата к углу и укладывается в верхний отступ шапки (16px) с печатью. */
+@media (max-width: 767px) {
+  .badge {
+    top: 0;
+    left: 0;
+    padding: 3px 8px;
+    font-size: 12px;
+  }
+}
