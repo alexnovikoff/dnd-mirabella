@@ -51,13 +51,6 @@ export function clampNodeBox(width: number, height: number): TileBox {
   };
 }
 
-/** Координата центра в процентах: не у самого края полотна и с точностью
- *  до сотой — сотая процента меньше пикселя, угол не уходит. */
-export function clampBoardPercent(value: number): number {
-  if (!Number.isFinite(value)) return 50;
-  return Math.min(97, Math.max(3, Math.round(value * 100) / 100));
-}
-
 /** Хватка в момент нажатия: плитка с левым верхним углом и размером
  *  (в пикселях плитки) и указатель — в пикселях полотна. */
 export function gripOf(

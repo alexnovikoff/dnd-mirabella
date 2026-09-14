@@ -16,7 +16,18 @@ import {
   tileCenter,
   type ResizeGrip,
 } from '@/lib/board-tile';
-import { centerOf, scrollToCenter } from '@/lib/board-view';
+import {
+  BOARD,
+  BOARD_HEIGHT,
+  BOARD_MARGIN,
+  BOARD_WIDTH,
+  FIELD,
+  FIELD_HEIGHT,
+  FIELD_WIDTH,
+  centerOf,
+  clampBoardPoint,
+  scrollToCenter,
+} from '@/lib/board-view';
 import { NODE_KIND_LABEL } from '@/lib/nodes';
 import type { BoardEdge, BoardNode } from '@/lib/queries/board';
 import styles from './Board.module.css';
@@ -30,23 +41,6 @@ const ZOOM_STEPS = [0.2, 0.4, 0.6, 0.8, 1, 1.2, 1.4, 1.6, 1.8, 2] as const;
 /* Доска открывается на 100% на любом экране, телефон тоже: имена узлов
  * читаются, а до остального графа доска дотягивается пальцем. */
 const ZOOM_DEFAULT = ZOOM_STEPS.indexOf(1);
-
-/* Собственный размер полотна: он не зависит от ширины колонки, поэтому
- * координаты узлов (проценты) всегда ложатся в одну и ту же систему, а
- * места хватает, чтобы двигать доску даже на 100%. В макете было 900×560,
- * но там доска и не двигалась. */
-const BOARD_WIDTH = 1500;
-const BOARD_HEIGHT = 900;
-const BOARD = { width: BOARD_WIDTH, height: BOARD_HEIGHT };
-
-/* Пустое поле вокруг полотна со всех сторон. Без него прокрутка начиналась
- * ровно с угла полотна, и доску можно было потянуть только вправо и вниз:
- * левый и верхний край упирались в ноль. Узлы в поле не ставятся — их
- * координаты по-прежнему проценты полотна, поле нужно лишь для обзора. */
-const BOARD_MARGIN = 600;
-const FIELD_WIDTH = BOARD_WIDTH + BOARD_MARGIN * 2;
-const FIELD_HEIGHT = BOARD_HEIGHT + BOARD_MARGIN * 2;
-const FIELD = { width: FIELD_WIDTH, height: FIELD_HEIGHT };
 
 function viewportOf(scroller: HTMLElement) {
   return { width: scroller.clientWidth, height: scroller.clientHeight };
@@ -260,13 +254,16 @@ export function BoardCanvas({
     endNodeDrag();
   }
 
+  /** Указатель в процентах полотна. Узел ходит по всему полю, а не только
+   *  по полотну: иначе на мелком масштабе видно поле, а поставить на него
+   *  нечего. Пределы те же, что проверит сервер. */
   function toPercent(event: React.PointerEvent) {
     const rect = canvasRef.current?.getBoundingClientRect();
     if (!rect) return null;
-    return {
-      x: Math.min(97, Math.max(3, ((event.clientX - rect.left) / rect.width) * 100)),
-      y: Math.min(97, Math.max(3, ((event.clientY - rect.top) / rect.height) * 100)),
-    };
+    return clampBoardPoint({
+      x: ((event.clientX - rect.left) / rect.width) * 100,
+      y: ((event.clientY - rect.top) / rect.height) * 100,
+    });
   }
 
   function deselect() {

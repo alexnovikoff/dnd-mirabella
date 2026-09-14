@@ -6,7 +6,6 @@ import {
   NODE_WIDTH_MIN,
   TILE_SCALE_DEFAULT,
   TILE_SCALE_STEPS,
-  clampBoardPercent,
   clampNodeBox,
   gripOf,
   resizedBox,
@@ -28,15 +27,6 @@ describe('clampNodeBox', () => {
       width: 140,
       height: NODE_HEIGHT_MIN,
     });
-  });
-});
-
-describe('clampBoardPercent', () => {
-  it('держит центр у полотна с точностью до сотой', () => {
-    expect(clampBoardPercent(41.23456)).toBe(41.23);
-    expect(clampBoardPercent(-5)).toBe(3);
-    expect(clampBoardPercent(120)).toBe(97);
-    expect(clampBoardPercent(Number.NaN)).toBe(50);
   });
 });
 

@@ -57,9 +57,14 @@ describe('saveNodeBox', () => {
     expect(await tavern()).toMatchObject({ x: 70.5, y: 30.25, width: 200, height: 90 });
   });
 
-  it('держит размер и центр в пределах', async () => {
-    await saveNodeBox(TAVERN, { x: -10, y: 140, width: 5, height: 9000 });
-    expect(await tavern()).toMatchObject({ x: 3, y: 97, width: 40, height: 600 });
+  it('держит размер и центр в пределах поля', async () => {
+    await saveNodeBox(TAVERN, { x: -100, y: 500, width: 5, height: 9000 });
+    expect(await tavern()).toMatchObject({ x: -37, y: 163.67, width: 40, height: 600 });
+  });
+
+  it('узел переносится за полотно, на поле вокруг', async () => {
+    await saveNodePosition(TAVERN, -20.5, 140.25);
+    expect(await tavern()).toMatchObject({ x: -20.5, y: 140.25 });
   });
 
   it('новый узел появляется размера по умолчанию', async () => {
