@@ -59,7 +59,7 @@ describe('saveNodeBox', () => {
 
   it('держит размер и центр в пределах', async () => {
     await saveNodeBox(TAVERN, { x: -10, y: 140, width: 5, height: 9000 });
-    expect(await tavern()).toMatchObject({ x: 3, y: 97, width: 90, height: 600 });
+    expect(await tavern()).toMatchObject({ x: 3, y: 97, width: 40, height: 600 });
   });
 
   it('новый узел появляется размера по умолчанию', async () => {

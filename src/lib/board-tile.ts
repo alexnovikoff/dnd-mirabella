@@ -10,7 +10,10 @@
 
 /** Ширина плитки по умолчанию — та же, что у .node в Board.module.css. */
 export const NODE_WIDTH_DEFAULT = 140;
-export const NODE_WIDTH_MIN = 90;
+/** Страховка для базы, а не настоящий предел: уже самого длинного слова плитку
+ *  не пускает min-width: min-content. Постоянный минимум оставлял короткому
+ *  имени («Бонсе») пустое поле справа втрое шире отступа слева. */
+export const NODE_WIDTH_MIN = 40;
 export const NODE_WIDTH_MAX = 600;
 /** Высота — нижняя граница: содержимое всё равно не обрежется. */
 export const NODE_HEIGHT_MIN = 40;

@@ -384,12 +384,15 @@
 
 /* Ширину и высоту растянутой плитки BoardCanvas задаёт инлайном: width —
  * текст переносится по ней, min-height — ниже содержимого плитка не станет.
+ * min-content — то же по ширине: плитка сжимается до самого длинного слова,
+ * но не режет его (break-word, в отличие от anywhere, этот предел не двигает).
  * Колонкой, чтобы в высокой плитке текст стоял сверху, а не посередине,
  * как у кнопки по умолчанию. */
 .node {
   display: flex;
   flex-direction: column;
   width: 140px;
+  min-width: min-content;
   overflow-wrap: break-word;
   background: var(--card);
   border: 1px solid var(--rule);

@@ -140,8 +140,8 @@ export function BoardCanvas({
     };
   }
 
-  /** Нарисованный размер плитки в её пикселях: высота бывает больше
-   *  заданной, если содержимое не помещается. */
+  /** Нарисованный размер плитки в её пикселях: он бывает больше заданного,
+   *  если содержимое не помещается ни по ширине, ни по высоте. */
   function drawnSize(id: string) {
     const element = nodeRefs.current.get(id);
     return element ? { width: element.offsetWidth, height: element.offsetHeight } : null;
@@ -677,16 +677,11 @@ export function BoardCanvas({
                         const box = resizedBox(resize.grip, pointer);
                         if (!resize.moved) setResize({ ...resize, moved: true });
                         setSizes((current) => ({ ...current, [node.id]: box }));
-                        /* Линии идут к центру. Высота — нарисованная, с прошлого
-                         * кадра: содержимое может не пустить плитку ниже. */
-                        const drawn = drawnSize(node.id);
+                        /* Линии идут к центру. Размер — нарисованный, с прошлого
+                         * кадра: содержимое может не пустить плитку уже и ниже. */
                         setPositions((current) => ({
                           ...current,
-                          [node.id]: tileCenter(
-                            resize.grip,
-                            { width: box.width, height: drawn?.height ?? box.height },
-                            BOARD,
-                          ),
+                          [node.id]: tileCenter(resize.grip, drawnSize(node.id) ?? box, BOARD),
                         }));
                       }}
                       onPointerUp={(event) => {
