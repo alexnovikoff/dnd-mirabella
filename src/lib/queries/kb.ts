@@ -40,6 +40,11 @@ export type FreeNote = {
   authorName: string | null;
   sessionNumber: number | null;
   isPrivate: boolean;
+  /** Право на правку и поля шита: карточка заметки открывается в него. */
+  authorId: string | null;
+  sessionId: string | null;
+  subjectId: string | null;
+  visibility: t.Visibility;
 };
 
 /** Наводки: узлы со статусом, счётчик связей и соседи по ручным рёбрам. */
@@ -107,6 +112,9 @@ export function getFreeNotes(viewer: Viewer | null): Promise<FreeNote[]> {
         id: t.entries.id,
         body: t.entries.body,
         visibility: t.entries.visibility,
+        authorId: t.entries.authorId,
+        sessionId: t.entries.sessionId,
+        subjectId: t.entries.subjectId,
         authorName: t.users.name,
         sessionNumber: t.sessions.number,
       })
@@ -116,13 +124,7 @@ export function getFreeNotes(viewer: Viewer | null): Promise<FreeNote[]> {
       .where(and(eq(t.entries.campaignId, CAMPAIGN_ID), eq(t.entries.kind, 'note'), visible))
       .orderBy(desc(t.entries.createdAt), desc(t.entries.id));
 
-    return rows.map((row) => ({
-      id: row.id,
-      body: row.body,
-      authorName: row.authorName,
-      sessionNumber: row.sessionNumber,
-      isPrivate: row.visibility === 'private',
-    }));
+    return rows.map((row) => ({ ...row, isPrivate: row.visibility === 'private' }));
   });
 }
 

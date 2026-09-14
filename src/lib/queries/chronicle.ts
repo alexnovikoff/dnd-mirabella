@@ -16,13 +16,14 @@ import { LOOT_TAG } from '@/lib/entries-shared';
 import { visibleEntries } from '@/lib/visibility';
 import { parseWikiLinks } from '@/lib/wiki/parse';
 
-export type FeedFilter = 'all' | 'moments' | 'quotes' | 'loot';
+export type FeedFilter = 'all' | 'moments' | 'quotes' | 'loot' | 'notes';
 
 export const FEED_FILTERS: { id: FeedFilter; label: string }[] = [
   { id: 'all', label: 'ВСЁ' },
   { id: 'moments', label: 'МОМЕНТЫ' },
   { id: 'quotes', label: 'ЦИТАТЫ' },
   { id: 'loot', label: 'ЛУТ' },
+  { id: 'notes', label: 'ЗАМЕТКИ' },
 ];
 
 export function isFeedFilter(value: string | undefined): value is FeedFilter {
@@ -80,9 +81,11 @@ export type FeedThumbnail = { url: string; alt: string };
 export function getFeed(filter: FeedFilter = 'all', viewer: Viewer | null = null) {
   return runDb(async (db) => {
     const visible = visibleEntries(viewer);
+    /* Заметки идут в ленту с теми же правами, что и в базе знаний: личную
+     * видят только автор и мастер. Фото живут в галерее. */
     const conditions = [
       eq(t.entries.campaignId, CAMPAIGN_ID),
-      inArray(t.entries.kind, ['moment', 'quote'] as const),
+      inArray(t.entries.kind, ['moment', 'quote', 'note'] as const),
       ...(visible ? [visible] : []),
     ];
     const isLoot = sql`${t.entries.tags} && ARRAY[${LOOT_TAG}]::text[]`;
@@ -90,6 +93,7 @@ export function getFeed(filter: FeedFilter = 'all', viewer: Viewer | null = null
     if (filter === 'moments') conditions.push(eq(t.entries.kind, 'moment'), not(isLoot));
     if (filter === 'quotes') conditions.push(eq(t.entries.kind, 'quote'));
     if (filter === 'loot') conditions.push(isLoot);
+    if (filter === 'notes') conditions.push(eq(t.entries.kind, 'note'));
 
     const rows = await db
       .select({

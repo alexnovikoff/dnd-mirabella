@@ -5,6 +5,7 @@ import { FreeNoteCard, RumorNote } from '@/components/kb/NoteCards';
 import { getFreeNotes, getNodeCards, getRumors, isKbTab, kbCards, KB_TABS } from '@/lib/queries/kb';
 import { getNodeIndex } from '@/lib/queries/chronicle';
 import { getViewer } from '@/lib/viewer';
+import { canEditEntry } from '@/lib/auth-shared';
 import { plural } from '@/lib/plural';
 import styles from '@/components/kb/NoteCards.module.css';
 
@@ -64,7 +65,14 @@ export default async function KnowledgeBasePage({
           <RumorNote key={card.id} card={card} tab={active} />
         ))}
         {showNotes
-          ? notes.map((note) => <FreeNoteCard key={note.id} note={note} index={index} />)
+          ? notes.map((note) => (
+              <FreeNoteCard
+                key={note.id}
+                note={note}
+                index={index}
+                canEdit={canEditEntry(viewer, note)}
+              />
+            ))
           : null}
       </div>
     </Screen>

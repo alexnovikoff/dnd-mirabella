@@ -1,5 +1,7 @@
 import Link from 'next/link';
 import { MonoLabel, STATUS_META, StatusPill } from '@/components/primitives';
+import { EditOnClick } from '@/components/entry/EditOnClick';
+import { EntryActions } from '@/components/entry/EntryActions';
 import { WikiText } from '@/components/wiki/WikiText';
 import { NODE_KIND_LABEL } from '@/lib/nodes';
 import type { FreeNote, RumorCard } from '@/lib/queries/kb';
@@ -52,25 +54,53 @@ export function RumorNote({ card, tab }: { card: RumorCard; tab?: string }) {
   );
 }
 
-export function FreeNoteCard({ note, index }: { note: FreeNote; index: Map<string, string> }) {
-  const meta = [
+/** «Заметка · Джаду · С14» — мета заметки в базе знаний и в ленте. */
+export function noteMeta(note: {
+  isPrivate: boolean;
+  authorName: string | null;
+  sessionNumber: number | null;
+}): string {
+  return [
     note.isPrivate ? 'Личная заметка' : 'Заметка',
     note.authorName,
     note.sessionNumber ? `С${note.sessionNumber}` : null,
   ]
     .filter(Boolean)
     .join(' · ');
+}
+
+export function FreeNoteCard({
+  note,
+  index,
+  canEdit = false,
+}: {
+  note: FreeNote;
+  index: Map<string, string>;
+  canEdit?: boolean;
+}) {
+  const entry = {
+    id: note.id,
+    kind: 'note' as const,
+    title: null,
+    body: note.body,
+    subjectId: note.subjectId,
+    sessionId: note.sessionId,
+    visibility: note.visibility,
+  };
 
   return (
-    <article className={styles.note}>
-      <MonoLabel size={9} tracking="0.08em" tone={note.isPrivate ? 'accent' : 'label'} block>
-        {meta}
-      </MonoLabel>
-      {note.body ? (
-        <p className={styles.noteBody}>
-          <WikiText body={note.body} index={index} />
-        </p>
-      ) : null}
-    </article>
+    <EditOnClick entry={entry} canEdit={canEdit}>
+      <article className={canEdit ? `${styles.note} ${styles.noteEditable}` : styles.note}>
+        <MonoLabel size={9} tracking="0.08em" tone={note.isPrivate ? 'accent' : 'label'} block>
+          {noteMeta(note)}
+        </MonoLabel>
+        {note.body ? (
+          <p className={styles.noteBody}>
+            <WikiText body={note.body} index={index} />
+          </p>
+        ) : null}
+        <EntryActions entry={entry} canEdit={canEdit} />
+      </article>
+    </EditOnClick>
   );
 }
