@@ -83,10 +83,18 @@
   color: var(--ink);
 }
 
-.note {
+.note,
+.description {
   font-size: 14px;
   line-height: 1.6;
   color: var(--ink-muted-2);
+}
+
+/* Описание карточки длиннее подписи: вплотную к типу над ним и к кадрам под
+ * ним абзац сливался с шапкой. 20px от мета-строки (с зазором колонки),
+ * 44px до первого блока (с зазором экрана). */
+.description {
+  margin-block: 14px 22px;
 }
 
 @media (max-width: 767px) {

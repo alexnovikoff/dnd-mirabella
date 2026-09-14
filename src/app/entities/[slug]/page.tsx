@@ -65,7 +65,7 @@ export default async function EntityPage({
           ) : null}
         </>
       }
-      note={detail.description ?? undefined}
+      description={detail.description ?? undefined}
       back={{ href: backTab ? `/kb?tab=${backTab}` : '/kb', label: 'К базе знаний' }}
       /* С доски сущность видна в окружении связей — туда и ссылка, с узлом
          уже выбранным. Единственная на странице: строка «Открыть на доске

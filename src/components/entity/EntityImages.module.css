@@ -1,8 +1,6 @@
 /* ── Изображения карточки сущности ───────────────────────────────────
- * Сетка плиток внутри блока карточки: заголовок со счётчиком рисует сама
- * страница, здесь — только плитки, дроп-зона и ошибка. Мерки те же, что
- * у «Достижений» персонажа: один и тот же кадр не должен выглядеть
- * по-разному на двух страницах. */
+ * Плитки внутри блока карточки: заголовок со счётчиком рисует сама
+ * страница, здесь — только плитки, дроп-зона и ошибка. */
 
 .images {
   display: flex;
@@ -10,27 +8,39 @@
   gap: 12px;
 }
 
+/* Кадры идут строкой и переносятся: у всех одна высота, ширина — от
+ * пропорции самого кадра, как в лайтбоксе. Правый край строки неровный —
+ * растянуть плитки до края значило бы сделать кадры в строках разной
+ * высоты. */
 .grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
   gap: 14px;
+  --tile-height: 260px;
 }
 
+/* --ratio ставит EntityImages.tsx. Панораму шире блока ограничивает его
+ * ширина — только тогда кадр становится ниже. 2px — рамка плитки. Уже 44px
+ * плитка не бывает: иначе в узкий кадр не попасть пальцем. */
 .item {
   position: relative;
   display: flex;
   flex-direction: column;
   gap: 6px;
-  min-width: 0;
+  width: min(100%, var(--tile-height) * var(--ratio) + 2px);
+  min-width: 44px;
 }
 
-/* Плитка прямоугольная, кадр вписан целиком: карточке несут и портреты,
- * и широкие виды локаций, а квадратная обрезка съедала бы ровно то, ради
- * чего кадр принесли. Пустые поля закрывает штриховка. */
+/* Кадр виден целиком и без полей: пропорцию плитки задаёт сам кадр, а не
+ * общая рамка 16:9, в которой узкий портрет терялся между штриховкой.
+ * content-box — пропорцию держит поле внутри рамки в 1px. */
 .tile {
   position: relative;
-  aspect-ratio: 16 / 9;
-  width: 100%;
+  box-sizing: content-box;
+  width: calc(100% - 2px);
+  aspect-ratio: var(--ratio);
+  padding: 0;
   border: 1px solid var(--rule);
   border-radius: var(--radius);
   background: var(--hatch);
@@ -41,6 +51,12 @@
     box-shadow var(--hover-slow);
 }
 
+/* Штриховка — только плейсхолдер, пока кадр грузится или файла нет: под
+ * загруженным кадром округление оставило бы по краю полоску. */
+.ready {
+  background: transparent;
+}
+
 .tile:hover {
   border-color: var(--accent);
   box-shadow: var(--node-shadow-sm);
@@ -48,6 +64,18 @@
 
 .photo {
   object-fit: contain;
+  opacity: 0;
+}
+
+/* Кадр прячется, пока плитка не узнала его пропорцию: иначе он мелькнул бы
+ * в плитке 16:9 с полями по бокам. */
+.ready .photo {
+  opacity: 1;
+}
+
+/* Подпись — по ширине плитки, длинное имя файла без пробелов переносится. */
+.caption {
+  overflow-wrap: anywhere;
 }
 
 /* Крестик поверх плитки: видно всегда — на сенсорном экране ховера нет. */
@@ -74,25 +102,31 @@
   background: var(--accent);
 }
 
-/* Дроп-зона кликабельна — это кнопка выбора файлов. */
+/* Дроп-зона кликабельна — это кнопка выбора файлов. Высота задана прямо, а
+ * не пропорцией: у кадра 2px рамки сверх неё, и у неквадратной плитки
+ * aspect-ratio дал бы высоту на долю пикселя больше соседей. Ширину даёт
+ * --ratio у .item. */
 .drop {
   display: block;
   width: 100%;
+  height: calc(var(--tile-height) + 2px);
   background: transparent;
   border: 0;
   padding: 0;
   text-align: inherit;
 }
 
-@media (max-width: 1023px) {
-  .grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
+.dropZone {
+  height: 100%;
+}
+
+.drop:hover .dropZone {
+  border-color: var(--accent);
 }
 
 @media (max-width: 767px) {
   .grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
+    --tile-height: 160px;
   }
 }

@@ -14,6 +14,9 @@ export type ScreenProps = {
   meta?: React.ReactNode;
   /** Подпись под заголовком: счётчики, сроки, подсказки. */
   note?: React.ReactNode;
+  /** Описание карточки — абзац под мета-строкой. В отличие от подписи
+   *  отбит и от шапки, и от содержимого экрана. */
+  description?: React.ReactNode;
   /** Фильтры и тумблеры справа от заголовка. */
   aside?: React.ReactNode;
   /** Возврат к списку, из которого открыли карточку: строка над заголовком. */
@@ -23,7 +26,17 @@ export type ScreenProps = {
   children?: React.ReactNode;
 };
 
-export function Screen({ title, action, meta, note, aside, back, links, children }: ScreenProps) {
+export function Screen({
+  title,
+  action,
+  meta,
+  note,
+  description,
+  aside,
+  back,
+  links,
+  children,
+}: ScreenProps) {
   return (
     <section className={styles.screen}>
       <div className={styles.head}>
@@ -52,6 +65,7 @@ export function Screen({ title, action, meta, note, aside, back, links, children
           )}
           {meta ? <div className={styles.meta}>{meta}</div> : null}
           {note ? <p className={styles.note}>{note}</p> : null}
+          {description ? <p className={styles.description}>{description}</p> : null}
         </div>
         {aside}
       </div>

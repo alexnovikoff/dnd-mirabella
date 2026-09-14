@@ -2,8 +2,8 @@
 
 /* Изображения карточки сущности: портрет NPC, вид локации, герб фракции.
  *
- * Устроено как «Достижения» персонажа — та же плитка, тот же лайтбокс,
- * то же перетаскивание на сам блок, а не на окно: карточка не про загрузку
+ * Устроено как «Достижения» персонажа — тот же лайтбокс, то же
+ * перетаскивание на сам блок, а не на окно: карточка не про загрузку
  * файлов, и оверлей во весь экран здесь мешал бы. Подпись берётся из имени
  * файла и дальше живёт в базе: править её отсюда пока нечем.
  */
@@ -17,6 +17,12 @@ import { useQuickEntry } from '@/components/editor/QuickEntryProvider';
 import { deleteEntityImage, uploadEntityImages } from '@/lib/actions/entity-images';
 import { describeFailures, uploadEach } from '@/lib/uploads';
 import styles from './EntityImages.module.css';
+
+/** Плитка до загрузки кадра и у строки без файла — прежние 16:9. */
+const FALLBACK_RATIO = 16 / 9;
+/** Плитка загрузки узкая, 3:5: высота как у кадров, а место в ряду она
+ *  отдаёт им. Подпись переносится в три-четыре строки. */
+const DROP_RATIO = 3 / 5;
 
 export type EntityImage = {
   id: string;
@@ -42,6 +48,9 @@ export function EntityImages({
   const [error, setError] = useState<string | null>(null);
   const [opened, setOpened] = useState<number | null>(null);
   const [removing, setRemoving] = useState<EntityImage | null>(null);
+  /* Пропорции кадров по id. Размеров файла в базе нет — узнаём по загрузке,
+   * как лайтбокс. */
+  const [ratios, setRatios] = useState<Record<string, number>>({});
   /* «Загружаем 2 из 5…» — пачка едет по файлу, и без счёта долгая загрузка
    * выглядит зависшей. */
   const [progress, setProgress] = useState<string | null>(null);
@@ -113,78 +122,104 @@ export function EntityImages({
 
   return (
     <div className={styles.images} {...dropHandlers}>
-      {images.length > 0 ? (
+      {images.length > 0 || canWrite ? (
         <div className={styles.grid}>
-          {images.map((image, index) => (
-            <div key={image.id} className={styles.item}>
-              <button
-                type="button"
-                className={styles.tile}
-                aria-label={`Открыть: ${image.caption ?? 'изображение'}`}
-                onClick={() => setOpened(index)}
+          {images.map((image, index) => {
+            const ratio = image.url ? ratios[image.id] : undefined;
+            return (
+              <div
+                key={image.id}
+                className={styles.item}
+                style={{ '--ratio': ratio ?? FALLBACK_RATIO } as React.CSSProperties}
               >
-                {image.url ? (
-                  <Image
-                    src={image.url}
-                    alt={image.caption ?? name}
-                    fill
-                    className={styles.photo}
-                    sizes="(max-width: 767px) 50vw, (max-width: 1023px) 33vw, 25vw"
-                  />
-                ) : null}
-              </button>
-
-              {canWrite ? (
                 <button
                   type="button"
-                  className={styles.remove}
-                  aria-label="Убрать изображение"
-                  disabled={pending}
-                  onClick={() => setRemoving(image)}
+                  className={ratio ? `${styles.tile} ${styles.ready}` : styles.tile}
+                  aria-label={`Открыть: ${image.caption ?? 'изображение'}`}
+                  onClick={() => setOpened(index)}
                 >
-                  ×
+                  {image.url ? (
+                    <Image
+                      src={image.url}
+                      alt={image.caption ?? name}
+                      fill
+                      className={styles.photo}
+                      /* Ширина плитки зависит от пропорции, а файл выбирают
+                         до загрузки — берём с запасом на широкий кадр. */
+                      sizes="(max-width: 767px) 100vw, 640px"
+                      onLoad={(event) => {
+                        const { naturalWidth, naturalHeight } = event.currentTarget;
+                        if (naturalWidth && naturalHeight) {
+                          const loaded = naturalWidth / naturalHeight;
+                          setRatios((current) =>
+                            current[image.id] === loaded
+                              ? current
+                              : { ...current, [image.id]: loaded },
+                          );
+                        }
+                      }}
+                    />
+                  ) : null}
                 </button>
-              ) : null}
 
-              <MonoLabel size={9} tracking="0.06em" tone="faint" block>
-                {image.caption ?? 'Без подписи'}
-              </MonoLabel>
+                {canWrite ? (
+                  <button
+                    type="button"
+                    className={styles.remove}
+                    aria-label="Убрать изображение"
+                    disabled={pending}
+                    onClick={() => setRemoving(image)}
+                  >
+                    ×
+                  </button>
+                ) : null}
+
+                <MonoLabel size={9} tracking="0.06em" tone="faint" block className={styles.caption}>
+                  {image.caption ?? 'Без подписи'}
+                </MonoLabel>
+              </div>
+            );
+          })}
+
+          {/* Загрузка — последней плиткой в ряду кадров, той же высоты: полоса
+              под сеткой уводила кнопку от кадров, к которым она добавляет. */}
+          {canWrite ? (
+            <div className={styles.item} style={{ '--ratio': DROP_RATIO } as React.CSSProperties}>
+              <button
+                type="button"
+                className={styles.drop}
+                disabled={pending}
+                onClick={() => fileRef.current?.click()}
+              >
+                <DropZone
+                  active={dragging}
+                  className={styles.dropZone}
+                  label={pending ? (progress ?? 'Загружаем…') : 'Бросьте картинки сюда или нажмите'}
+                />
+              </button>
             </div>
-          ))}
+          ) : null}
         </div>
       ) : (
         <MonoLabel size={9} tracking="0.08em" tone="faint" block>
-          {canWrite ? 'Изображений пока нет — перетащите картинки сюда' : 'Изображений пока нет'}
+          Изображений пока нет
         </MonoLabel>
       )}
 
       {canWrite ? (
-        <>
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            multiple
-            hidden
-            onChange={(event) => {
-              const files = event.currentTarget.files;
-              if (files?.length) upload(files);
-              /* Один и тот же файл должен грузиться дважды подряд. */
-              event.currentTarget.value = '';
-            }}
-          />
-          <button
-            type="button"
-            className={styles.drop}
-            disabled={pending}
-            onClick={() => fileRef.current?.click()}
-          >
-            <DropZone
-              active={dragging}
-              label={pending ? (progress ?? 'Загружаем…') : 'Бросьте картинки сюда или нажмите'}
-            />
-          </button>
-        </>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          multiple
+          hidden
+          onChange={(event) => {
+            const files = event.currentTarget.files;
+            if (files?.length) upload(files);
+            /* Один и тот же файл должен грузиться дважды подряд. */
+            event.currentTarget.value = '';
+          }}
+        />
       ) : null}
 
       {error ? (
