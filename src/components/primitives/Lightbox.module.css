@@ -1,5 +1,5 @@
-/* Просмотр кадра во весь экран. Стили перенесены из Gallery.module.css
- * без изменений: «Галерея» и «Достижения» открывают кадр одинаково. */
+/* Просмотр кадра во весь экран: «Галерея», «Достижения» и изображения
+ * карточки открывают кадр одинаково. */
 
 .lightbox {
   position: fixed;
@@ -12,14 +12,20 @@
   gap: 14px;
   padding: 32px;
   background: rgba(43, 33, 24, 0.86);
+  /* Высота у всех кадров одна, ширина идёт от пропорции самого кадра (--ratio
+   * ставит Lightbox.tsx): изображение видно целиком, и полей со штриховкой по
+   * бокам нет. Панораму шире окна ограничивает ширина — только тогда кадр
+   * становится ниже. 2px — рамка: пропорцию держит поле внутри неё. */
+  --frame-height: 72vh;
+  --frame-width: min(100% - 2px, var(--frame-height) * var(--ratio));
 }
 
 .frame {
   position: relative;
-  max-width: min(1100px, 100%);
-  max-height: 72vh;
-  width: 100%;
-  height: 72vh;
+  flex: none;
+  box-sizing: content-box;
+  width: var(--frame-width);
+  aspect-ratio: var(--ratio);
   border: 1px solid var(--rule-sheet);
   background: var(--hatch);
   display: flex;
@@ -28,17 +34,32 @@
   overflow: hidden;
 }
 
-.image {
-  object-fit: contain;
+/* Штриховка — только плейсхолдер, пока кадр грузится или файла нет. Под
+ * загруженным кадром её нет: округление до пикселя иначе оставило бы по
+ * краю полоску. */
+.ready {
+  background: transparent;
 }
 
+.image {
+  object-fit: contain;
+  opacity: 0;
+}
+
+/* Кадр прячется, пока рамка не узнала его пропорцию: иначе он мелькнул бы в
+ * рамке предыдущего с полями по бокам. */
+.ready .image {
+  opacity: 1;
+}
+
+/* Строка под кадром — по его ширине, но не уже, чем нужно подписи и трём
+ * кнопкам. */
 .bar {
   display: flex;
   align-items: center;
   gap: 16px;
   color: #f3e9d4;
-  max-width: min(1100px, 100%);
-  width: 100%;
+  width: max(var(--frame-width) + 2px, min(100%, 320px));
 }
 
 .caption {
