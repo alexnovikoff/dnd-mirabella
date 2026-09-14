@@ -24,9 +24,16 @@ import {
   FIELD,
   FIELD_HEIGHT,
   FIELD_WIDTH,
-  centerOf,
+  ZOOM_DEFAULT,
+  ZOOM_MAX,
+  ZOOM_MIN,
   clampBoardPoint,
+  middleOf,
+  pointAt,
   scrollToCenter,
+  scrollToPlace,
+  zoomByButton,
+  zoomByWheel,
 } from '@/lib/board-view';
 import { NODE_KIND_LABEL } from '@/lib/nodes';
 import type { BoardEdge, BoardNode } from '@/lib/queries/board';
@@ -35,12 +42,12 @@ import styles from './Board.module.css';
 /** Сдвиг больше этого — перетаскивание, меньше — клик. */
 const DRAG_THRESHOLD = 4;
 
-/* Масштаб доски. Координаты узлов хранятся в процентах, поэтому масштаб —
- * чисто визуальная штука: он ничего не пересчитывает и никуда не сохраняется. */
-const ZOOM_STEPS = [0.2, 0.4, 0.6, 0.8, 1, 1.2, 1.4, 1.6, 1.8, 2] as const;
-/* Доска открывается на 100% на любом экране, телефон тоже: имена узлов
- * читаются, а до остального графа доска дотягивается пальцем. */
-const ZOOM_DEFAULT = ZOOM_STEPS.indexOf(1);
+/* Мышь даёт одно событие колёсика на щелчок, а трекпад и колёса со свободным
+ * вращением — десятки за жест. Шаг не чаще раза в 50 мс: щелчки мыши идут
+ * реже, а жест трекпада не проносит весь масштаб за долю секунды. */
+const WHEEL_STEP_INTERVAL = 50;
+
+type Point = { x: number; y: number };
 
 function viewportOf(scroller: HTMLElement) {
   return { width: scroller.clientWidth, height: scroller.clientHeight };
@@ -97,7 +104,12 @@ export function BoardCanvas({
   /* Живые узлы: по их прямоугольникам ищем, на кого бросили. */
   const nodeRefs = useRef(new Map<string, HTMLElement>());
 
-  const [zoomStep, setZoomStep] = useState<number>(ZOOM_DEFAULT);
+  /* Масштаб доски в целых процентах. Координаты узлов хранятся в процентах
+   * полотна, поэтому масштаб — чисто визуальная штука: он ничего не
+   * пересчитывает и никуда не сохраняется. Доска открывается на 100% на любом
+   * экране, телефон тоже: имена узлов читаются, а до остального графа доска
+   * дотягивается пальцем. */
+  const [zoomPercent, setZoomPercent] = useState<number>(ZOOM_DEFAULT);
   const [drag, setDrag] = useState<NodeDrag | null>(null);
   const [dropTarget, setDropTarget] = useState<string | null>(null);
   const [linking, setLinking] = useState<Linking | null>(null);
@@ -109,7 +121,7 @@ export function BoardCanvas({
   const [sizes, setSizes] = useState<Record<string, NodeSize>>({});
   const [tileStep, setTileStep] = useState<number>(initialTileStep);
 
-  const zoom = ZOOM_STEPS[zoomStep];
+  const zoom = zoomPercent / 100;
   const tileScale = TILE_SCALE_STEPS[tileStep];
   const byId = new Map(nodes.map((node) => [node.id, node]));
   const selectedId = nodes.find((node) => node.slug === selectedSlug)?.id ?? null;
@@ -143,30 +155,57 @@ export function BoardCanvas({
 
   /* Масштаб, при котором поле сейчас отрисовано. */
   const zoomRef = useRef(zoom);
-  /* Точка поля, которую после смены масштаба надо вернуть в центр окна.
-   * Первый показ — середина поля: запас для перетаскивания есть во все
-   * стороны сразу. */
-  const anchorRef = useRef<{ x: number; y: number } | null>({
-    x: FIELD_WIDTH / 2,
-    y: FIELD_HEIGHT / 2,
+  /* Последний заказанный масштаб. Щелчки колёсика бывают чаще отрисовки, и
+   * шаг от состояния потерял бы щелчок, пришедший до неё. */
+  const targetRef = useRef<number>(ZOOM_DEFAULT);
+  /* Точка поля и место окна, куда её вернуть после смены масштаба: для
+   * кнопок это центр окна, для колёсика — курсор. Первый показ — середина
+   * поля в центре окна: запас для перетаскивания есть во все стороны сразу. */
+  const anchorRef = useRef<{ point: Point; at: Point | null } | null>({
+    point: { x: FIELD_WIDTH / 2, y: FIELD_HEIGHT / 2 },
+    at: null,
   });
+  /* Что поставили прошлой сменой масштаба и какая прокрутка из этого вышла. */
+  const placedRef = useRef<{
+    point: Point;
+    at: Point;
+    zoom: number;
+    left: number;
+    top: number;
+  } | null>(null);
 
   /* Масштаб меняет размер поля, а прокрутка остаётся в пикселях — без
-   * поправки вид уезжал бы к углу. Центр снимаем до смены: после неё
-   * прокрутку уже не прочесть — на меньшем поле браузер её обрезает. */
-  function zoomTo(step: number) {
-    if (ZOOM_STEPS[step] === zoomRef.current) return;
+   * поправки вид уезжал бы к углу. Точку снимаем до смены: после неё
+   * прокрутку уже не прочесть — на меньшем поле браузер её обрезает.
+   * `at` — место в окне, которое стоит на месте; без него — центр окна. */
+  const zoomTo = useCallback((percent: number, at: Point | null = null) => {
+    if (percent === targetRef.current) return;
+    targetRef.current = percent;
     const scroller = scrollerRef.current;
     if (scroller) {
-      anchorRef.current = centerOf(
-        { left: scroller.scrollLeft, top: scroller.scrollTop },
-        zoomRef.current,
-        viewportOf(scroller),
-        FIELD,
-      );
+      const viewport = viewportOf(scroller);
+      const place = at ?? middleOf(viewport);
+      const scroll = { left: scroller.scrollLeft, top: scroller.scrollTop };
+      /* Браузер округляет прокрутку до пикселя, и точка, снятая с неё заново,
+       * на каждом шаге смещалась на полпикселя — всегда в ту же сторону:
+       * одно округление подталкивает следующее. За два десятка щелчков узел
+       * отъезжал из-под курсора пикселей на десять. Пока курсор и прокрутка
+       * те же, что после прошлого шага, точка берётся оттуда, неокруглённой. */
+      const placed = placedRef.current;
+      const kept =
+        placed &&
+        placed.zoom === zoomRef.current &&
+        placed.left === scroll.left &&
+        placed.top === scroll.top &&
+        placed.at.x === place.x &&
+        placed.at.y === place.y;
+      anchorRef.current = {
+        point: kept ? placed.point : pointAt(scroll, zoomRef.current, viewport, FIELD, place),
+        at: place,
+      };
     }
-    setZoomStep(step);
-  }
+    setZoomPercent(percent);
+  }, []);
 
   /* До отрисовки — иначе мелькнул бы пустой угол поля. */
   useLayoutEffect(() => {
@@ -176,10 +215,51 @@ export function BoardCanvas({
     if (!scroller || !anchor) return;
     anchorRef.current = null;
 
-    const { left, top } = scrollToCenter(anchor, zoom, viewportOf(scroller), FIELD);
+    const viewport = viewportOf(scroller);
+    const at = anchor.at ?? middleOf(viewport);
+    const { left, top } = scrollToPlace(anchor.point, zoom, viewport, FIELD, at);
     scroller.scrollLeft = left;
     scroller.scrollTop = top;
+    placedRef.current = {
+      point: anchor.point,
+      at,
+      zoom,
+      left: scroller.scrollLeft,
+      top: scroller.scrollTop,
+    };
   }, [zoom]);
+
+  /* Колёсико над доской меняет масштаб, а не прокручивает: двигают доску
+   * перетаскиванием. Точка под курсором остаётся под ним, как на карте.
+   * Слушатель свой, а не onWheel: React вешает колёсико пассивным, и
+   * preventDefault в нём не остановил бы прокрутку. */
+  const panning = pan !== null;
+  useEffect(() => {
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+    let lastStep = -Infinity;
+
+    function onWheel(event: WheelEvent) {
+      /* Shift + колёсико и сдвиг трекпада вбок по-прежнему листают доску. */
+      if (event.deltaY === 0 || !scroller) return;
+      event.preventDefault();
+      /* Пока доску тянут, прокрутку ведёт жест: он считает её от точки
+       * старта в пикселях прежнего масштаба и сорвал бы вид на первом же
+       * сдвиге. */
+      if (panning) return;
+      if (event.timeStamp - lastStep < WHEEL_STEP_INTERVAL) return;
+      lastStep = event.timeStamp;
+
+      const rect = scroller.getBoundingClientRect();
+      zoomTo(zoomByWheel(targetRef.current, event.deltaY), {
+        x: event.clientX - rect.left - scroller.clientLeft,
+        y: event.clientY - rect.top - scroller.clientTop,
+      });
+    }
+
+    scroller.addEventListener('wheel', onWheel, { passive: false });
+    return () => scroller.removeEventListener('wheel', onWheel);
+  }, [zoomTo, panning]);
 
   /* Полотно больше окна, поэтому выбранный узел может оказаться за краем —
    * например при переходе по связи из панели. Подкручиваем к нему. */
@@ -295,8 +375,8 @@ export function BoardCanvas({
             type="button"
             className={styles.zoomButton}
             aria-label="Уменьшить масштаб"
-            disabled={zoomStep === 0}
-            onClick={() => zoomTo(Math.max(0, zoomStep - 1))}
+            disabled={zoomPercent <= ZOOM_MIN}
+            onClick={() => zoomTo(zoomByButton(zoomPercent, -1))}
           >
             −
           </button>
@@ -306,14 +386,14 @@ export function BoardCanvas({
             title="Вернуть 100%"
             onClick={() => zoomTo(ZOOM_DEFAULT)}
           >
-            {`${Math.round(zoom * 100)}%`}
+            {`${zoomPercent}%`}
           </button>
           <button
             type="button"
             className={styles.zoomButton}
             aria-label="Увеличить масштаб"
-            disabled={zoomStep === ZOOM_STEPS.length - 1}
-            onClick={() => zoomTo(Math.min(ZOOM_STEPS.length - 1, zoomStep + 1))}
+            disabled={zoomPercent >= ZOOM_MAX}
+            onClick={() => zoomTo(zoomByButton(zoomPercent, 1))}
           >
             +
           </button>

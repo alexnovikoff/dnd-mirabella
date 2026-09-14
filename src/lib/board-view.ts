@@ -87,6 +87,37 @@ export function previewFrame(points: Point[]): { left: number; top: number; span
   return { left: startOf(x, span), top: startOf(y, span), span };
 }
 
+/* Масштаб доски — в целых процентах: шаги по 10% и 20% в дробях копили бы
+ * ошибку, и после десятка щелчков колёсика подпись показывала бы 99%. */
+export const ZOOM_MIN = 20;
+export const ZOOM_MAX = 200;
+export const ZOOM_DEFAULT = 100;
+/** Кнопки «−» и «+». */
+export const ZOOM_BUTTON_STEP = 20;
+/** Один щелчок колёсика. */
+export const ZOOM_WHEEL_STEP = 10;
+
+function clampZoom(percent: number) {
+  return Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, percent));
+}
+
+/** Масштаб после щелчка колёсика: вверх (deltaY < 0) — крупнее. */
+export function zoomByWheel(percent: number, deltaY: number) {
+  if (deltaY === 0) return percent;
+  return clampZoom(percent + (deltaY < 0 ? ZOOM_WHEEL_STEP : -ZOOM_WHEEL_STEP));
+}
+
+/** Масштаб после кнопки: к соседней ступени по 20%. Со 110% «+» ведёт на 120%,
+ *  а не на 130% — иначе после колёсика кнопки уже не попадали бы в ступени. */
+export function zoomByButton(percent: number, direction: 1 | -1) {
+  const step = ZOOM_BUTTON_STEP;
+  const next =
+    direction > 0
+      ? (Math.floor(percent / step) + 1) * step
+      : (Math.ceil(percent / step) - 1) * step;
+  return clampZoom(next);
+}
+
 /**
  * Отступ поля от края распорки по одной оси. Пока поле шире окна, распорка
  * ровно по нему и отступа нет; на мелком масштабе поле меньше окна, распорка
@@ -96,23 +127,51 @@ function inset(viewport: number, field: number, zoom: number) {
   return Math.max(0, (viewport - field * zoom) / 2);
 }
 
+/** Центр окна в пикселях от его левого верхнего угла. */
+export function middleOf(viewport: Size): Point {
+  return { x: viewport.width / 2, y: viewport.height / 2 };
+}
+
 /**
- * Прокрутка, при которой точка поля встаёт в центр окна.
+ * Прокрутка, при которой точка поля встаёт в место окна `at` — в пикселях от
+ * его левого верхнего угла. Колёсико держит так точку под курсором.
  *
  * Точка и поле — в пикселях на 100%: масштаб умножает их, а не саму прокрутку.
  * Выход за края не обрезаем — это делает сам браузер.
  */
-export function scrollToCenter(point: Point, zoom: number, viewport: Size, field: Size): Scroll {
+export function scrollToPlace(
+  point: Point,
+  zoom: number,
+  viewport: Size,
+  field: Size,
+  at: Point,
+): Scroll {
   return {
-    left: inset(viewport.width, field.width, zoom) + point.x * zoom - viewport.width / 2,
-    top: inset(viewport.height, field.height, zoom) + point.y * zoom - viewport.height / 2,
+    left: inset(viewport.width, field.width, zoom) + point.x * zoom - at.x,
+    top: inset(viewport.height, field.height, zoom) + point.y * zoom - at.y,
   };
+}
+
+/** Точка поля (в пикселях на 100%), что сейчас в месте окна `at`. */
+export function pointAt(
+  scroll: Scroll,
+  zoom: number,
+  viewport: Size,
+  field: Size,
+  at: Point,
+): Point {
+  return {
+    x: (scroll.left + at.x - inset(viewport.width, field.width, zoom)) / zoom,
+    y: (scroll.top + at.y - inset(viewport.height, field.height, zoom)) / zoom,
+  };
+}
+
+/** Прокрутка, при которой точка поля встаёт в центр окна. */
+export function scrollToCenter(point: Point, zoom: number, viewport: Size, field: Size): Scroll {
+  return scrollToPlace(point, zoom, viewport, field, middleOf(viewport));
 }
 
 /** Точка поля (в пикселях на 100%), что сейчас в центре окна. */
 export function centerOf(scroll: Scroll, zoom: number, viewport: Size, field: Size): Point {
-  return {
-    x: (scroll.left + viewport.width / 2 - inset(viewport.width, field.width, zoom)) / zoom,
-    y: (scroll.top + viewport.height / 2 - inset(viewport.height, field.height, zoom)) / zoom,
-  };
+  return pointAt(scroll, zoom, viewport, field, middleOf(viewport));
 }
