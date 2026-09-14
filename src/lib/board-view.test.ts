@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { FIELD, centerOf, clampBoardPoint, previewFrame, scrollToCenter } from './board-view';
+import {
+  FIELD,
+  centerOf,
+  clampBoardPoint,
+  pointAt,
+  previewFrame,
+  scrollToCenter,
+  scrollToPlace,
+  zoomByButton,
+  zoomByWheel,
+} from './board-view';
 
 const viewport = { width: 1000, height: 600 };
 const field = { width: 2700, height: 2100 };
@@ -85,6 +95,79 @@ describe('previewFrame', () => {
     const { x, y } = inPreview(frame, { x: 97, y: 3 });
     expect(x).toBeCloseTo(93);
     expect(y).toBeCloseTo(7);
+  });
+});
+
+describe('zoomByWheel', () => {
+  it('щелчок вверх — на 5% крупнее, вниз — на 5% мельче', () => {
+    expect(zoomByWheel(100, -100)).toBe(105);
+    expect(zoomByWheel(100, 4.000244140625)).toBe(95);
+  });
+
+  it('величина прокрутки не важна: один щелчок — один шаг', () => {
+    expect(zoomByWheel(60, -1)).toBe(65);
+    expect(zoomByWheel(60, -960)).toBe(65);
+  });
+
+  it('не выходит за 20–200%, горизонтальная прокрутка масштаб не трогает', () => {
+    expect(zoomByWheel(200, -100)).toBe(200);
+    expect(zoomByWheel(20, 100)).toBe(20);
+    expect(zoomByWheel(135, 0)).toBe(135);
+  });
+
+  it('двадцать щелчков от 100% — ровно 200%, без дробного хвоста', () => {
+    let percent = 100;
+    for (let i = 0; i < 20; i += 1) percent = zoomByWheel(percent, -100);
+    expect(percent).toBe(200);
+  });
+});
+
+describe('zoomByButton', () => {
+  it('с круглого значения — на 20%', () => {
+    expect(zoomByButton(100, 1)).toBe(120);
+    expect(zoomByButton(100, -1)).toBe(80);
+  });
+
+  it('после колёсика — к ближайшей ступени по 20% в сторону нажатия', () => {
+    expect(zoomByButton(85, 1)).toBe(100);
+    expect(zoomByButton(85, -1)).toBe(80);
+    expect(zoomByButton(115, -1)).toBe(100);
+  });
+
+  it('не выходит за 20–200%', () => {
+    expect(zoomByButton(195, 1)).toBe(200);
+    expect(zoomByButton(200, 1)).toBe(200);
+    expect(zoomByButton(25, -1)).toBe(20);
+    expect(zoomByButton(20, -1)).toBe(20);
+  });
+});
+
+describe('scrollToPlace и pointAt', () => {
+  it('обратны друг другу', () => {
+    const point = { x: 700, y: 420 };
+    const at = { x: 120, y: 480 };
+    expect(
+      pointAt(scrollToPlace(point, 0.85, viewport, field, at), 0.85, viewport, field, at),
+    ).toEqual(point);
+  });
+
+  it('при смене масштаба точка под курсором остаётся под курсором', () => {
+    const at = { x: 150, y: 90 };
+    const before = pointAt({ left: 300, top: 120 }, 1, viewport, field, at);
+    const after = scrollToPlace(before, 1.05, viewport, field, at);
+    expect(after.left).toBeCloseTo(322.5);
+    expect(after.top).toBeCloseTo(130.5);
+    const point = pointAt(after, 1.05, viewport, field, at);
+    expect(point.x).toBeCloseTo(before.x);
+    expect(point.y).toBeCloseTo(before.y);
+  });
+
+  it('в центре окна — то же, что centerOf и scrollToCenter', () => {
+    const middle = { x: viewport.width / 2, y: viewport.height / 2 };
+    const scroll = { left: 300, top: 120 };
+    expect(pointAt(scroll, 1.4, viewport, field, middle)).toEqual(
+      centerOf(scroll, 1.4, viewport, field),
+    );
   });
 });
 
