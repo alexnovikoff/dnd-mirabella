@@ -14,12 +14,13 @@ import { CAMPAIGN_ID } from '@/lib/db/seed';
 import type { Viewer } from '@/lib/auth-shared';
 import { visibleEntries } from '@/lib/visibility';
 
-export type FeedFilter = 'all' | 'quotes' | 'loot';
+export type FeedFilter = 'all' | 'quotes' | 'loot' | 'notes';
 
 export const FEED_FILTERS: { id: FeedFilter; label: string }[] = [
   { id: 'all', label: 'ВСЁ' },
   { id: 'quotes', label: 'ЦИТАТЫ' },
   { id: 'loot', label: 'ЛУТ' },
+  { id: 'notes', label: 'ЗАМЕТКИ' },
 ];
 
 export function isFeedFilter(value: string | undefined): value is FeedFilter {
@@ -74,12 +75,15 @@ export type FeedEntry = Awaited<ReturnType<typeof getFeed>>[number];
 export function getFeed(filter: FeedFilter = 'all', viewer: Viewer | null = null) {
   return runDb(async (db) => {
     const visible = visibleEntries(viewer);
+    /* Заметки идут в ленту с теми же правами, что и в базе знаний: личную
+     * видят только автор и мастер. Фото живут в галерее. */
     const conditions = [
       eq(t.entries.campaignId, CAMPAIGN_ID),
-      inArray(t.entries.kind, ['moment', 'quote'] as const),
+      inArray(t.entries.kind, ['moment', 'quote', 'note'] as const),
       ...(visible ? [visible] : []),
     ];
     if (filter === 'quotes') conditions.push(eq(t.entries.kind, 'quote'));
+    if (filter === 'notes') conditions.push(eq(t.entries.kind, 'note'));
     if (filter === 'loot') conditions.push(sql`${t.entries.tags} && ARRAY['#лут']::text[]`);
 
     const rows = await db

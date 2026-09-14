@@ -4,6 +4,7 @@ import { FeedFilters } from '@/components/chronicle/FeedFilters';
 import { Hero } from '@/components/chronicle/Hero';
 import { CompactMomentCard, MomentCard } from '@/components/chronicle/MomentCard';
 import { NextGame } from '@/components/chronicle/NextGame';
+import { NoteEntry } from '@/components/chronicle/NoteEntry';
 import { QuoteEntry } from '@/components/chronicle/QuoteEntry';
 import { Sidebar } from '@/components/chronicle/Sidebar';
 import { GALLERY_PREVIEW_LIMIT } from '@/components/chronicle/SidebarGallery';
@@ -101,6 +102,15 @@ export default async function ChroniclePage({
                     <QuoteEntry
                       key={entry.id}
                       entry={entry}
+                      canEdit={canEditEntry(viewer, entry)}
+                    />
+                  );
+                if (entry.kind === 'note')
+                  return (
+                    <NoteEntry
+                      key={entry.id}
+                      entry={entry}
+                      index={index}
                       canEdit={canEditEntry(viewer, entry)}
                     />
                   );

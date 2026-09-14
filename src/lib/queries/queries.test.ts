@@ -66,6 +66,28 @@ describe('getFeed', () => {
     expect(titles(await getFeed('loot', null))).toEqual(['Лут']);
   });
 
+  it('заметки идут в ленту с теми же правами, что и в базе знаний', async () => {
+    expect(titles(await getFeed('all', player))).toContain('Личное.');
+    expect(titles(await getFeed('all', dm))).toContain('Личное.');
+    expect(titles(await getFeed('all', other))).not.toContain('Личное.');
+  });
+
+  it('фильтр «заметки» оставляет только заметки', async () => {
+    await runDb((db) =>
+      db.insert(t.entries).values({
+        id: 'e-public-note',
+        campaignId: FIXTURE.campaignId,
+        kind: 'note',
+        body: 'Общая заметка.',
+        authorId: FIXTURE.users.other,
+        visibility: 'public',
+      }),
+    );
+
+    expect(titles(await getFeed('notes', null))).toEqual(['Общая заметка.']);
+    expect(titles(await getFeed('notes', player)).sort()).toEqual(['Личное.', 'Общая заметка.']);
+  });
+
   it('свежие записи идут первыми', async () => {
     const feed = await getFeed('all', null);
     expect(feed[0].sessionNumber).toBe(2);

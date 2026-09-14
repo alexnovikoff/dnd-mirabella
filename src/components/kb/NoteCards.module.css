@@ -20,7 +20,10 @@
   transition: background var(--hover-fast);
 }
 
-.rumor:hover {
+/* Заметка, которую зритель вправе править, открывается в шит кликом —
+ * и подсвечивается так же, как карточка наводки. */
+.rumor:hover,
+.noteEditable:hover {
   background: #fdf8ea;
 }
 
@@ -61,6 +64,7 @@
   border: 1px solid var(--rule);
   border-radius: var(--radius);
   padding: 13px 14px;
+  transition: background var(--hover-fast);
 }
 
 .noteBody {

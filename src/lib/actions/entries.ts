@@ -199,7 +199,10 @@ export async function updateEntry(entryId: string, input: EntryPatch): Promise<C
         /* Заголовок записи-фото — это её подпись: своего поля у неё нет. */
         title: entry.kind === 'image' ? caption : title,
         body: entry.kind === 'image' ? null : body,
-        subjectId: input.subjectId ?? null,
+        /* Автора в шите выбирают только цитате. У остальных записей
+         * subject_id ставят не отсюда — личная заметка так держится
+         * за своего персонажа, — и правка текста его не трогает. */
+        ...(entry.kind === 'quote' ? { subjectId: input.subjectId ?? null } : {}),
         ...(move ? { sessionId: move.id } : {}),
         /* Личная заметка остаётся личной: кнопка «сохранить» не должна
          * втихую опубликовать то, что человек писал для себя. */
