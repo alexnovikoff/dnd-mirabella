@@ -5,7 +5,8 @@
 сущность, и эти ссылки одновременно образуют граф.
 
 Спецификация и визуальный референс лежат в `design_handoff_mirabella/`,
-план работ — в [docs/plan.md](docs/plan.md).
+план работ и решения — в [docs/plan.md](docs/plan.md), правила работы для
+Claude Code — в [CLAUDE.md](CLAUDE.md).
 
 ## Стек
 
