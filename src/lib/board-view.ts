@@ -87,7 +87,7 @@ export function previewFrame(points: Point[]): { left: number; top: number; span
   return { left: startOf(x, span), top: startOf(y, span), span };
 }
 
-/* Масштаб доски — в целых процентах: шаги по 5% и 20% в дробях копили бы
+/* Масштаб доски — в целых процентах: шаги по 10% и 20% в дробях копили бы
  * ошибку, и после десятка щелчков колёсика подпись показывала бы 99%. */
 export const ZOOM_MIN = 20;
 export const ZOOM_MAX = 200;
@@ -95,7 +95,7 @@ export const ZOOM_DEFAULT = 100;
 /** Кнопки «−» и «+». */
 export const ZOOM_BUTTON_STEP = 20;
 /** Один щелчок колёсика. */
-export const ZOOM_WHEEL_STEP = 5;
+export const ZOOM_WHEEL_STEP = 10;
 
 function clampZoom(percent: number) {
   return Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, percent));
@@ -107,8 +107,8 @@ export function zoomByWheel(percent: number, deltaY: number) {
   return clampZoom(percent + (deltaY < 0 ? ZOOM_WHEEL_STEP : -ZOOM_WHEEL_STEP));
 }
 
-/** Масштаб после кнопки: к соседней ступени по 20%. С 85% «+» ведёт на 100%,
- *  а не на 105% — иначе после колёсика кнопки уже не попадали бы в круглые. */
+/** Масштаб после кнопки: к соседней ступени по 20%. Со 110% «+» ведёт на 120%,
+ *  а не на 130% — иначе после колёсика кнопки уже не попадали бы в ступени. */
 export function zoomByButton(percent: number, direction: 1 | -1) {
   const step = ZOOM_BUTTON_STEP;
   const next =

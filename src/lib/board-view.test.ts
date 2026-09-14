@@ -99,26 +99,28 @@ describe('previewFrame', () => {
 });
 
 describe('zoomByWheel', () => {
-  it('щелчок вверх — на 5% крупнее, вниз — на 5% мельче', () => {
-    expect(zoomByWheel(100, -100)).toBe(105);
-    expect(zoomByWheel(100, 4.000244140625)).toBe(95);
+  it('щелчок вверх — на 10% крупнее, вниз — на 10% мельче', () => {
+    expect(zoomByWheel(100, -100)).toBe(110);
+    expect(zoomByWheel(100, 4.000244140625)).toBe(90);
   });
 
   it('величина прокрутки не важна: один щелчок — один шаг', () => {
-    expect(zoomByWheel(60, -1)).toBe(65);
-    expect(zoomByWheel(60, -960)).toBe(65);
+    expect(zoomByWheel(60, -1)).toBe(70);
+    expect(zoomByWheel(60, -960)).toBe(70);
   });
 
   it('не выходит за 20–200%, горизонтальная прокрутка масштаб не трогает', () => {
     expect(zoomByWheel(200, -100)).toBe(200);
     expect(zoomByWheel(20, 100)).toBe(20);
-    expect(zoomByWheel(135, 0)).toBe(135);
+    expect(zoomByWheel(130, 0)).toBe(130);
   });
 
-  it('двадцать щелчков от 100% — ровно 200%, без дробного хвоста', () => {
-    let percent = 100;
-    for (let i = 0; i < 20; i += 1) percent = zoomByWheel(percent, -100);
+  it('от 20% до 200% и обратно — ровно по ступеням, без дробного хвоста', () => {
+    let percent = 20;
+    for (let i = 0; i < 18; i += 1) percent = zoomByWheel(percent, -100);
     expect(percent).toBe(200);
+    for (let i = 0; i < 18; i += 1) percent = zoomByWheel(percent, 100);
+    expect(percent).toBe(20);
   });
 });
 
@@ -129,15 +131,15 @@ describe('zoomByButton', () => {
   });
 
   it('после колёсика — к ближайшей ступени по 20% в сторону нажатия', () => {
-    expect(zoomByButton(85, 1)).toBe(100);
-    expect(zoomByButton(85, -1)).toBe(80);
-    expect(zoomByButton(115, -1)).toBe(100);
+    expect(zoomByButton(110, 1)).toBe(120);
+    expect(zoomByButton(110, -1)).toBe(100);
+    expect(zoomByButton(90, 1)).toBe(100);
   });
 
   it('не выходит за 20–200%', () => {
-    expect(zoomByButton(195, 1)).toBe(200);
+    expect(zoomByButton(190, 1)).toBe(200);
     expect(zoomByButton(200, 1)).toBe(200);
-    expect(zoomByButton(25, -1)).toBe(20);
+    expect(zoomByButton(30, -1)).toBe(20);
     expect(zoomByButton(20, -1)).toBe(20);
   });
 });
