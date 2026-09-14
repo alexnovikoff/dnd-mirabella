@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { AccountChip } from './AccountChip';
 import { useQuickEntry } from '@/components/editor/QuickEntryProvider';
-import { NAV, actionFor, isActive, kindFor } from '@/lib/nav';
+import { ACTION_LABELS, NAV, actionFor, isActive, kindFor } from '@/lib/nav';
 import type { Viewer } from '@/lib/auth-shared';
 import styles from './Header.module.css';
 
@@ -21,6 +21,7 @@ export function Header({
 }) {
   const pathname = usePathname();
   const quickEntry = useQuickEntry();
+  const action = actionFor(pathname);
 
   return (
     <header className={styles.header}>
@@ -58,7 +59,18 @@ export function Header({
             className={styles.action}
             onClick={() => quickEntry.open(kindFor(pathname))}
           >
-            {actionFor(pathname)}
+            {/* Скрытые подписи держат ширину кнопки (ACTION_LABELS);
+             * visibility убирает их и из имени кнопки. */}
+            <span className={styles.actionLabels}>
+              {ACTION_LABELS.map((label) => (
+                <span
+                  key={label}
+                  className={label === action ? styles.actionLabel : styles.actionLabelIdle}
+                >
+                  {label}
+                </span>
+              ))}
+            </span>
           </button>
         ) : null}
         <AccountChip viewer={viewer} />

@@ -8,7 +8,7 @@ import type { PickerNode } from '@/lib/queries/nodes';
 import type { SessionOption } from '@/lib/queries/sessions';
 
 type QuickEntryContext = {
-  /** Тип задаёт кнопка экрана: «Новая цитата» открывает шит сразу цитатой.
+  /** Тип задаёт кнопка экрана: «+ ЦИТАТА» открывает шит сразу цитатой.
    *  Сессию — тот, кто уже выбрал её у себя: полоса загрузки на «Галерее»
    *  открывает шит той же группой, что показывает сама. */
   open: (kind?: EntryKind, sessionId?: string) => void;
