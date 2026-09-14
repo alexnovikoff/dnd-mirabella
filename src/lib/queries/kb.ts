@@ -1,7 +1,7 @@
 /* Запросы экрана «База знаний»: наводки со статусами, свободные заметки,
  * а также подтабы «Всё», NPC и Локации. */
 
-import { and, desc, eq, isNotNull, type SQL } from 'drizzle-orm';
+import { and, desc, eq, isNotNull, isNull, or, sql, type SQL } from 'drizzle-orm';
 import type { PgColumn } from 'drizzle-orm/pg-core';
 import { runDb } from '@/lib/db/client';
 import * as t from '@/lib/db/schema';
@@ -32,6 +32,9 @@ export type RumorCard = {
   status: t.NodeStatus | null;
   /** Чипы связанных сущностей под карточкой; их число — счётчик связей. */
   related: RelatedNode[];
+  /** Сколько записей и пересказов сессий называют узел по [[ссылке]] —
+   *  из тех, что видны зрителю. Отдельный счётчик: в связи не входит. */
+  mentions: number;
 };
 
 type RelatedNode = { id: string; name: string; slug: string };
@@ -50,8 +53,11 @@ export type FreeNote = {
 };
 
 /** Наводки: узлы со статусом, открытые первыми. */
-export function getRumors(): Promise<RumorCard[]> {
-  return getCards(isNotNull(t.nodes.status), [t.nodes.status, t.nodes.name]);
+export function getRumors(viewer: Viewer | null): Promise<RumorCard[]> {
+  return queryNodeCards(viewer, {
+    where: isNotNull(t.nodes.status),
+    order: [t.nodes.status, t.nodes.name],
+  });
 }
 
 /** Свободные заметки. Личные видит автор, мастер — все. */
@@ -80,22 +86,27 @@ export function getFreeNotes(viewer: Viewer | null): Promise<FreeNote[]> {
   });
 }
 
-/** Карточки узлов: без аргумента — все узлы кампании, с типом — только узлы
+/** Карточки узлов: без типа — все узлы кампании, с типом — только узлы
  *  этого типа (подтабы NPC и Локации). */
-export function getNodeCards(kind?: t.NodeKind): Promise<RumorCard[]> {
-  return getCards(kind ? eq(t.nodes.kind, kind) : undefined, [t.nodes.name]);
+export function getNodeCards(viewer: Viewer | null, kind?: t.NodeKind): Promise<RumorCard[]> {
+  return queryNodeCards(viewer, {
+    where: kind ? eq(t.nodes.kind, kind) : undefined,
+    order: [t.nodes.name],
+  });
 }
 
-/** Карточки с соседями по ручным рёбрам — у всех узлов, а не только у наводок.
+/** Карточки узлов со связями и упоминаниями — для базы знаний и сайдбара
+ *  «Хроники»: одна наводка на двух экранах показывает одни и те же числа.
  *
- *  Соседей раньше собирали одним наводкам, и в подтабах NPC и Локации, где
- *  карточки идут из общего списка узлов, чипов не было ни у кого. Счётчик
- *  связей — число этих соседей: он считал ещё и упоминания [[…]], и «5 связей»
- *  стояло рядом с одним чипом. По тем же ручным рёбрам считают «Связи · N»
- *  на карточке сущности и метрика связей персонажа. */
-function getCards(where: SQL | undefined, order: (SQL | PgColumn)[]): Promise<RumorCard[]> {
+ *  Связи — соседи по ручным рёбрам в обе стороны, они же чипы. Упоминания
+ *  [[…]] считаются отдельно: раньше они входили в «N связей», и счётчик
+ *  стоял рядом с меньшим числом чипов. */
+export function queryNodeCards(
+  viewer: Viewer | null,
+  { where, order, limit }: { where?: SQL; order: (SQL | PgColumn)[]; limit?: number },
+): Promise<RumorCard[]> {
   return runDb(async (db) => {
-    const rows = await db
+    const base = db
       .select({
         id: t.nodes.id,
         name: t.nodes.name,
@@ -106,6 +117,7 @@ function getCards(where: SQL | undefined, order: (SQL | PgColumn)[]): Promise<Ru
       .from(t.nodes)
       .where(and(eq(t.nodes.campaignId, CAMPAIGN_ID), where))
       .orderBy(...order);
+    const rows = await (limit === undefined ? base : base.limit(limit));
 
     if (rows.length === 0) return [];
 
@@ -122,6 +134,24 @@ function getCards(where: SQL | undefined, order: (SQL | PgColumn)[]): Promise<Ru
       .where(eq(t.nodes.campaignId, CAMPAIGN_ID));
     const byId = new Map(names.map((n) => [n.id, n]));
 
+    /* Упоминание из записи считается, только если зритель видит саму запись:
+     * иначе число выдавало бы чужую личную заметку или скрытое мастером.
+     * У пересказа сессии видимости нет — он виден всем. */
+    const visible = visibleEntries(viewer);
+    const mentionRows = await db
+      .select({ nodeId: t.links.toNodeId, count: sql<number>`count(*)::int` })
+      .from(t.links)
+      .leftJoin(t.entries, eq(t.entries.id, t.links.fromEntryId))
+      .where(
+        and(
+          eq(t.links.campaignId, CAMPAIGN_ID),
+          eq(t.links.kind, 'mention'),
+          visible ? or(isNull(t.links.fromEntryId), visible) : undefined,
+        ),
+      )
+      .groupBy(t.links.toNodeId);
+    const mentions = new Map(mentionRows.map((row) => [row.nodeId, row.count]));
+
     return rows.map((row) => {
       /* Map по id: встречные рёбра A→B и B→A — один сосед, один чип. */
       const related = new Map<string, RelatedNode>();
@@ -131,7 +161,7 @@ function getCards(where: SQL | undefined, order: (SQL | PgColumn)[]): Promise<Ru
         const node = byId.get(other);
         if (node) related.set(node.id, node);
       }
-      return { ...row, related: [...related.values()] };
+      return { ...row, related: [...related.values()], mentions: mentions.get(row.id) ?? 0 };
     });
   });
 }

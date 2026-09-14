@@ -15,6 +15,7 @@ import type { Viewer } from '@/lib/auth-shared';
 import { LOOT_TAG } from '@/lib/entries-shared';
 import { visibleEntries } from '@/lib/visibility';
 import { parseWikiLinks } from '@/lib/wiki/parse';
+import { queryNodeCards } from './kb';
 
 export type FeedFilter = 'all' | 'moments' | 'quotes' | 'loot' | 'notes';
 
@@ -242,29 +243,15 @@ export async function getActiveSession() {
   return session ?? null;
 }
 
-/** Карточки «ЗАМЕТКИ»: узлы со статусом плюс счётчик входящих связей.
- *
- * Считаем джойном, а не коррелированным подзапросом: в подзапросе Drizzle
- * рендерит ссылку на внешнюю колонку неквалифицированно, и `nodes.id`
- * резолвится в `links.id` — счётчик молча выходит нулевым. */
-export function getStatusNodes(limit = 4) {
-  return runDb((db) =>
-    db
-      .select({
-        id: t.nodes.id,
-        name: t.nodes.name,
-        slug: t.nodes.slug,
-        kind: t.nodes.kind,
-        status: t.nodes.status,
-        links: sql<number>`count(${t.links.id})::int`,
-      })
-      .from(t.nodes)
-      .leftJoin(t.links, eq(t.links.toNodeId, t.nodes.id))
-      .where(and(eq(t.nodes.campaignId, CAMPAIGN_ID), isNotNull(t.nodes.status)))
-      .groupBy(t.nodes.id)
-      .orderBy(t.nodes.status, desc(t.nodes.name))
-      .limit(limit),
-  );
+/** Карточки «ЗАМЕТКИ»: наводки со связями и упоминаниями. Считает тот же
+ *  запрос, что и базу знаний, — иначе одна наводка на двух экранах
+ *  показывала разные числа. */
+export function getStatusNodes(viewer: Viewer | null, limit = 4) {
+  return queryNodeCards(viewer, {
+    where: isNotNull(t.nodes.status),
+    order: [t.nodes.status, desc(t.nodes.name)],
+    limit,
+  });
 }
 
 /** Превью галереи в сайдбаре: последние кадры и общий счётчик.

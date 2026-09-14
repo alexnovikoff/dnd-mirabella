@@ -188,24 +188,55 @@ describe('getFeed: миниатюра карточки', () => {
   });
 });
 
+/* Рёбра для тестов счётчиков: ручная связь и упоминание [[…]] из записи
+ * или из пересказа сессии. */
+const manualLink = (id: string, from: string, to: string) =>
+  runDb((db) =>
+    db.insert(t.links).values({
+      id,
+      campaignId: FIXTURE.campaignId,
+      kind: 'manual',
+      fromNodeId: from,
+      toNodeId: to,
+    }),
+  );
+
+const mention = (id: string, from: { entryId: string } | { sessionId: string }, to: string) =>
+  runDb((db) =>
+    db.insert(t.links).values({
+      id,
+      campaignId: FIXTURE.campaignId,
+      kind: 'mention',
+      fromEntryId: 'entryId' in from ? from.entryId : null,
+      fromSessionId: 'sessionId' in from ? from.sessionId : null,
+      toNodeId: to,
+    }),
+  );
+
+/** «Имя → [связи, упоминания]» — как их показывает карточка. */
+const counts = (cards: { name: string; related: unknown[]; mentions: number }[]) =>
+  Object.fromEntries(cards.map((card) => [card.name, [card.related.length, card.mentions]]));
+
 describe('getStatusNodes и getRumors', () => {
-  /* Регрессия: коррелированный подзапрос отдавал ноль на всех узлах. */
-  it('считают входящие связи, а не ноль', async () => {
-    const rows = await getStatusNodes(10);
-    const byName = Object.fromEntries(rows.map((row) => [row.name, row.links]));
-    expect(byName['Таверна']).toBe(1);
-    expect(byName['Призрак']).toBe(2);
-    expect(byName['Тупик']).toBe(0);
+  /* Регрессия: сайдбар «Хроники» считал входящие рёбра вместе с упоминаниями
+   * одним числом, и наводка показывала там не то, что в базе знаний. */
+  it('сайдбар считает связи и упоминания так же, как база знаний', async () => {
+    await manualLink('l-back', FIXTURE.nodes.ghost, FIXTURE.nodes.tavern);
+    await mention('l-session', { sessionId: 's-1' }, FIXTURE.nodes.tavern);
+
+    const [rows, rumors] = await Promise.all([getStatusNodes(null, 10), getRumors(null)]);
+    expect(counts(rows)).toEqual({ Таверна: [1, 2], Призрак: [1, 1], Тупик: [0, 0] });
+    expect(counts(rows)).toEqual(counts(rumors));
   });
 
   it('наводки отдают соседей по ручным рёбрам', async () => {
-    const rumors = await getRumors();
+    const rumors = await getRumors(null);
     const tavern = rumors.find((row) => row.name === 'Таверна');
     expect(tavern?.related.map((node) => node.name)).toEqual(['Призрак']);
   });
 
   it('узлы без статуса в наводки не попадают', async () => {
-    expect((await getRumors()).map((row) => row.name)).not.toContain('Герой');
+    expect((await getRumors(null)).map((row) => row.name)).not.toContain('Герой');
   });
 });
 
@@ -214,7 +245,7 @@ describe('База знаний: состав табов', () => {
    * и узел другого типа без статуса не попадал ни в один таб — хотя кнопка
    * «+ Добавить» на этой же странице заводит все восемь типов. */
   it('во «Всё» попадает узел без статуса и вне NPC и локаций', async () => {
-    const [rumors, nodes] = await Promise.all([getRumors(), getNodeCards()]);
+    const [rumors, nodes] = await Promise.all([getRumors(null), getNodeCards(null)]);
     expect(kbCards('all', rumors, nodes).map((card) => card.name)).toContain('Герой');
   });
 
@@ -230,12 +261,12 @@ describe('База знаний: состав табов', () => {
       }),
     );
 
-    const [rumors, nodes] = await Promise.all([getRumors(), getNodeCards()]);
+    const [rumors, nodes] = await Promise.all([getRumors(null), getNodeCards(null)]);
     expect(kbCards('all', rumors, nodes).map((card) => card.name)).toContain('Гильдия');
   });
 
   it('во «Всё» наводки идут первыми, остальные по имени', async () => {
-    const [rumors, nodes] = await Promise.all([getRumors(), getNodeCards()]);
+    const [rumors, nodes] = await Promise.all([getRumors(null), getNodeCards(null)]);
     expect(kbCards('all', rumors, nodes).map((card) => card.name)).toEqual([
       'Таверна',
       'Призрак',
@@ -245,35 +276,24 @@ describe('База знаний: состав табов', () => {
   });
 
   it('узел со статусом не задваивается', async () => {
-    const [rumors, nodes] = await Promise.all([getRumors(), getNodeCards()]);
+    const [rumors, nodes] = await Promise.all([getRumors(null), getNodeCards(null)]);
     const names = kbCards('all', rumors, nodes).map((card) => card.name);
     expect(names.filter((name) => name === 'Таверна')).toHaveLength(1);
   });
 
   it('подтабы остаются фильтром по типу', async () => {
-    const nodes = await getNodeCards();
+    const nodes = await getNodeCards(null);
     expect(kbCards('npc', [], nodes).map((card) => card.name)).toEqual(['Призрак']);
     expect(kbCards('locations', [], nodes).map((card) => card.name)).toEqual(['Таверна']);
   });
 
   it('таб «Заметки» показывает только наводки', async () => {
-    const [rumors, nodes] = await Promise.all([getRumors(), getNodeCards()]);
+    const [rumors, nodes] = await Promise.all([getRumors(null), getNodeCards(null)]);
     expect(kbCards('notes', rumors, nodes).map((card) => card.name)).not.toContain('Герой');
   });
 });
 
-describe('База знаний: связи на карточках', () => {
-  const manualLink = (id: string, from: string, to: string) =>
-    runDb((db) =>
-      db.insert(t.links).values({
-        id,
-        campaignId: FIXTURE.campaignId,
-        kind: 'manual',
-        fromNodeId: from,
-        toNodeId: to,
-      }),
-    );
-
+describe('База знаний: связи и упоминания на карточках', () => {
   const related = (cards: { name: string; related: { name: string }[] }[], name: string) =>
     cards.find((card) => card.name === name)?.related.map((node) => node.name);
 
@@ -281,26 +301,57 @@ describe('База знаний: связи на карточках', () => {
    * чипов не было, даже когда связи есть. */
   it('узел без статуса получает соседей', async () => {
     await manualLink('l-hero', FIXTURE.nodes.hero, FIXTURE.nodes.tavern);
-    const [rumors, nodes] = await Promise.all([getRumors(), getNodeCards()]);
+    const [rumors, nodes] = await Promise.all([getRumors(null), getNodeCards(null)]);
     expect(related(kbCards('all', rumors, nodes), 'Герой')).toEqual(['Таверна']);
   });
 
   /* Регрессия: подтабы брали карточки из общего списка узлов, где соседей
    * не было ни у кого, в том числе у наводок. */
   it('в подтабах NPC и Локации у карточек есть соседи', async () => {
-    const nodes = await getNodeCards();
+    const nodes = await getNodeCards(null);
     expect(related(kbCards('npc', [], nodes), 'Призрак')).toEqual(['Таверна']);
     expect(related(kbCards('locations', [], nodes), 'Таверна')).toEqual(['Призрак']);
   });
 
   it('упоминания [[…]] в соседи не идут', async () => {
     /* У Призрака входящих рёбер два: ручное от Таверны и упоминание из момента. */
-    expect(related(await getRumors(), 'Призрак')).toEqual(['Таверна']);
+    expect(related(await getRumors(null), 'Призрак')).toEqual(['Таверна']);
   });
 
   it('встречные рёбра дают одного соседа', async () => {
     await manualLink('l-back', FIXTURE.nodes.ghost, FIXTURE.nodes.tavern);
-    expect(related(await getNodeCards(), 'Таверна')).toEqual(['Призрак']);
+    expect(related(await getNodeCards(null), 'Таверна')).toEqual(['Призрак']);
+  });
+
+  it('упоминания считаются отдельно от связей', async () => {
+    /* Призрак: ручная связь от Таверны и [[Призрак]] в публичном моменте. */
+    expect(counts(await getNodeCards(null, 'npc'))).toEqual({ Призрак: [1, 1] });
+  });
+
+  it('упоминание из пересказа сессии считается', async () => {
+    await mention('l-session', { sessionId: 's-1' }, FIXTURE.nodes.ghost);
+    expect(counts(await getNodeCards(null, 'npc'))).toEqual({ Призрак: [1, 2] });
+  });
+
+  it('упоминание без ручной связи не даёт чипа', async () => {
+    await mention('l-hero', { entryId: FIXTURE.entries.moment }, FIXTURE.nodes.hero);
+    expect(counts(await getNodeCards(null, 'character'))).toEqual({ Герой: [0, 1] });
+  });
+
+  /* Число не должно выдавать записи, которых зритель не видит: личную
+   * заметку, черновик и скрытое мастером. */
+  it('упоминания из скрытых записей видит только тот, кому видна запись', async () => {
+    await mention('l-private', { entryId: FIXTURE.entries.privateNote }, FIXTURE.nodes.tavern);
+    await mention('l-draft', { entryId: FIXTURE.entries.draft }, FIXTURE.nodes.tavern);
+    await mention('l-dm', { entryId: FIXTURE.entries.dmOnly }, FIXTURE.nodes.tavern);
+
+    const tavern = async (viewer: Viewer | null) =>
+      (await getNodeCards(viewer, 'location')).find((card) => card.name === 'Таверна')?.mentions;
+
+    expect(await tavern(null)).toBe(1);
+    expect(await tavern(other)).toBe(1);
+    expect(await tavern(player)).toBe(3);
+    expect(await tavern(dm)).toBe(4);
   });
 });
 

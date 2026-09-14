@@ -42,7 +42,7 @@ export default async function ChroniclePage({
       getFeed(active, viewer),
       getNodeIndex(),
       getRecentSessions(5),
-      getStatusNodes(4),
+      getStatusNodes(viewer, 4),
       getGalleryPreview(GALLERY_PREVIEW_LIMIT),
       getBoardPreview(),
       getActiveSession(),

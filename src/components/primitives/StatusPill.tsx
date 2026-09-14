@@ -44,6 +44,8 @@ export type StatusPillProps = {
   status: Status;
   /** Счётчик связей: «ОТКРЫТА · 3 СВЯЗИ». */
   links?: number;
+  /** Счётчик упоминаний [[…]] следом за связями: «· 2 УПОМИНАНИЯ». */
+  mentions?: number;
   className?: string;
 };
 
@@ -52,10 +54,21 @@ export function linksLabel(links: number): string {
   return `${links} ${plural(links, 'связь', 'связи', 'связей').toUpperCase()}`;
 }
 
+/** «2 УПОМИНАНИЯ» — отдельно от связей: это [[ссылки]] из текста, а не рёбра. */
+export function mentionsLabel(mentions: number): string {
+  return `${mentions} ${plural(mentions, 'упоминание', 'упоминания', 'упоминаний').toUpperCase()}`;
+}
+
 /** Подпись статуса: mono 9px, letter-spacing 0.08em, цветом полосы. */
-export function StatusPill({ status, links, className }: StatusPillProps) {
+export function StatusPill({ status, links, mentions, className }: StatusPillProps) {
   const meta = STATUS_META[status];
-  const text = links === undefined ? meta.label : `${meta.label} · ${linksLabel(links)}`;
+  const text = [
+    meta.label,
+    links === undefined ? null : linksLabel(links),
+    mentions === undefined ? null : mentionsLabel(mentions),
+  ]
+    .filter(Boolean)
+    .join(' · ');
 
   return (
     <MonoLabel size={9} tracking="0.08em" className={className}>

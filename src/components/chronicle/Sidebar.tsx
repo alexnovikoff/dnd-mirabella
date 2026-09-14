@@ -3,18 +3,11 @@ import { NewSessionButton } from '@/components/session/NewSessionButton';
 import { MonoLabel, STATUS_META, StatusPill } from '@/components/primitives';
 import { SidebarAdd } from './SidebarAdd';
 import { SidebarGallery, type GalleryPreviewImage } from './SidebarGallery';
-import type { NodeStatus } from '@/lib/db/schema';
+import type { RumorCard } from '@/lib/queries/kb';
 import { numericDate } from '@/lib/dates';
 import styles from './Sidebar.module.css';
 
 type SessionRow = { id: string; number: number; title: string | null; date: string | null };
-type StatusNode = {
-  id: string;
-  name: string;
-  slug: string;
-  status: NodeStatus | null;
-  links: number;
-};
 type GalleryPreview = { total: number; recent: GalleryPreviewImage[] };
 
 export function Sidebar({
@@ -24,7 +17,7 @@ export function Sidebar({
   activeSessionNumber,
 }: {
   sessions: SessionRow[];
-  notes: StatusNode[];
+  notes: RumorCard[];
   gallery: GalleryPreview;
   activeSessionNumber: number | null;
 }) {
@@ -95,7 +88,15 @@ export function Sidebar({
                 >
                   {note.name}
                 </span>
-                {note.status ? <StatusPill status={note.status} links={note.links} /> : null}
+                {/* Счётчики те же, что на карточке базы знаний: связи — ручные
+                    рёбра в обе стороны, упоминания [[…]] — отдельно. */}
+                {note.status ? (
+                  <StatusPill
+                    status={note.status}
+                    links={note.related.length}
+                    mentions={note.mentions}
+                  />
+                ) : null}
               </Link>
             );
           })}

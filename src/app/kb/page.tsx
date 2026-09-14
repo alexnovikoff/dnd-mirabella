@@ -19,9 +19,9 @@ export default async function KnowledgeBasePage({
   const viewer = await getViewer();
 
   const [rumors, notes, nodes, index] = await Promise.all([
-    getRumors(),
+    getRumors(viewer),
     getFreeNotes(viewer),
-    getNodeCards(),
+    getNodeCards(viewer),
     getNodeIndex(),
   ]);
 
