@@ -53,6 +53,16 @@
   box-shadow: var(--modal-shadow);
 }
 
+/* «Без типа» — не ярлык, а сброс: тише настоящих типов. Через .panel —
+ * чтобы цвет не зависел от порядка, в котором сборка сложит Picker.module.css. */
+.panel .clear {
+  color: var(--ink-faint);
+}
+
+.panel .clear:hover {
+  color: var(--accent);
+}
+
 @media (max-width: 767px) {
   .field {
     position: relative;

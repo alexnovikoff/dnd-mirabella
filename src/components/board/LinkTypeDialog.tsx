@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState, useTransition } from 'react';
 import { MonoLabel } from '@/components/primitives';
 import { LabelInput } from '@/components/editor/LabelInput';
-import { linkNodes, updateLink } from '@/lib/actions/board';
+import { deleteLink, linkNodes, updateLink } from '@/lib/actions/board';
+import { REMOVE_LINK_BODY } from './RemoveLinkButton';
 import styles from './LinkTypeDialog.module.css';
 
 /**
@@ -33,6 +34,9 @@ export function LinkTypeDialog({
 }) {
   const sheetRef = useRef<HTMLFormElement>(null);
   const [label, setLabel] = useState(existingLabel ?? '');
+  /* Подтверждение удаления — шагом этого же окна, а не ConfirmDialog поверх:
+   * оба окна ловят Escape на document, и закрылись бы разом. */
+  const [removing, setRemoving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -40,12 +44,14 @@ export function LinkTypeDialog({
     function onKey(event: KeyboardEvent) {
       if (event.key === 'Escape') {
         event.stopPropagation();
-        onClose();
+        /* Из подтверждения Escape возвращает к типу, как «ОТМЕНА». */
+        if (removing) setRemoving(false);
+        else onClose();
       }
     }
     document.addEventListener('keydown', onKey, true);
     return () => document.removeEventListener('keydown', onKey, true);
-  }, [onClose]);
+  }, [onClose, removing]);
 
   return (
     <div
@@ -57,11 +63,12 @@ export function LinkTypeDialog({
       <form
         ref={sheetRef}
         className={styles.sheet}
-        role="dialog"
+        role={removing ? 'alertdialog' : 'dialog'}
         aria-modal="true"
-        aria-label="Тип связи"
+        aria-label={removing ? 'Убрать связь?' : 'Тип связи'}
         onSubmit={(event) => {
           event.preventDefault();
+          if (removing) return;
           setError(null);
           startTransition(async () => {
             const result = existingLinkId
@@ -75,45 +82,106 @@ export function LinkTypeDialog({
           });
         }}
       >
-        <h2 className={styles.title}>{existingLinkId ? 'Сменить тип связи' : 'Новая связь'}</h2>
+        {removing && existingLinkId ? (
+          <>
+            <h2 className={styles.title}>Убрать связь?</h2>
+            <p className={styles.body}>{REMOVE_LINK_BODY}</p>
+            <p className={styles.pair}>
+              {from.name}
+              <span className={styles.arrow}> → </span>
+              {to.name}
+              {existingLabel ? ` · ${existingLabel}` : null}
+            </p>
 
-        <p className={styles.pair}>
-          {from.name}
-          <span className={styles.arrow}> → </span>
-          {to.name}
-        </p>
+            <div className={styles.buttons}>
+              <button
+                type="button"
+                className={styles.button}
+                onClick={() => setRemoving(false)}
+                disabled={pending}
+              >
+                ОТМЕНА
+              </button>
+              <button
+                type="button"
+                className={`${styles.button} ${styles.primary}`}
+                disabled={pending}
+                autoFocus
+                onClick={() =>
+                  startTransition(async () => {
+                    await deleteLink(existingLinkId);
+                    onClose();
+                  })
+                }
+              >
+                {pending ? 'УДАЛЯЕМ…' : 'УБРАТЬ'}
+              </button>
+            </div>
 
-        <div className={styles.field}>
-          <MonoLabel size={9} tracking="0.14em" block>
-            Тип связи
-          </MonoLabel>
-          <LabelInput
-            value={label}
-            labels={labels}
-            placeholder="Долг, вражда, след…"
-            ariaLabel="Тип связи"
-            autoFocus
-            onCommit={setLabel}
-          />
-          <MonoLabel size={9} tracking="0.06em" tone="faint" block>
-            Можно оставить пустым
-          </MonoLabel>
-        </div>
+            <MonoLabel size={9} tracking="0.06em" tone="faint" block>
+              Отменить удаление нельзя
+            </MonoLabel>
+          </>
+        ) : (
+          <>
+            <h2 className={styles.title}>{existingLinkId ? 'Сменить тип связи' : 'Новая связь'}</h2>
 
-        {error ? (
-          <MonoLabel size={10} tracking="0.06em" tone="accent" block>
-            {error}
-          </MonoLabel>
-        ) : null}
+            <p className={styles.pair}>
+              {from.name}
+              <span className={styles.arrow}> → </span>
+              {to.name}
+            </p>
 
-        <div className={styles.buttons}>
-          <button type="button" className={styles.button} onClick={onClose} disabled={pending}>
-            ОТМЕНА
-          </button>
-          <button type="submit" className={`${styles.button} ${styles.primary}`} disabled={pending}>
-            {pending ? 'СВЯЗЫВАЕМ…' : existingLinkId ? 'СОХРАНИТЬ' : 'СВЯЗАТЬ'}
-          </button>
-        </div>
+            <div className={styles.field}>
+              <MonoLabel size={9} tracking="0.14em" block>
+                Тип связи
+              </MonoLabel>
+              <LabelInput
+                value={label}
+                labels={labels}
+                placeholder="Долг, вражда, след…"
+                ariaLabel="Тип связи"
+                autoFocus
+                onCommit={setLabel}
+              />
+              <MonoLabel size={9} tracking="0.06em" tone="faint" block>
+                Можно оставить пустым
+              </MonoLabel>
+            </div>
+
+            {error ? (
+              <MonoLabel size={10} tracking="0.06em" tone="accent" block>
+                {error}
+              </MonoLabel>
+            ) : null}
+
+            <div className={styles.buttons}>
+              <button type="button" className={styles.button} onClick={onClose} disabled={pending}>
+                ОТМЕНА
+              </button>
+              <button
+                type="submit"
+                className={`${styles.button} ${styles.primary}`}
+                disabled={pending}
+              >
+                {pending ? 'СВЯЗЫВАЕМ…' : existingLinkId ? 'СОХРАНИТЬ' : 'СВЯЗАТЬ'}
+              </button>
+            </div>
+
+            {/* Связь этой пары уже есть — здесь же её и убирают: не искать
+                потом крестик в панели узла. */}
+            {existingLinkId ? (
+              <button
+                type="button"
+                className={styles.remove}
+                onClick={() => setRemoving(true)}
+                disabled={pending}
+              >
+                УБРАТЬ СВЯЗЬ
+              </button>
+            ) : null}
+          </>
+        )}
       </form>
     </div>
   );

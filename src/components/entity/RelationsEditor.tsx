@@ -4,11 +4,11 @@ import { useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { LinkRow, MonoLabel } from '@/components/primitives';
-import { ConfirmDialog } from '@/components/editor/ConfirmDialog';
+import { RemoveLinkButton } from '@/components/board/RemoveLinkButton';
 import { LabelInput } from '@/components/editor/LabelInput';
 import { NodePicker, type PickerOption } from '@/components/editor/NodePicker';
 import { useQuickEntry } from '@/components/editor/QuickEntryProvider';
-import { deleteLink, linkNodes, updateLink } from '@/lib/actions/board';
+import { linkNodes, updateLink } from '@/lib/actions/board';
 import styles from './RelationsEditor.module.css';
 
 export type Relation = {
@@ -36,7 +36,6 @@ export function RelationsEditor({
   const [adding, setAdding] = useState(false);
   const [target, setTarget] = useState<PickerOption | null>(null);
   const [newLabel, setNewLabel] = useState('');
-  const [removing, setRemoving] = useState<Relation | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -78,7 +77,8 @@ export function RelationsEditor({
             → {relation.name}
           </Link>
 
-          {/* Тип правится на месте: Enter, уход фокуса или выбор из списка. */}
+          {/* Тип правится на месте: Enter, уход фокуса или выбор из списка.
+              «Без типа» в списке стирает тип, а связь оставляет. */}
           <LabelInput
             className={styles.labelField}
             value={relation.label ?? ''}
@@ -88,15 +88,7 @@ export function RelationsEditor({
             onCommit={(next) => saveLabel(relation, next)}
           />
 
-          <button
-            type="button"
-            className={styles.remove}
-            title="Убрать связь"
-            aria-label={`Убрать связь с «${relation.name}»`}
-            onClick={() => setRemoving(relation)}
-          >
-            ×
-          </button>
+          <RemoveLinkButton linkId={relation.linkId} name={relation.name} label={relation.label} />
         </div>
       ))}
 
@@ -174,24 +166,6 @@ export function RelationsEditor({
         <MonoLabel size={10} tracking="0.06em" tone="accent" block>
           {error}
         </MonoLabel>
-      ) : null}
-
-      {removing ? (
-        <ConfirmDialog
-          title="Убрать связь?"
-          body="Исчезнет только эта связь между двумя сущностями. Сами сущности и записи останутся."
-          quoted={`${removing.name}${removing.label ? ` · ${removing.label}` : ''}`}
-          confirmLabel="УБРАТЬ"
-          pending={pending}
-          onConfirm={() =>
-            startTransition(async () => {
-              await deleteLink(removing.linkId);
-              setRemoving(null);
-              router.refresh();
-            })
-          }
-          onCancel={() => setRemoving(null)}
-        />
       ) : null}
     </div>
   );
