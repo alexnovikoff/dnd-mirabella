@@ -22,9 +22,13 @@ import { plural } from '@/lib/plural';
 import { describeFailures, uploadEach } from '@/lib/uploads';
 import styles from './QuickEntry.module.css';
 
-const TYPES: { id: EntryKind; label: string; lands: string }[] = [
+/** Кнопка типа в шите. «Лут» — не свой тип записи, а момент с тегом #лут. */
+type SheetType = EntryKind | 'loot';
+
+const TYPES: { id: SheetType; label: string; lands: string }[] = [
   { id: 'moment', label: 'МОМЕНТ', lands: 'Попадёт в ленту «Хроники»' },
   { id: 'quote', label: 'ЦИТАТА', lands: 'Попадёт в ленту и в цитатник' },
+  { id: 'loot', label: 'ЛУТ', lands: 'Попадёт в ленту «Хроники» с тегом #лут' },
   { id: 'image', label: 'ФОТО', lands: 'Попадёт в галерею выбранной сессии' },
   { id: 'note', label: 'ЗАМЕТКА', lands: 'Попадёт в базу знаний' },
 ];
@@ -57,6 +61,8 @@ export type EditableEntry = {
   sessionId: string | null;
   visibility: Visibility;
   caption?: string | null;
+  /** Момент с тегом #лут: шит подсвечивает ЛУТ, а не МОМЕНТ. */
+  loot?: boolean;
 };
 
 export function QuickEntry({
@@ -87,7 +93,11 @@ export function QuickEntry({
   const router = useRouter();
   const editing = entry ?? null;
 
-  const [kind, setKind] = useState<EntryKind>(editing?.kind ?? defaultKind);
+  const [sheetType, setSheetType] = useState<SheetType>(
+    editing ? (editing.loot ? 'loot' : editing.kind) : defaultKind,
+  );
+  /* Поля и экшен знают только тип записи: лут для них — обычный момент. */
+  const kind: EntryKind = sheetType === 'loot' ? 'moment' : sheetType;
   const [title, setTitle] = useState(editing?.title ?? '');
   const [body, setBody] = useState(editing?.body ?? '');
   const [caption, setCaption] = useState(editing?.caption ?? '');
@@ -135,7 +145,7 @@ export function QuickEntry({
     return () => document.removeEventListener('keydown', onKey);
   }, [onClose]);
 
-  const type = TYPES.find((t) => t.id === kind) ?? TYPES[0];
+  const type = TYPES.find((t) => t.id === sheetType) ?? TYPES[0];
   /* Кадру вне сессий место всё равно найдётся — в галерее он будет лежать
    * отдельной группой «Без сессии». */
   const lands = kind === 'image' && sessionId === NO_SESSION ? 'Попадёт в галерею' : type.lands;
@@ -198,7 +208,7 @@ export function QuickEntry({
 
       const result = editing
         ? await updateEntry(editing.id, payload)
-        : await createEntry({ kind, ...payload });
+        : await createEntry({ kind, loot: sheetType === 'loot', ...payload });
 
       if (!result.ok) {
         setError(result.error);
@@ -327,14 +337,14 @@ export function QuickEntry({
                   key={option.id}
                   type="button"
                   className={
-                    option.id === kind ? `${styles.type} ${styles.typeActive}` : styles.type
+                    option.id === sheetType ? `${styles.type} ${styles.typeActive}` : styles.type
                   }
                   /* Тип записи при правке не меняем: он определяет и набор
                    * полей, и то, где запись живёт. */
                   disabled={Boolean(editing)}
                   title={editing ? 'Тип записи менять нельзя' : undefined}
                   onClick={() => {
-                    setKind(option.id);
+                    setSheetType(option.id);
                     setError(null);
                     setFiles([]);
                   }}
@@ -383,7 +393,7 @@ export function QuickEntry({
                 className={styles.titleField}
                 value={title}
                 onChange={(e) => setTitle(e.currentTarget.value)}
-                placeholder="Заголовок момента…"
+                placeholder={sheetType === 'loot' ? 'Что досталось…' : 'Заголовок момента…'}
               />
             ) : null}
 

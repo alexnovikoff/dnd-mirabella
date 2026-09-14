@@ -1,5 +1,5 @@
-/* Шит быстрой записи: что обязательно у кадра, а что нет, и куда уходит
- * запись при выборе сессии — включая пустой пункт списка.
+/* Шит быстрой записи: что обязательно у кадра, а что нет, куда уходит
+ * запись при выборе сессии — включая пустой пункт списка, и как ложится лут.
  * Хранилище и вход подменены — проверяем решения, а не запись на диск.
  */
 
@@ -182,6 +182,54 @@ describe('createEntry вне сессий', () => {
     if (!result.ok) return;
 
     expect(await entrySessionId(result.entryId)).toBe('s-2');
+  });
+});
+
+/* Тип «лут» в шите — это момент с тегом: так он попадает в фильтр ленты. */
+describe('createEntry для лута', () => {
+  function entryRow(entryId: string) {
+    return runDb(async (db) => {
+      const [row] = await db
+        .select({ kind: t.entries.kind, tags: t.entries.tags })
+        .from(t.entries)
+        .where(eq(t.entries.id, entryId));
+      return row;
+    });
+  }
+
+  it('заводит момент с тегом #лут', async () => {
+    const result = await createEntry({
+      kind: 'moment',
+      loot: true,
+      title: 'Сундук',
+      body: 'Сто золотых',
+      publish: true,
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(await entryRow(result.entryId)).toEqual({ kind: 'moment', tags: ['#лут'] });
+  });
+
+  it('правка лута тег не снимает', async () => {
+    const result = await createEntry({ kind: 'moment', loot: true, body: 'Кольцо', publish: true });
+    if (!result.ok) throw new Error(result.error);
+
+    await updateEntry(result.entryId, { title: 'Кольцо', body: 'Кольцо с руной', publish: true });
+    expect((await entryRow(result.entryId)).tags).toEqual(['#лут']);
+  });
+
+  it('цитате тег не ставит', async () => {
+    const result = await createEntry({
+      kind: 'quote',
+      loot: true,
+      body: 'Моё!',
+      subjectId: FIXTURE.nodes.hero,
+      publish: true,
+    });
+    if (!result.ok) throw new Error(result.error);
+
+    expect((await entryRow(result.entryId)).tags).toEqual([]);
   });
 });
 

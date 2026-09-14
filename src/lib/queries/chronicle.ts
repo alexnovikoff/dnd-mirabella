@@ -7,18 +7,20 @@
  * разложит их по одному.
  */
 
-import { and, asc, desc, eq, inArray, isNotNull, notInArray, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, isNotNull, not, notInArray, sql } from 'drizzle-orm';
 import { runDb, type Db } from '@/lib/db/client';
 import * as t from '@/lib/db/schema';
 import { CAMPAIGN_ID } from '@/lib/db/seed';
 import type { Viewer } from '@/lib/auth-shared';
+import { LOOT_TAG } from '@/lib/entries-shared';
 import { visibleEntries } from '@/lib/visibility';
 import { parseWikiLinks } from '@/lib/wiki/parse';
 
-export type FeedFilter = 'all' | 'quotes' | 'loot';
+export type FeedFilter = 'all' | 'moments' | 'quotes' | 'loot';
 
 export const FEED_FILTERS: { id: FeedFilter; label: string }[] = [
   { id: 'all', label: 'ВСЁ' },
+  { id: 'moments', label: 'МОМЕНТЫ' },
   { id: 'quotes', label: 'ЦИТАТЫ' },
   { id: 'loot', label: 'ЛУТ' },
 ];
@@ -83,8 +85,11 @@ export function getFeed(filter: FeedFilter = 'all', viewer: Viewer | null = null
       inArray(t.entries.kind, ['moment', 'quote'] as const),
       ...(visible ? [visible] : []),
     ];
+    const isLoot = sql`${t.entries.tags} && ARRAY[${LOOT_TAG}]::text[]`;
+    /* Лут — тоже момент, но у него свой фильтр: в «моментах» он не дублируется. */
+    if (filter === 'moments') conditions.push(eq(t.entries.kind, 'moment'), not(isLoot));
     if (filter === 'quotes') conditions.push(eq(t.entries.kind, 'quote'));
-    if (filter === 'loot') conditions.push(sql`${t.entries.tags} && ARRAY['#лут']::text[]`);
+    if (filter === 'loot') conditions.push(isLoot);
 
     const rows = await db
       .select({
