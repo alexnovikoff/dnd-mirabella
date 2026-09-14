@@ -6,6 +6,7 @@ import { MonoLabel } from '@/components/primitives';
 import { LinkTypeDialog } from '@/components/board/LinkTypeDialog';
 import { useQuickEntry } from '@/components/editor/QuickEntryProvider';
 import { nodeAt, type NodeBox } from '@/lib/board-drag';
+import { previewFrame } from '@/lib/board-view';
 import { NODE_KIND_LABEL } from '@/lib/nodes';
 import type { NodeKind, NodeStatus } from '@/lib/db/schema';
 import styles from './BoardPreview.module.css';
@@ -60,6 +61,9 @@ export function BoardPreview({
   const [linking, setLinking] = useState<Linking | null>(null);
 
   const byId = new Map(nodes.map((node) => [node.id, node]));
+  /* Узел могли вынести с полотна на поле вокруг — рамка превью вписывает
+   * всех. Координаты карточек дальше в процентах рамки, а не полотна. */
+  const frame = previewFrame(nodes);
 
   const targetUnder = useCallback((dragged: string, clientX: number, clientY: number) => {
     const boxes: NodeBox[] = [];
@@ -88,7 +92,11 @@ export function BoardPreview({
   }
 
   function positionOf(node: BoardNode) {
-    return drag?.id === node.id && drag.point ? drag.point : { x: node.x, y: node.y };
+    if (drag?.id === node.id && drag.point) return drag.point;
+    return {
+      x: ((node.x - frame.left) / frame.span) * 100,
+      y: ((node.y - frame.top) / frame.span) * 100,
+    };
   }
 
   function endDrag() {

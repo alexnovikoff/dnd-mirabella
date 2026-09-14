@@ -3,7 +3,8 @@
 import { randomUUID } from 'node:crypto';
 import { revalidatePath } from 'next/cache';
 import { and, eq } from 'drizzle-orm';
-import { clampBoardPercent, clampNodeBox } from '@/lib/board-tile';
+import { clampNodeBox } from '@/lib/board-tile';
+import { clampBoardPoint } from '@/lib/board-view';
 import { runDb } from '@/lib/db/client';
 import * as t from '@/lib/db/schema';
 import { CAMPAIGN_ID } from '@/lib/db/seed';
@@ -13,6 +14,7 @@ import { requireViewer } from './guard';
 /** Позиция в процентах — доска общая на кампанию (решение в docs/plan.md). */
 export async function saveNodePosition(nodeId: string, x: number, y: number) {
   await requireViewer();
+  const point = clampBoardPoint({ x, y });
 
   await runDb(async (db) => {
     const existing = await db
@@ -22,14 +24,9 @@ export async function saveNodePosition(nodeId: string, x: number, y: number) {
       .limit(1);
 
     if (existing.length > 0) {
-      await db
-        .update(t.boardPositions)
-        .set({ x: clampBoardPercent(x), y: clampBoardPercent(y) })
-        .where(eq(t.boardPositions.nodeId, nodeId));
+      await db.update(t.boardPositions).set(point).where(eq(t.boardPositions.nodeId, nodeId));
     } else {
-      await db
-        .insert(t.boardPositions)
-        .values({ nodeId, x: clampBoardPercent(x), y: clampBoardPercent(y) });
+      await db.insert(t.boardPositions).values({ nodeId, ...point });
     }
   });
 
@@ -52,8 +49,7 @@ export async function saveNodeBox(
     await db
       .update(t.boardPositions)
       .set({
-        x: clampBoardPercent(box.x),
-        y: clampBoardPercent(box.y),
+        ...clampBoardPoint(box),
         ...clampNodeBox(box.width, box.height),
       })
       .where(eq(t.boardPositions.nodeId, nodeId));
