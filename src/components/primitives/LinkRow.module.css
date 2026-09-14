@@ -27,11 +27,13 @@ a.row:hover {
   padding: 0;
 }
 
+/* Тип — по центру высоты, как кнопка рядом: по первой строке он висел у верха,
+ * когда длинное имя переносится, а крестик стоял посередине. */
 .main {
   flex: 1;
   min-width: 0;
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 10px;
   padding: 8px 0 8px 10px;
