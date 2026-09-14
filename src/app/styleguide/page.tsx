@@ -142,8 +142,8 @@ export default function StyleguidePage() {
       <section className={styles.section}>
         <h2 className={styles.heading}>StatusPill</h2>
         <div className={styles.row}>
-          <StatusPill status="open" links={3} />
-          <StatusPill status="resolved" links={1} />
+          <StatusPill status="open" links={3} mentions={2} />
+          <StatusPill status="resolved" links={1} mentions={0} />
           <StatusPill status="dead_end" links={5} />
           <StatusPill status="open" />
         </div>

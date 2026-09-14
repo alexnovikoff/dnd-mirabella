@@ -1,7 +1,8 @@
 /* Запросы экрана «База знаний»: наводки со статусами, свободные заметки,
  * а также подтабы «Всё», NPC и Локации. */
 
-import { and, desc, eq, inArray, isNotNull, or, sql } from 'drizzle-orm';
+import { and, desc, eq, isNotNull, isNull, or, sql, type SQL } from 'drizzle-orm';
+import type { PgColumn } from 'drizzle-orm/pg-core';
 import { runDb } from '@/lib/db/client';
 import * as t from '@/lib/db/schema';
 import { CAMPAIGN_ID } from '@/lib/db/seed';
@@ -29,10 +30,14 @@ export type RumorCard = {
   /** Тип узла — мета под названием карточки: NPC, ЛОКАЦИЯ и так далее. */
   kind: t.NodeKind;
   status: t.NodeStatus | null;
-  links: number;
-  /** Чипы связанных сущностей под карточкой. */
-  related: { id: string; name: string; slug: string }[];
+  /** Чипы связанных сущностей под карточкой; их число — счётчик связей. */
+  related: RelatedNode[];
+  /** Сколько записей и пересказов сессий называют узел по [[ссылке]] —
+   *  из тех, что видны зрителю. Отдельный счётчик: в связи не входит. */
+  mentions: number;
 };
+
+type RelatedNode = { id: string; name: string; slug: string };
 
 export type FreeNote = {
   id: string;
@@ -47,58 +52,11 @@ export type FreeNote = {
   visibility: t.Visibility;
 };
 
-/** Наводки: узлы со статусом, счётчик связей и соседи по ручным рёбрам. */
-export function getRumors(): Promise<RumorCard[]> {
-  return runDb(async (db) => {
-    const rows = await db
-      .select({
-        id: t.nodes.id,
-        name: t.nodes.name,
-        slug: t.nodes.slug,
-        kind: t.nodes.kind,
-        status: t.nodes.status,
-        links: sql<number>`count(${t.links.id})::int`,
-      })
-      .from(t.nodes)
-      .leftJoin(t.links, eq(t.links.toNodeId, t.nodes.id))
-      .where(and(eq(t.nodes.campaignId, CAMPAIGN_ID), isNotNull(t.nodes.status)))
-      .groupBy(t.nodes.id)
-      .orderBy(t.nodes.status, t.nodes.name);
-
-    if (rows.length === 0) return [];
-
-    const ids = rows.map((row) => row.id);
-    const manual = await db
-      .select({
-        from: t.links.fromNodeId,
-        to: t.links.toNodeId,
-        label: t.links.label,
-      })
-      .from(t.links)
-      .where(
-        and(
-          eq(t.links.campaignId, CAMPAIGN_ID),
-          eq(t.links.kind, 'manual'),
-          or(inArray(t.links.toNodeId, ids), inArray(t.links.fromNodeId, ids)),
-        ),
-      );
-
-    const names = await db
-      .select({ id: t.nodes.id, name: t.nodes.name, slug: t.nodes.slug })
-      .from(t.nodes)
-      .where(eq(t.nodes.campaignId, CAMPAIGN_ID));
-    const byId = new Map(names.map((n) => [n.id, n]));
-
-    return rows.map((row) => {
-      const related = new Map<string, { id: string; name: string; slug: string }>();
-      for (const link of manual) {
-        const other = link.from === row.id ? link.to : link.to === row.id ? link.from : null;
-        if (!other) continue;
-        const node = byId.get(other);
-        if (node) related.set(node.id, node);
-      }
-      return { ...row, related: [...related.values()] };
-    });
+/** Наводки: узлы со статусом, открытые первыми. */
+export function getRumors(viewer: Viewer | null): Promise<RumorCard[]> {
+  return queryNodeCards(viewer, {
+    where: isNotNull(t.nodes.status),
+    order: [t.nodes.status, t.nodes.name],
   });
 }
 
@@ -128,26 +86,83 @@ export function getFreeNotes(viewer: Viewer | null): Promise<FreeNote[]> {
   });
 }
 
-/** Карточки узлов со счётчиком связей: без аргумента — все узлы кампании,
- *  с типом — только узлы этого типа (подтабы NPC и Локации). */
-export function getNodeCards(kind?: t.NodeKind): Promise<RumorCard[]> {
+/** Карточки узлов: без типа — все узлы кампании, с типом — только узлы
+ *  этого типа (подтабы NPC и Локации). */
+export function getNodeCards(viewer: Viewer | null, kind?: t.NodeKind): Promise<RumorCard[]> {
+  return queryNodeCards(viewer, {
+    where: kind ? eq(t.nodes.kind, kind) : undefined,
+    order: [t.nodes.name],
+  });
+}
+
+/** Карточки узлов со связями и упоминаниями — для базы знаний и сайдбара
+ *  «Хроники»: одна наводка на двух экранах показывает одни и те же числа.
+ *
+ *  Связи — соседи по ручным рёбрам в обе стороны, они же чипы. Упоминания
+ *  [[…]] считаются отдельно: раньше они входили в «N связей», и счётчик
+ *  стоял рядом с меньшим числом чипов. */
+export function queryNodeCards(
+  viewer: Viewer | null,
+  { where, order, limit }: { where?: SQL; order: (SQL | PgColumn)[]; limit?: number },
+): Promise<RumorCard[]> {
   return runDb(async (db) => {
-    const rows = await db
+    const base = db
       .select({
         id: t.nodes.id,
         name: t.nodes.name,
         slug: t.nodes.slug,
         kind: t.nodes.kind,
         status: t.nodes.status,
-        links: sql<number>`count(${t.links.id})::int`,
       })
       .from(t.nodes)
-      .leftJoin(t.links, eq(t.links.toNodeId, t.nodes.id))
-      .where(and(eq(t.nodes.campaignId, CAMPAIGN_ID), kind ? eq(t.nodes.kind, kind) : undefined))
-      .groupBy(t.nodes.id)
-      .orderBy(t.nodes.name);
+      .where(and(eq(t.nodes.campaignId, CAMPAIGN_ID), where))
+      .orderBy(...order);
+    const rows = await (limit === undefined ? base : base.limit(limit));
 
-    return rows.map((row) => ({ ...row, related: [] }));
+    if (rows.length === 0) return [];
+
+    const manual = await db
+      .select({ from: t.links.fromNodeId, to: t.links.toNodeId })
+      .from(t.links)
+      .where(and(eq(t.links.campaignId, CAMPAIGN_ID), eq(t.links.kind, 'manual')));
+
+    /* Соседи ищутся по всем узлам кампании: связь из NPC ведёт и в локацию,
+     * которой в подтабе NPC нет. */
+    const names = await db
+      .select({ id: t.nodes.id, name: t.nodes.name, slug: t.nodes.slug })
+      .from(t.nodes)
+      .where(eq(t.nodes.campaignId, CAMPAIGN_ID));
+    const byId = new Map(names.map((n) => [n.id, n]));
+
+    /* Упоминание из записи считается, только если зритель видит саму запись:
+     * иначе число выдавало бы чужую личную заметку или скрытое мастером.
+     * У пересказа сессии видимости нет — он виден всем. */
+    const visible = visibleEntries(viewer);
+    const mentionRows = await db
+      .select({ nodeId: t.links.toNodeId, count: sql<number>`count(*)::int` })
+      .from(t.links)
+      .leftJoin(t.entries, eq(t.entries.id, t.links.fromEntryId))
+      .where(
+        and(
+          eq(t.links.campaignId, CAMPAIGN_ID),
+          eq(t.links.kind, 'mention'),
+          visible ? or(isNull(t.links.fromEntryId), visible) : undefined,
+        ),
+      )
+      .groupBy(t.links.toNodeId);
+    const mentions = new Map(mentionRows.map((row) => [row.nodeId, row.count]));
+
+    return rows.map((row) => {
+      /* Map по id: встречные рёбра A→B и B→A — один сосед, один чип. */
+      const related = new Map<string, RelatedNode>();
+      for (const link of manual) {
+        const other = link.from === row.id ? link.to : link.to === row.id ? link.from : null;
+        if (!other) continue;
+        const node = byId.get(other);
+        if (node) related.set(node.id, node);
+      }
+      return { ...row, related: [...related.values()], mentions: mentions.get(row.id) ?? 0 };
+    });
   });
 }
 

@@ -7,7 +7,7 @@ export type { AccentQuoteCardProps } from './AccentQuoteCard';
 export { MonoLabel } from './MonoLabel';
 export type { MonoLabelProps, MonoSize, MonoTone, MonoTracking } from './MonoLabel';
 
-export { StatusPill, STATUS_META } from './StatusPill';
+export { linksLabel, mentionsLabel, StatusPill, STATUS_META } from './StatusPill';
 export type { Status, StatusPillProps } from './StatusPill';
 
 export { ImagePlaceholder } from './ImagePlaceholder';
