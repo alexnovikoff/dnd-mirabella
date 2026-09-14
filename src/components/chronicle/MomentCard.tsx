@@ -2,6 +2,7 @@ import { Fragment } from 'react';
 import { ImagePlaceholder, MonoLabel, ParchmentCard } from '@/components/primitives';
 import { WikiText } from '@/components/wiki/WikiText';
 import { EntryActions } from '@/components/entry/EntryActions';
+import { LOOT_TAG } from '@/lib/entries-shared';
 import type { FeedEntry } from '@/lib/queries/chronicle';
 import styles from './MomentCard.module.css';
 
@@ -73,6 +74,7 @@ export function toEditable(entry: FeedEntry) {
     /* Подпись кадра — единственное, что правится у записи-фото. Без неё шит
      * открывался бы с пустым полем и стирал подпись при сохранении. */
     caption: entry.image?.caption ?? null,
+    loot: entry.tags.includes(LOOT_TAG),
   };
 }
 

@@ -62,6 +62,10 @@ describe('getFeed', () => {
     expect(feed.every((entry) => entry.kind === 'quote')).toBe(true);
   });
 
+  it('фильтр «моменты» оставляет моменты без лута', async () => {
+    expect(titles(await getFeed('moments', null))).toEqual(['Момент']);
+  });
+
   it('фильтр «лут» смотрит на тег', async () => {
     expect(titles(await getFeed('loot', null))).toEqual(['Лут']);
   });
