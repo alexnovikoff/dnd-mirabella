@@ -4,8 +4,8 @@
 
 .badge {
   position: fixed;
-  top: 4px;
-  left: 4px;
+  top: 12px;
+  left: 12px;
   z-index: 80;
   padding: 5px 14px;
   background: var(--accent);
@@ -22,13 +22,13 @@
   user-select: none;
 }
 
-/* <768px стола вокруг листа нет, и шапка начинается у самого края окна.
- * Метка прижата к углу и укладывается в верхний отступ шапки (16px) с печатью. */
+/* <768px стола вокруг листа нет, и шапка начинается у самого края окна:
+ * отступ и размер меньше, чтобы метка почти не задевала печать в шапке. */
 @media (max-width: 767px) {
   .badge {
-    top: 0;
-    left: 0;
-    padding: 3px 8px;
-    font-size: 12px;
+    top: 6px;
+    left: 6px;
+    padding: 2px 7px;
+    font-size: 11px;
   }
 }
