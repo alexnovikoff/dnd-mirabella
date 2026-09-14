@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { MonoLabel, STATUS_META, StatusPill } from '@/components/primitives';
+import { linksLabel, MonoLabel, STATUS_META, StatusPill } from '@/components/primitives';
 import { EditOnClick } from '@/components/entry/EditOnClick';
 import { EntryActions } from '@/components/entry/EntryActions';
 import { WikiText } from '@/components/wiki/WikiText';
@@ -27,13 +27,16 @@ export function RumorNote({ card, tab }: { card: RumorCard; tab?: string }) {
       <span className={meta?.struck ? `${styles.name} ${styles.struck}` : styles.name}>
         {card.name}
       </span>
-      {/* Мета-ряд: тип узла и статус через «·», как на доске и в макете.
-       * Тип есть у каждого узла, статус — не у каждого. */}
+      {/* Мета-ряд: тип узла, статус и счётчик связей через «·», как на доске
+       * и в макете. Статус есть не у каждого узла, а счётчик — у каждого:
+       * без статуса он идёт следом за типом тем же приглушённым цветом. */}
       <span className={styles.meta}>
         <MonoLabel size={9} tracking="0.08em" tone="muted">
-          {card.status ? `${NODE_KIND_LABEL[card.kind]} ·` : NODE_KIND_LABEL[card.kind]}
+          {card.status
+            ? `${NODE_KIND_LABEL[card.kind]} ·`
+            : `${NODE_KIND_LABEL[card.kind]} · ${linksLabel(card.related.length)}`}
         </MonoLabel>
-        {card.status ? <StatusPill status={card.status} links={card.links} /> : null}
+        {card.status ? <StatusPill status={card.status} links={card.related.length} /> : null}
       </span>
       {card.related.length > 0 ? (
         <span className={styles.chips}>

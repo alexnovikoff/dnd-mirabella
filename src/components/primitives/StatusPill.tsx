@@ -47,13 +47,15 @@ export type StatusPillProps = {
   className?: string;
 };
 
+/** «3 СВЯЗИ» — счётчик и в подписи статуса, и на карточке узла без статуса. */
+export function linksLabel(links: number): string {
+  return `${links} ${plural(links, 'связь', 'связи', 'связей').toUpperCase()}`;
+}
+
 /** Подпись статуса: mono 9px, letter-spacing 0.08em, цветом полосы. */
 export function StatusPill({ status, links, className }: StatusPillProps) {
   const meta = STATUS_META[status];
-  const text =
-    links === undefined
-      ? meta.label
-      : `${meta.label} · ${links} ${plural(links, 'связь', 'связи', 'связей').toUpperCase()}`;
+  const text = links === undefined ? meta.label : `${meta.label} · ${linksLabel(links)}`;
 
   return (
     <MonoLabel size={9} tracking="0.08em" className={className}>

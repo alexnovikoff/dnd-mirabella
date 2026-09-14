@@ -262,6 +262,48 @@ describe('База знаний: состав табов', () => {
   });
 });
 
+describe('База знаний: связи на карточках', () => {
+  const manualLink = (id: string, from: string, to: string) =>
+    runDb((db) =>
+      db.insert(t.links).values({
+        id,
+        campaignId: FIXTURE.campaignId,
+        kind: 'manual',
+        fromNodeId: from,
+        toNodeId: to,
+      }),
+    );
+
+  const related = (cards: { name: string; related: { name: string }[] }[], name: string) =>
+    cards.find((card) => card.name === name)?.related.map((node) => node.name);
+
+  /* Регрессия: соседей собирали только наводкам, и у узла без статуса
+   * чипов не было, даже когда связи есть. */
+  it('узел без статуса получает соседей', async () => {
+    await manualLink('l-hero', FIXTURE.nodes.hero, FIXTURE.nodes.tavern);
+    const [rumors, nodes] = await Promise.all([getRumors(), getNodeCards()]);
+    expect(related(kbCards('all', rumors, nodes), 'Герой')).toEqual(['Таверна']);
+  });
+
+  /* Регрессия: подтабы брали карточки из общего списка узлов, где соседей
+   * не было ни у кого, в том числе у наводок. */
+  it('в подтабах NPC и Локации у карточек есть соседи', async () => {
+    const nodes = await getNodeCards();
+    expect(related(kbCards('npc', [], nodes), 'Призрак')).toEqual(['Таверна']);
+    expect(related(kbCards('locations', [], nodes), 'Таверна')).toEqual(['Призрак']);
+  });
+
+  it('упоминания [[…]] в соседи не идут', async () => {
+    /* У Призрака входящих рёбер два: ручное от Таверны и упоминание из момента. */
+    expect(related(await getRumors(), 'Призрак')).toEqual(['Таверна']);
+  });
+
+  it('встречные рёбра дают одного соседа', async () => {
+    await manualLink('l-back', FIXTURE.nodes.ghost, FIXTURE.nodes.tavern);
+    expect(related(await getNodeCards(), 'Таверна')).toEqual(['Призрак']);
+  });
+});
+
 describe('getFreeNotes', () => {
   it('гость личную заметку не видит', async () => {
     expect(await getFreeNotes(null)).toHaveLength(0);
