@@ -45,6 +45,10 @@ export function LabelInput({
   )
     .filter((label) => label.toLowerCase() !== text.trim().toLowerCase())
     .slice(0, 8);
+  /* «Без типа» стирает тип, а связь оставляет: стереть текст и увести фокус
+   * тоже работает, но до этого не догадываются. Пока в поле печатают, пункта
+   * нет — список тогда подсказывает, а не сбрасывает. */
+  const clearable = !typed && text.trim() !== '';
 
   function commit(next: string) {
     setText(next);
@@ -111,8 +115,20 @@ export function LabelInput({
         ) : null}
       </div>
 
-      {open && options.length > 0 ? (
+      {open && (clearable || options.length > 0) ? (
         <div className={`${picker.panel} ${styles.panel}`} role="listbox">
+          {clearable ? (
+            <button
+              type="button"
+              role="option"
+              aria-selected={false}
+              className={`${picker.option} ${styles.clear}`}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => commit('')}
+            >
+              Без типа
+            </button>
+          ) : null}
           {options.map((label) => (
             <button
               key={label}

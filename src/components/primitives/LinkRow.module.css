@@ -18,3 +18,26 @@
 a.row:hover {
   background: #fdf8ea;
 }
+
+/* Строка с кнопкой справа. Отступы строки забирает ссылка — так она
+ * кликается во всю высоту, а кнопка сама задаёт себе зону касания. */
+.withAction {
+  align-items: stretch;
+  gap: 0;
+  padding: 0;
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 0 8px 10px;
+  color: inherit;
+}
+
+.withAction:has(a.main:hover) {
+  background: #fdf8ea;
+}

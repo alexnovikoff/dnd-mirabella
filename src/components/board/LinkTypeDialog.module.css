@@ -48,6 +48,36 @@
   color: var(--accent);
 }
 
+/* Текст подтверждения — как в ConfirmDialog. */
+.body {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink-body);
+}
+
+/* «УБРАТЬ СВЯЗЬ» тише кнопок окна: главное здесь — тип, удаление — запасной
+ * выход, и оно всё равно спросит ещё раз. */
+.remove {
+  align-self: center;
+  background: transparent;
+  border: 0;
+  padding: 6px 12px;
+  min-height: 44px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--ink-muted);
+  transition: color var(--hover-fast);
+}
+
+.remove:hover {
+  color: var(--accent);
+}
+
+.remove:disabled {
+  opacity: 0.55;
+}
+
 .field {
   display: flex;
   flex-direction: column;

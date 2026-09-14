@@ -4,6 +4,7 @@ import { cookies } from 'next/headers';
 import { LinkRow, MonoLabel } from '@/components/primitives';
 import { BoardCanvas } from '@/components/board/BoardCanvas';
 import { BoardToolbar, DeleteNodeButton, LinkNodeButton } from '@/components/board/BoardActions';
+import { BoardRelations } from '@/components/board/BoardRelations';
 import { EntityEditor } from '@/components/entity/EntityEditor';
 import { getBoard, getNodeDetail } from '@/lib/queries/board';
 import { getLinkLabels } from '@/lib/queries/labels';
@@ -127,21 +128,7 @@ export default async function BoardPage({
                   {`Связи · ${detail.relations.length}`}
                 </MonoLabel>
                 <div className={styles.rows}>
-                  {detail.relations.length === 0 ? (
-                    <MonoLabel size={9} tracking="0.08em" tone="faint">
-                      Связей пока нет
-                    </MonoLabel>
-                  ) : (
-                    detail.relations.map((relation) => (
-                      <LinkRow
-                        key={`${relation.id}-${relation.label ?? ''}`}
-                        arrow
-                        name={relation.name}
-                        label={relation.label?.toUpperCase()}
-                        href={`/board?node=${relation.slug}`}
-                      />
-                    ))
-                  )}
+                  <BoardRelations relations={detail.relations} />
                 </div>
               </div>
 
