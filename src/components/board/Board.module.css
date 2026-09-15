@@ -452,7 +452,10 @@
   background: var(--card);
   border: 1px solid var(--rule);
   border-radius: var(--radius);
-  padding: 8px 11px;
+  /* Снизу на пиксель больше: под подписью типа (капс в 9px) пустого места
+   * в строке меньше, чем над именем в 13px. При равных отступах от букв
+   * до рамки выходило 11,3px сверху и 10,2px снизу, теперь поровну. */
+  padding: 8px 11px 9px;
   font-family: var(--font-body);
   font-size: 13px;
   line-height: 16px;
