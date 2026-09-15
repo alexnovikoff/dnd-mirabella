@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import pkg from '../../package.json';
-import { CURRENT_RELEASE, RELEASES } from './changelog';
+import { CHANGE_VERB, CURRENT_RELEASE, RELEASES } from './changelog';
 
 const SEMVER = /^(\d+)\.(\d+)\.(\d+)$/;
 
@@ -35,6 +35,16 @@ describe('changelog', () => {
     }
     for (let i = 1; i < RELEASES.length; i++) {
       expect(RELEASES[i - 1].date >= RELEASES[i].date).toBe(true);
+    }
+  });
+
+  it('каждый пункт говорит, что сделано: добавлено, изменено, исправлено или убрано', () => {
+    for (const release of RELEASES) {
+      for (const group of release.groups) {
+        for (const item of group.items) {
+          expect(item).toMatch(CHANGE_VERB);
+        }
+      }
     }
   });
 
