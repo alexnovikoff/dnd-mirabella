@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { MonoLabel } from '@/components/primitives';
@@ -71,6 +71,19 @@ export function EntityEditor({
   const [confirmingKind, setConfirmingKind] = useState(false);
   const [pending, startTransition] = useTransition();
 
+  /* На странице сущности форма всплывает поверх карточки, как у персонажа, и
+   * Esc закрывает её, как «Отмена». Клик мимо формы — нет: промах мышью стёр
+   * бы набранное. Пока идёт сохранение, закрыть нельзя. Окно подтверждения
+   * ловит Esc раньше и закрывается само, форма под ним остаётся. */
+  useEffect(() => {
+    if (!open || pending || returnTo === 'board') return;
+    function onKey(event: KeyboardEvent) {
+      if (event.key === 'Escape') setOpen(false);
+    }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [open, pending, returnTo]);
+
   /* Без входа править нечем. Пустое место на месте кнопки читается как
    * поломка, поэтому вместо неё — строка со ссылкой на вход. На доске такая
    * же строка уже висит в тулбаре, второй раз в панели она не нужна. */
@@ -87,18 +100,36 @@ export function EntityEditor({
     );
   }
 
+  /* Поля сбрасываются при открытии, а не при закрытии: так «Отмена», Esc и
+   * повторный клик по «Править» закрывают одинаково, а после сохранения
+   * форма берёт уже обновлённые значения. */
+  const openEditor = () => {
+    setName(node.name);
+    setKind(node.kind);
+    setStatus(node.status ?? '');
+    setDescription(node.description ?? '');
+    setError(null);
+    setOpen(true);
+  };
+
   /* Прежних имён рядом с кнопкой нет: и на доске, и на странице сущности она
    * делит строку с подписью или заголовком, и именам там тесно. Обе страницы
    * ставят их под названием. */
-  if (!open) {
-    return (
-      <div className={styles.bar}>
-        <button type="button" className={styles.action} onClick={() => setOpen(true)}>
-          Править
-        </button>
-      </div>
-    );
-  }
+  const toggle = (
+    <div className={styles.bar}>
+      <button
+        type="button"
+        className={styles.action}
+        aria-expanded={open}
+        disabled={pending}
+        onClick={() => (open ? setOpen(false) : openEditor())}
+      >
+        Править
+      </button>
+    </div>
+  );
+
+  if (!open) return toggle;
 
   const save = () => {
     setError(null);
@@ -124,138 +155,141 @@ export function EntityEditor({
   };
 
   return (
-    <form
-      className={returnTo === 'board' ? `${styles.form} ${styles.onBoard}` : styles.form}
-      onSubmit={(event) => {
-        event.preventDefault();
-        if (node.isCharacter && kind !== 'character') {
-          setConfirmingKind(true);
-          return;
-        }
-        save();
-      }}
-    >
-      <label className={styles.field}>
-        <MonoLabel size={9} tracking="0.14em" block>
-          Название
-        </MonoLabel>
-        <input
-          className={picker.field}
-          value={name}
-          onChange={(e) => setName(e.currentTarget.value)}
-          required
-        />
-      </label>
-
-      {/* Тип и статус — короткие списки одного порядка, и читаются они парой.
-          Название забрало бы у них всю строку, поэтому стоит выше отдельно. */}
-      <div className={styles.row}>
+    <>
+      {/* На странице сущности кнопка остаётся на месте и при открытой форме:
+          без неё строка названия на телефоне теряла высоту кнопки (44px), и
+          тип со статусом поднимались. На доске форму ставит панель, и строку
+          «Выбранный узел» держит она сама. */}
+      {returnTo === 'entity' ? toggle : null}
+      <form
+        className={returnTo === 'board' ? `${styles.form} ${styles.onBoard}` : styles.form}
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (node.isCharacter && kind !== 'character') {
+            setConfirmingKind(true);
+            return;
+          }
+          save();
+        }}
+      >
         <label className={styles.field}>
           <MonoLabel size={9} tracking="0.14em" block>
-            Тип
+            Название
           </MonoLabel>
-          <select
+          <input
             className={picker.field}
-            value={node.hasPlayer ? 'character' : kind}
-            disabled={node.hasPlayer}
-            title={node.hasPlayer ? 'У персонажа игрока тип не меняется' : undefined}
-            onChange={(e) => setKind(e.currentTarget.value as NodeKind)}
-          >
-            {node.hasPlayer ? (
-              <option value="character">{NODE_KIND_TITLE.character}</option>
-            ) : (
-              KINDS.map((item) => (
-                <option key={item} value={item}>
-                  {NODE_KIND_TITLE[item]}
+            value={name}
+            onChange={(e) => setName(e.currentTarget.value)}
+            required
+          />
+        </label>
+
+        {/* Тип и статус — короткие списки одного порядка, и читаются они парой.
+          Название забрало бы у них всю строку, поэтому стоит выше отдельно. */}
+        <div className={styles.row}>
+          <label className={styles.field}>
+            <MonoLabel size={9} tracking="0.14em" block>
+              Тип
+            </MonoLabel>
+            <select
+              className={picker.field}
+              value={node.hasPlayer ? 'character' : kind}
+              disabled={node.hasPlayer}
+              title={node.hasPlayer ? 'У персонажа игрока тип не меняется' : undefined}
+              onChange={(e) => setKind(e.currentTarget.value as NodeKind)}
+            >
+              {node.hasPlayer ? (
+                <option value="character">{NODE_KIND_TITLE.character}</option>
+              ) : (
+                KINDS.map((item) => (
+                  <option key={item} value={item}>
+                    {NODE_KIND_TITLE[item]}
+                  </option>
+                ))
+              )}
+            </select>
+          </label>
+
+          <label className={`${styles.field} ${styles.status}`}>
+            <MonoLabel size={9} tracking="0.14em" block>
+              Статус
+            </MonoLabel>
+            <select
+              className={picker.field}
+              value={status}
+              onChange={(e) => setStatus(e.currentTarget.value)}
+            >
+              {STATUSES.map((item) => (
+                <option key={item.value} value={item.value}>
+                  {item.label}
                 </option>
-              ))
-            )}
-          </select>
-        </label>
+              ))}
+            </select>
+          </label>
+        </div>
 
-        <label className={`${styles.field} ${styles.status}`}>
+        <label className={styles.field}>
           <MonoLabel size={9} tracking="0.14em" block>
-            Статус
+            Описание
           </MonoLabel>
-          <select
-            className={picker.field}
-            value={status}
-            onChange={(e) => setStatus(e.currentTarget.value)}
-          >
-            {STATUSES.map((item) => (
-              <option key={item.value} value={item.value}>
-                {item.label}
-              </option>
-            ))}
-          </select>
+          <textarea
+            className={`${picker.field} ${styles.textarea}`}
+            value={description}
+            onChange={(e) => setDescription(e.currentTarget.value)}
+            placeholder="Что о ней известно"
+          />
         </label>
-      </div>
 
-      <label className={styles.field}>
-        <MonoLabel size={9} tracking="0.14em" block>
-          Описание
-        </MonoLabel>
-        <textarea
-          className={`${picker.field} ${styles.textarea}`}
-          value={description}
-          onChange={(e) => setDescription(e.currentTarget.value)}
-          placeholder="Что о ней известно"
-        />
-      </label>
+        {!node.isCharacter && kind === 'character' ? (
+          <MonoLabel size={9} tracking="0.06em" tone="faint" block>
+            Станет гостевым персонажем: появится своя страница, а в «Партию» его переводит тумблер
+            на карточке
+          </MonoLabel>
+        ) : null}
 
-      {!node.isCharacter && kind === 'character' ? (
-        <MonoLabel size={9} tracking="0.06em" tone="faint" block>
-          Станет гостевым персонажем: появится своя страница, а в «Партию» его переводит тумблер на
-          карточке
-        </MonoLabel>
-      ) : null}
+        {name !== node.name ? (
+          <MonoLabel size={9} tracking="0.06em" tone="faint" block>
+            {`Прежнее имя «${node.name}» уйдёт в алиасы — [[ссылки]] в старых записях не сломаются`}
+          </MonoLabel>
+        ) : null}
 
-      {name !== node.name ? (
-        <MonoLabel size={9} tracking="0.06em" tone="faint" block>
-          {`Прежнее имя «${node.name}» уйдёт в алиасы — [[ссылки]] в старых записях не сломаются`}
-        </MonoLabel>
-      ) : null}
+        {error ? (
+          <MonoLabel size={10} tracking="0.06em" tone="accent" block>
+            {error}
+          </MonoLabel>
+        ) : null}
 
-      {error ? (
-        <MonoLabel size={10} tracking="0.06em" tone="accent" block>
-          {error}
-        </MonoLabel>
-      ) : null}
-
-      <div className={styles.buttons}>
-        <button type="submit" className={styles.submit} disabled={pending}>
-          СОХРАНИТЬ
-        </button>
-        <button
-          type="button"
-          className={styles.cancel}
-          disabled={pending}
-          onClick={() => {
-            setOpen(false);
-            setError(null);
-            setName(node.name);
-            setKind(node.kind);
-            setStatus(node.status ?? '');
-            setDescription(node.description ?? '');
-          }}
-        >
-          ОТМЕНА
-        </button>
-
-        {/* Персонажа игрока не удаляем: у игрока своя учётка и своя страница. */}
-        {!node.hasPlayer ? (
+        <div className={styles.buttons}>
+          <button type="submit" className={styles.submit} disabled={pending}>
+            СОХРАНИТЬ
+          </button>
           <button
             type="button"
-            className={styles.danger}
+            className={styles.cancel}
             disabled={pending}
-            title="Удалить сущность"
-            onClick={() => setConfirming(true)}
+            onClick={() => setOpen(false)}
           >
-            УДАЛИТЬ
+            ОТМЕНА
           </button>
-        ) : null}
-      </div>
 
+          {/* Персонажа игрока не удаляем: у игрока своя учётка и своя страница. */}
+          {!node.hasPlayer ? (
+            <button
+              type="button"
+              className={styles.danger}
+              disabled={pending}
+              title="Удалить сущность"
+              onClick={() => setConfirming(true)}
+            >
+              УДАЛИТЬ
+            </button>
+          ) : null}
+        </div>
+      </form>
+
+      {/* Окна подтверждения — рядом с формой, а не внутри: у всплывающей формы
+          свой z-index, и в нём затемнение легло бы под «О проекте» и полосу
+          быстрой записи. */}
       {confirming ? (
         <ConfirmDialog
           title="Удалить сущность?"
@@ -294,6 +328,6 @@ export function EntityEditor({
           onCancel={() => setConfirmingKind(false)}
         />
       ) : null}
-    </form>
+    </>
   );
 }

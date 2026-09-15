@@ -52,6 +52,12 @@
   color: var(--accent);
 }
 
+/* Открытая форма подсвечивает кнопку, которая её открыла. */
+.action[aria-expanded='true'] {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 .form {
   display: flex;
   flex-direction: column;
