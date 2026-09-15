@@ -46,7 +46,7 @@ export default async function CharacterPage({ params }: { params: Promise<{ slug
         <div className={styles.headText}>
           {/* «Править» стоит в самой верхней строке шапки, рядом с мета-строкой:
               внизу, у метрик, её приходилось искать глазами. Раскрытая форма
-              переносится под строку на всю ширину. */}
+              всплывает под кнопкой поверх шапки и ничего не сдвигает. */}
           <div className={styles.headTop}>
             <MonoLabel size={11} tracking="0.16em" block>
               {meta}
