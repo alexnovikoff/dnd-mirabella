@@ -1,0 +1,40 @@
+/* «О проекте» в правом нижнем углу окна, пара метке PREVIEW слева сверху: тот же
+ * отступ 12px от краёв. Подложки нет — решение владельца: только mono-подпись.
+ * На узком окне она ложится на край листа, это принято.
+ * z-index 35 — над полосой быстрой записи (30), под подсветкой перетаскивания
+ * файлов (40) и всеми окнами (50–70). */
+
+.link {
+  position: fixed;
+  right: 12px;
+  bottom: 12px;
+  z-index: 35;
+  padding: 2px 0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 16px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  transition: color var(--hover-fast);
+}
+
+.link:hover {
+  color: var(--accent);
+}
+
+@media (max-width: 767px) {
+  /* Подпись остаётся мелкой, а зона касания — 44px: невидимое поле вокруг.
+   * Видимая высота 20px, по 12px сверху и снизу. */
+  .link::after {
+    content: '';
+    position: absolute;
+    inset: -12px;
+  }
+
+  /* Полоса быстрой записи — 65px (кнопка 44 + паддинги 10 + рамка 1),
+   * см. QuickEntryBar.module.css. Подпись стоит над ней, а не на кнопке. */
+  .raised {
+    bottom: calc(65px + 12px);
+  }
+}

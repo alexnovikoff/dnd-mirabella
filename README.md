@@ -135,9 +135,10 @@ DATABASE_URL='<строка Neon>' pnpm db:setup   # миграции; сид н
 src/
   app/            маршруты: / /party /gallery /quotes /kb /board /login
                   /account /characters/[slug] /entities/[slug]
-                  /sessions и /sessions/[number], служебный /styleguide
+                  /sessions и /sessions/[number], /about, служебный /styleguide
   components/
-    shell/        оболочка: лист, шапка, чип аккаунта, заголовок экрана
+    shell/        оболочка: лист, шапка, кнопка «О проекте», чип аккаунта,
+                  заголовок экрана
     primitives/   ParchmentCard, AccentQuoteCard, MonoLabel, StatusPill,
                   ImagePlaceholder, DropZone, FilterChips, Lightbox, LinkRow,
                   Metric, QuoteBody, Skeleton
@@ -155,6 +156,7 @@ src/
     db/           схема, сид, фикстура тестов, подготовка базы, подключение
     wiki/         разбор [[ссылок]] и пересчёт рёбер графа
     storage.ts    Blob или public/uploads; uploads.ts — загрузка по файлу
+    changelog.ts  история версий для «О проекте»
   styles/         tokens.css (все значения дизайна), globals.css
 drizzle/          миграции
 scripts/          смена пароля, одноразовые правки боевой базы
