@@ -28,8 +28,22 @@ export function CropPortraitButton({
         className={styles.cropButton}
         onClick={() => setOpen(true)}
         title={`Кадрировать портрет: ${name}`}
+        aria-label={`Кадрировать портрет: ${name}`}
       >
-        КАДР
+        {/* Две встречные скобки — привычный знак кадрирования. Углы прямые,
+         * как у всего интерфейса. Подпись у иконки одна — aria-label. */}
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          aria-hidden="true"
+        >
+          <path d="M6 2v16h16" />
+          <path d="M18 22V6H2" />
+        </svg>
       </button>
 
       {open ? (
