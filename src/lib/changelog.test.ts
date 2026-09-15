@@ -38,14 +38,26 @@ describe('changelog', () => {
     }
   });
 
-  it('каждый пункт говорит, что сделано: добавлено, изменено, исправлено или убрано', () => {
-    for (const release of RELEASES) {
-      for (const group of release.groups) {
-        for (const item of group.items) {
-          expect(item).toMatch(CHANGE_VERB);
-        }
-      }
+  const items = RELEASES.flatMap((release) => release.groups.flatMap((group) => group.items));
+
+  it('каждый пункт начинается с того, что сделано: реализовано, добавлено, исправлено…', () => {
+    for (const item of items) {
+      expect(item).toMatch(CHANGE_VERB);
     }
+  });
+
+  it('в конце пункта нет точки', () => {
+    for (const item of items) {
+      expect(item).not.toMatch(/[.\s]$/);
+    }
+  });
+
+  it('глагол узнаётся только целым словом', () => {
+    expect('Изменена кнопка').toMatch(CHANGE_VERB);
+    expect('Реализованы разделы').toMatch(CHANGE_VERB);
+    expect('Исправлено: текст').toMatch(CHANGE_VERB);
+    expect('Открытие сезона').not.toMatch(CHANGE_VERB);
+    expect('Изменение масштаба').not.toMatch(CHANGE_VERB);
   });
 
   it('у каждой версии есть что показать', () => {
