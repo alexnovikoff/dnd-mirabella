@@ -316,6 +316,18 @@ PGlite сбрасывает wasm-память на диск, и подготов
 - Предел тела серверного экшена поднят до **4 МБ** (`next.config.ts`): выше не пустит
   Vercel — 4,5 МБ на запрос.
 
+### О проекте и версии
+
+- **`/about`** — что это за сайт и история версий. Ссылка «О проекте» — в подвале
+  листа справа, неприметной mono-подписью: в шапке шесть вкладок из README, а это
+  не раздел кампании. Страница открыта и без входа.
+- Версия — `MAJOR.MINOR.PATCH`: MAJOR — сайт переделан заметно для всех, MINOR —
+  новые возможности, PATCH — исправления и мелкая правка вида. Запуск 9 сентября —
+  1.0.0, всё после него до PR #60 и сама страница — 1.1.0.
+- История — `lib/changelog.ts`, пишется для участников: что изменилось на сайте,
+  без миграций и имён файлов. Верхняя версия стоит и в `package.json`; тест сверяет
+  их, порядок версий и дат.
+
 ### Данные и эксплуатация
 
 Миграции после деплоя (накатываются на Neon вручную — см. README «Обновление
@@ -356,10 +368,10 @@ Preview и Development), а не проверкой `VERCEL_ENV`: так мет�
 ```
 src/
   app/            маршруты: / /party /gallery /quotes /kb /board /login /account
-                  /characters/[slug] /entities/[slug] /sessions /sessions/[number],
-                  служебный /styleguide
+                  /characters/[slug] /entities/[slug] /sessions /sessions/[number]
+                  /about, служебный /styleguide
   components/
-    shell/        Sheet, Header, AccountChip, Screen (back, links, action, meta), Stub
+    shell/        Sheet, Header, Footer, AccountChip, Screen (back, links, action, meta), Stub
     primitives/   ParchmentCard, AccentQuoteCard, MonoLabel, StatusPill, ImagePlaceholder,
                   DropZone, FilterChips, Lightbox, LinkRow, Metric, QuoteBody, Skeleton
     chronicle/    Hero, лента, сайдбар, анонс игры, превью доски
@@ -375,6 +387,7 @@ src/
     db/           схема, сид, фикстура тестов, подготовка и подключение базы
     wiki/         разбор [[ссылок]] и пересчёт рёбер (sync-links)
     storage.ts    Blob или public/uploads;  uploads.ts — загрузка по файлу
+    changelog.ts  история версий для /about
     board-drag.ts, board-view.ts, crop.ts, name-mentions.ts, dates.ts, visibility.ts
   styles/         tokens.css, globals.css
 drizzle/          миграции и снимки схемы

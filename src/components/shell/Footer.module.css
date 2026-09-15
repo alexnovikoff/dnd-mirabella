@@ -1,0 +1,37 @@
+/* Подвал листа. Ссылка — mono-подпись в тоне меты, как «← К списку» над
+ * заголовком экрана: текст, а не кнопка. Отступ справа равен паддингу экрана,
+ * поэтому ссылка стоит под правым краем содержимого. Отступ сверху нужен
+ * доске связей: она доходит до низа экрана без своего поля. */
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 8px 32px 18px;
+}
+
+.link {
+  padding: 2px 0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  transition: color var(--hover-fast);
+}
+
+.link:hover {
+  color: var(--accent);
+}
+
+@media (max-width: 767px) {
+  .footer {
+    padding: 0 16px 8px;
+  }
+
+  /* Зона касания на узком экране — 44px. */
+  .link {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+  }
+}

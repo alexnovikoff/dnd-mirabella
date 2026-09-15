@@ -1,0 +1,98 @@
+/* «О проекте»: вводный текст узкой колонкой, ниже — карточки версий. */
+
+.intro {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 680px;
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--ink-body);
+}
+
+.history {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.sectionTitle {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.release {
+  gap: 16px;
+}
+
+/* Название версии слева, номер и дата справа; на узком экране номер
+ * переносится под название. */
+.releaseHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--rule-soft);
+}
+
+.releaseTitle {
+  font-family: var(--font-display);
+  font-size: 23px;
+  line-height: 1.15;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* Группы колонками, а не сеткой: высота у них разная, и в сетке короткая
+ * группа оставляла бы дыру до конца строки. Отступ под последней группой
+ * колонки съедает отрицательный margin контейнера. */
+.groups {
+  columns: 2 300px;
+  column-gap: 36px;
+  margin-bottom: -18px;
+}
+
+.group {
+  break-inside: avoid;
+  padding-bottom: 18px;
+}
+
+.groupTitle {
+  margin-bottom: 6px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-label);
+}
+
+.items {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+/* Маркер — квадратик акцента: углы прямые, как у всего листа. */
+.items li {
+  position: relative;
+  padding-left: 14px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink-body);
+}
+
+.items li::before {
+  content: '';
+  position: absolute;
+  left: 1px;
+  top: 0.68em;
+  width: 4px;
+  height: 4px;
+  background: var(--accent);
+}
