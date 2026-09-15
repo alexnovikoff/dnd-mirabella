@@ -207,7 +207,6 @@ a.cell:hover {
   font-size: 15px;
   line-height: 1.7;
   color: var(--ink-body);
-  white-space: pre-wrap;
 }
 
 /* — Имена из [[скобок]], которым не нашлось сущности — */
