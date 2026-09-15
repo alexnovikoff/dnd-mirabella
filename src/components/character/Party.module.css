@@ -29,13 +29,13 @@
   position: absolute;
   top: 28px;
   right: 30px;
-  padding: 6px 9px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
   background: var(--sheet);
   border: 1px solid var(--rule);
   border-radius: var(--radius);
-  font-family: var(--font-mono);
-  font-size: 9px;
-  letter-spacing: 0.1em;
   color: var(--ink-muted);
   opacity: 0.85;
   transition:
@@ -82,5 +82,11 @@
 @media (max-width: 767px) {
   .grid {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* Без подписи кнопка — одна иконка; пальцу нужна зона 44px. */
+  .cropButton {
+    width: 44px;
+    height: 44px;
   }
 }
