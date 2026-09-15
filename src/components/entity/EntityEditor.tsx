@@ -125,7 +125,7 @@ export function EntityEditor({
 
   return (
     <form
-      className={styles.form}
+      className={returnTo === 'board' ? `${styles.form} ${styles.onBoard}` : styles.form}
       onSubmit={(event) => {
         event.preventDefault();
         if (node.isCharacter && kind !== 'character') {
