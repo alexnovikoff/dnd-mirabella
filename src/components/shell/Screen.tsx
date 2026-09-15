@@ -8,7 +8,7 @@ export type ScreenProps = {
   /** Заголовок экрана — Cormorant 42px/1. */
   title: string;
   /** Кнопка в строке заголовка, у правого края: «Править». Раскрытая
-   *  форма переносится под заголовок, в правую половину шапки. */
+   *  форма переносится под мета-строку, в правую половину шапки. */
   action?: React.ReactNode;
   /** Мета-строка сразу под заголовком: тип и статус карточки. */
   meta?: React.ReactNode;
@@ -55,15 +55,21 @@ export function Screen({
               ))}
             </div>
           ) : null}
+          {/* Мета-строка с кнопкой лежит в одной обёртке с заголовком: так
+              раскрытая форма встаёт под типом и статусом, а не между ними и
+              названием, и они не уезжают вниз на её высоту. */}
           {action ? (
             <div className={styles.titleRow}>
               <h1 className={styles.title}>{title}</h1>
               {action}
+              {meta ? <div className={styles.meta}>{meta}</div> : null}
             </div>
           ) : (
-            <h1 className={styles.title}>{title}</h1>
+            <>
+              <h1 className={styles.title}>{title}</h1>
+              {meta ? <div className={styles.meta}>{meta}</div> : null}
+            </>
           )}
-          {meta ? <div className={styles.meta}>{meta}</div> : null}
           {note ? <p className={styles.note}>{note}</p> : null}
           {description ? <p className={styles.description}>{description}</p> : null}
         </div>
