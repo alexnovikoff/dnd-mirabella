@@ -12,7 +12,10 @@ body {
   padding: 0;
 }
 
+/* position: relative — от низа body считается ссылка «О проекте» в углу стола.
+ * Оверлеи в проекте fixed, их это не касается. */
 body {
+  position: relative;
   min-height: 100dvh;
   padding: 40px 32px 64px;
   background: var(--desk-bg);

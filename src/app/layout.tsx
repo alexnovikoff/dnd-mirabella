@@ -90,8 +90,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               viewer={viewer}
             />
             {children}
-            <Footer />
           </Sheet>
+          <Footer />
         </QuickEntryProvider>
       </body>
     </html>

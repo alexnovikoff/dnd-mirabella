@@ -1,21 +1,25 @@
-/* Подвал листа. Ссылка — mono-подпись в тоне меты, как «← К списку» над
- * заголовком экрана: текст, а не кнопка. Отступ справа равен паддингу экрана,
- * поэтому ссылка стоит под правым краем содержимого. Отступ сверху нужен
- * доске связей: она доходит до низа экрана без своего поля. */
+/* Ссылка «О проекте» — на столе в правом нижнем углу страницы, вне листа.
+ * От края окна 12px, как метка PREVIEW слева сверху; по высоте — посередине
+ * нижнего поля body (64px). body не ниже окна, поэтому и на коротком экране
+ * ссылка стоит в углу окна, а не сразу под листом.
+ * Цвет --ink-muted, а не --ink-faint: стол темнее листа, и бледная мелкая
+ * подпись на нём не читалась бы. */
 
 .footer {
-  display: flex;
-  justify-content: flex-end;
-  padding: 8px 32px 18px;
+  position: absolute;
+  right: 12px;
+  bottom: 22px;
 }
 
 .link {
+  display: block;
   padding: 2px 0;
   font-family: var(--font-mono);
   font-size: 10px;
+  line-height: 16px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--ink-faint);
+  color: var(--ink-muted);
   transition: color var(--hover-fast);
 }
 
@@ -23,9 +27,14 @@
   color: var(--accent);
 }
 
+/* <768px стола вокруг листа нет, а лист не ниже экрана: в углу ссылка легла
+ * бы на содержимое. Здесь она — полоса стола под листом, в потоке. */
 @media (max-width: 767px) {
   .footer {
-    padding: 0 16px 8px;
+    position: static;
+    display: flex;
+    justify-content: flex-end;
+    padding: 0 12px;
   }
 
   /* Зона касания на узком экране — 44px. */
