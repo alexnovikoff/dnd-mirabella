@@ -1,0 +1,46 @@
+/* «О проекте» в правом нижнем углу окна, пара метке PREVIEW слева сверху: тот же
+ * отступ 12px от краёв, но плашка тихая — пергамент, а не акцент.
+ * Плашка, а не голый текст: fixed-ссылка лежит то на столе, то на краю листа
+ * (на узком окне стола справа почти нет), и без подложки подпись сливалась бы
+ * с содержимым под ней.
+ * z-index 35 — над полосой быстрой записи (30), под подсветкой перетаскивания
+ * файлов (40) и всеми окнами (50–70). */
+
+.link {
+  position: fixed;
+  right: 12px;
+  bottom: 12px;
+  z-index: 35;
+  padding: 5px 10px;
+  background: var(--card);
+  border: 1px solid var(--rule-sheet);
+  border-radius: var(--radius);
+  box-shadow: var(--node-shadow-sm);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 16px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  transition: color var(--hover-fast);
+}
+
+.link:hover {
+  color: var(--accent);
+}
+
+@media (max-width: 767px) {
+  /* Плашка остаётся мелкой, а зона касания — 44px: невидимое поле вокруг.
+   * Видимая высота 28px, по 8px сверху и снизу. */
+  .link::after {
+    content: '';
+    position: absolute;
+    inset: -8px;
+  }
+
+  /* Полоса быстрой записи — 65px (кнопка 44 + паддинги 10 + рамка 1),
+   * см. QuickEntryBar.module.css. Плашка стоит над ней, а не на кнопке. */
+  .raised {
+    bottom: calc(65px + 12px);
+  }
+}

@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Cormorant_Garamond, Spectral, IBM_Plex_Mono } from 'next/font/google';
 import { Sheet } from '@/components/shell/Sheet';
 import { Header } from '@/components/shell/Header';
-import { Footer } from '@/components/shell/Footer';
+import { AboutLink } from '@/components/shell/AboutLink';
 import { PreviewBadge } from '@/components/shell/PreviewBadge';
 import { QuickEntryProvider } from '@/components/editor/QuickEntryProvider';
 import { getCampaign } from '@/lib/queries/chronicle';
@@ -91,7 +91,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             />
             {children}
           </Sheet>
-          <Footer />
+          {/* Вошедшему на телефоне снизу закреплена полоса быстрой записи. */}
+          <AboutLink aboveQuickEntryBar={viewer !== null} />
         </QuickEntryProvider>
       </body>
     </html>

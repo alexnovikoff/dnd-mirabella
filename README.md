@@ -137,7 +137,8 @@ src/
                   /account /characters/[slug] /entities/[slug]
                   /sessions и /sessions/[number], /about, служебный /styleguide
   components/
-    shell/        оболочка: лист, шапка, подвал, чип аккаунта, заголовок экрана
+    shell/        оболочка: лист, шапка, кнопка «О проекте», чип аккаунта,
+                  заголовок экрана
     primitives/   ParchmentCard, AccentQuoteCard, MonoLabel, StatusPill,
                   ImagePlaceholder, DropZone, FilterChips, Lightbox, LinkRow,
                   Metric, QuoteBody, Skeleton
