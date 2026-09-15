@@ -94,8 +94,13 @@
 }
 
 /* Верхняя строка шапки: мета слева, «Править» справа. Раскрытая форма правки
- * переносится на свою строку и занимает всю ширину. */
+ * всплывает под кнопкой поверх шапки, как меню аккаунта: в потоке она сдвигала
+ * имя, описание и метрики вниз. Ширина задана в пикселях, а не долей шапки:
+ * при 65% форма на широком экране была просторнее нужного, а на узком
+ * ужималась так, что имя, раса и классы расходились на два ряда. 560px держат
+ * их в одном; шапка уже этого — форма во всю её ширину. */
 .headTop {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -104,7 +109,33 @@
 }
 
 .headTop .form {
-  flex: 1 1 100%;
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 20;
+  width: min(560px, 100%);
+  box-shadow: var(--modal-shadow);
+}
+
+/* Открытая форма подсвечивает кнопку, которая её открыла. */
+.compactAction[aria-expanded='true'] {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.formCheck {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  align-self: flex-start;
+  cursor: pointer;
+}
+
+.formCheck input {
+  accent-color: var(--accent);
+  width: 15px;
+  height: 15px;
 }
 
 .form {

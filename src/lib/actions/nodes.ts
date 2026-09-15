@@ -64,9 +64,11 @@ export type CharacterPatch = {
   level: string;
   bio: string;
   sinceSession: string;
+  /** Гостевой не виден в «Партии», hero «Хроники» и среди авторов цитат. */
+  guest: boolean;
 };
 
-/** Правка карточки персонажа: имя узла плюс его игровые поля. */
+/** Правка карточки персонажа: имя узла, его игровые поля и признак гостя. */
 export async function updateCharacter(
   nodeId: string,
   patch: CharacterPatch,
@@ -105,14 +107,13 @@ export async function updateCharacter(
         level: toNumber(patch.level),
         bio: patch.bio.trim() || null,
         sinceSession: toNumber(patch.sinceSession),
+        isPc: !patch.guest,
       })
       .where(eq(t.characters.nodeId, nodeId));
 
-    revalidatePath('/');
-    revalidatePath('/party');
-    revalidatePath('/board');
-    revalidatePath('/characters/[slug]', 'page');
-    revalidatePath('/entities/[slug]', 'page');
+    /* Весь layout, а не список страниц: имя и признак гостя видны и в авторах
+     * цитат, а они живут в корневом layout — в шите быстрой записи. */
+    revalidatePath('/', 'layout');
 
     return { ok: true as const, slug: rename.slug, renamedFrom: rename.renamed ? node.name : null };
   });

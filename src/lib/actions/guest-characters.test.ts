@@ -34,7 +34,7 @@ vi.mock('@/lib/viewer', () => ({
 }));
 
 const { createBoardNode } = await import('./board');
-const { deleteNode, updateNode } = await import('./nodes');
+const { deleteNode, updateCharacter, updateNode } = await import('./nodes');
 const { setCharacterGuest } = await import('./characters');
 const { getNodeDetail } = await import('@/lib/queries/board');
 const { getCharacter, getCharacters } = await import('@/lib/queries/characters');
@@ -133,6 +133,19 @@ describe('гостевой персонаж', () => {
     await setCharacterGuest(HERO, true);
     expect(names(await getCharacters())).not.toContain('Герой');
     expect((await getNodeDetail('geroy'))?.isGuest).toBe(true);
+  });
+
+  it('правка на странице персонажа переводит его в основные и обратно', async () => {
+    await ghostAsGuest();
+    const card = { name: 'Призрак', race: '', classes: '', level: '', bio: '', sinceSession: '' };
+
+    expect(await updateCharacter(GHOST, { ...card, guest: false })).toMatchObject({ ok: true });
+    expect(await characterRow(GHOST)).toMatchObject({ isPc: true });
+    expect(names(await getParty())).toContain('Призрак');
+
+    await updateCharacter(GHOST, { ...card, guest: true });
+    expect(await characterRow(GHOST)).toMatchObject({ isPc: false });
+    expect(names(await getQuoteAuthors())).not.toContain('Призрак');
   });
 
   it('тумблер узлу без строки персонажа отвечает ошибкой', async () => {

@@ -1,12 +1,10 @@
-import Image from 'next/image';
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { AccentQuoteCard, Metric, MonoLabel, ParchmentCard } from '@/components/primitives';
 import { WikiText } from '@/components/wiki/WikiText';
 import { EntryActions } from '@/components/entry/EntryActions';
 import { Achievements } from '@/components/character/Achievements';
 import { CharacterEditor } from '@/components/character/CharacterEditor';
-import { GuestToggle } from '@/components/character/GuestToggle';
+import { CharacterGallery } from '@/components/character/CharacterGallery';
 import { PersonalNotes } from '@/components/character/PersonalNotes';
 import { PortraitEditor } from '@/components/character/PortraitEditor';
 import { RelationsEditor } from '@/components/entity/RelationsEditor';
@@ -48,7 +46,7 @@ export default async function CharacterPage({ params }: { params: Promise<{ slug
         <div className={styles.headText}>
           {/* «Править» стоит в самой верхней строке шапки, рядом с мета-строкой:
               внизу, у метрик, её приходилось искать глазами. Раскрытая форма
-              переносится под строку на всю ширину. */}
+              всплывает под кнопкой поверх шапки и ничего не сдвигает. */}
           <div className={styles.headTop}>
             <MonoLabel size={11} tracking="0.16em" block>
               {meta}
@@ -61,6 +59,7 @@ export default async function CharacterPage({ params }: { params: Promise<{ slug
               level={character.level}
               bio={character.bio}
               sinceSession={character.sinceSession}
+              guest={!character.isPc}
             />
           </div>
 
@@ -73,8 +72,6 @@ export default async function CharacterPage({ params }: { params: Promise<{ slug
               <Metric value={character.metrics.quotes} label="ЦИТАТ" />
               <Metric value={character.metrics.links} label="СВЯЗЕЙ" />
             </div>
-            {/* Гостевой персонаж не виден в «Партии», hero и авторах цитат. */}
-            <GuestToggle nodeId={character.id} guest={!character.isPc} />
           </div>
         </div>
       </header>
@@ -157,32 +154,13 @@ export default async function CharacterPage({ params }: { params: Promise<{ slug
             notes={character.privateNotes.map((note) => ({ id: note.id, body: note.body }))}
           />
 
-          <div className={styles.block}>
-            <MonoLabel size={10} tracking="0.14em" block>
-              {`Галерея · ${character.images.length}`}
-            </MonoLabel>
-            <div className={styles.grid3}>
-              {character.images.slice(0, 6).map((image) => (
-                <Link
-                  key={image.id}
-                  href="/gallery"
-                  className={styles.cell}
-                  title={image.caption ?? undefined}
-                >
-                  {/* Кадр без файла оставляет ячейке штриховку плейсхолдера. */}
-                  {image.url ? (
-                    <Image
-                      src={image.url}
-                      alt={image.caption ?? ''}
-                      fill
-                      sizes="(max-width: 1023px) 33vw, 96px"
-                      className={styles.photo}
-                    />
-                  ) : null}
-                </Link>
-              ))}
-            </div>
-          </div>
+          <CharacterGallery
+            images={character.images.map((image) => ({
+              id: image.id,
+              caption: image.caption,
+              url: image.url,
+            }))}
+          />
         </aside>
       </div>
 
