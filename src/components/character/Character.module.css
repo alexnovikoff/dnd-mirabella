@@ -94,7 +94,11 @@
 }
 
 /* Верхняя строка шапки: мета слева, «Править» справа. Раскрытая форма правки
- * переносится на свою строку и занимает всю ширину. */
+ * переносится на свою строку и встаёт справа, под «Правкой», на 65% ширины:
+ * во всю ширину короткие поля растягивались без нужды, а на половине, как на
+ * карточке сущности, имя, раса и классы уже не держат один ряд. Строку держит
+ * отступ слева — с одним max-width форма встала бы рядом с метой. На телефоне
+ * снова вся ширина. */
 .headTop {
   display: flex;
   align-items: center;
@@ -104,7 +108,23 @@
 }
 
 .headTop .form {
-  flex: 1 1 100%;
+  flex: 0 0 65%;
+  margin-left: 35%;
+}
+
+.formCheck {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  align-self: flex-start;
+  cursor: pointer;
+}
+
+.formCheck input {
+  accent-color: var(--accent);
+  width: 15px;
+  height: 15px;
 }
 
 .form {
@@ -472,6 +492,11 @@ a.cell:hover {
 
   .name {
     font-size: 38px;
+  }
+
+  .headTop .form {
+    flex-basis: 100%;
+    margin-left: 0;
   }
 
   .entries {

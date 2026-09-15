@@ -16,6 +16,7 @@ export function CharacterEditor({
   level,
   bio,
   sinceSession,
+  guest,
 }: {
   nodeId: string;
   name: string;
@@ -24,6 +25,7 @@ export function CharacterEditor({
   level: number | null;
   bio: string | null;
   sinceSession: number | null;
+  guest: boolean;
 }) {
   const router = useRouter();
   const { canWrite } = useQuickEntry();
@@ -37,6 +39,9 @@ export function CharacterEditor({
     sinceSession: sinceSession === null ? '' : String(sinceSession),
   };
   const [form, setForm] = useState(initial);
+  /* Признак гостя живёт отдельно от строковых полей формы: у него не поле
+   * ввода, а флажок. */
+  const [isGuest, setIsGuest] = useState(guest);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -71,7 +76,7 @@ export function CharacterEditor({
         event.preventDefault();
         setError(null);
         startTransition(async () => {
-          const result = await updateCharacter(nodeId, form);
+          const result = await updateCharacter(nodeId, { ...form, guest: isGuest });
           if (!result.ok) {
             setError(result.error);
             return;
@@ -106,6 +111,20 @@ export function CharacterEditor({
         />
       </label>
 
+      <label
+        className={styles.formCheck}
+        title="Гостевой не виден в «Партии», на «Хронике» и среди авторов цитат"
+      >
+        <input
+          type="checkbox"
+          checked={isGuest}
+          onChange={(e) => setIsGuest(e.currentTarget.checked)}
+        />
+        <MonoLabel size={9} tracking="0.08em" tone="faint">
+          Гостевой персонаж
+        </MonoLabel>
+      </label>
+
       {form.name !== name ? (
         <MonoLabel size={9} tracking="0.06em" tone="faint" block>
           {`Прежнее имя «${name}» уйдёт в алиасы — [[ссылки]] в старых записях не сломаются`}
@@ -129,6 +148,7 @@ export function CharacterEditor({
           onClick={() => {
             setOpen(false);
             setForm(initial);
+            setIsGuest(guest);
             setError(null);
           }}
         >
