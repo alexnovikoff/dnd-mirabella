@@ -71,7 +71,9 @@ export default function AboutPage() {
         </p>
       </div>
 
-      <section className={styles.history} aria-labelledby="history-title">
+      {/* Метка для листа: версии сворачиваются, высота страницы скачет, и
+          засветки листа должны считаться только от его верха (Sheet.module.css). */}
+      <section className={styles.history} aria-labelledby="history-title" data-sheet-bg="steady">
         <h2 id="history-title" className={styles.sectionTitle}>
           История версий
         </h2>
