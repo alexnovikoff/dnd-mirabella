@@ -118,6 +118,24 @@ export function zoomByButton(percent: number, direction: 1 | -1) {
   return clampZoom(next);
 }
 
+/** Масштаб после щипка: во столько же раз, во сколько развели пальцы.
+ *  Считается от масштаба начала жеста, а не от текущего — иначе округление
+ *  до целого процента копилось бы за сотню событий касания. Пальцы, сошедшиеся
+ *  в точку, дают деление на ноль: масштаб тогда не трогаем. */
+export function zoomByPinch(percent: number, ratio: number) {
+  if (!Number.isFinite(ratio) || ratio <= 0) return percent;
+  return clampZoom(Math.round(percent * ratio));
+}
+
+/** Расстояние между пальцами и точка посередине: щипок берёт из них масштаб
+ *  и место, которое остаётся под пальцами. */
+export function pinchOf(a: Point, b: Point): { distance: number; middle: Point } {
+  return {
+    distance: Math.hypot(a.x - b.x, a.y - b.y),
+    middle: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 },
+  };
+}
+
 /**
  * Отступ поля от края распорки по одной оси. Пока поле шире окна, распорка
  * ровно по нему и отступа нет; на мелком масштабе поле меньше окна, распорка

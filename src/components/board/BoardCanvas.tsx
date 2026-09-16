@@ -29,10 +29,12 @@ import {
   ZOOM_MIN,
   clampBoardPoint,
   middleOf,
+  pinchOf,
   pointAt,
   scrollToCenter,
   scrollToPlace,
   zoomByButton,
+  zoomByPinch,
   zoomByWheel,
 } from '@/lib/board-view';
 import { NODE_KIND_LABEL } from '@/lib/nodes';
@@ -260,6 +262,142 @@ export function BoardCanvas({
     scroller.addEventListener('wheel', onWheel, { passive: false });
     return () => scroller.removeEventListener('wheel', onWheel);
   }, [zoomTo, panning]);
+
+  /* Что ведёт первый палец: щипок приходит из своего слушателя, вне рендера,
+   * и состояния жестов ему видно только через ссылки. */
+  const dragRef = useRef<NodeDrag | null>(null);
+  const resizeRef = useRef<Resize | null>(null);
+  useEffect(() => {
+    dragRef.current = drag;
+    resizeRef.current = resize;
+  }, [drag, resize]);
+  /* Пальцы, разводившие масштаб, не должны на отпускании сработать тапом по
+   * плитке. Держим до конца касания: второй палец поднимают уже без щипка. */
+  const pinchedRef = useRef(false);
+
+  /* Щипок двумя пальцами масштабирует доску, как карту: расстояние между
+   * пальцами задаёт масштаб, точка между ними остаётся между ними. На телефоне
+   * это единственный привычный способ приблизить граф — кнопками «−» и «+»
+   * до 200% идти десять нажатий.
+   *
+   * Слушатели касаний, а не указателей: `touches` сразу дают обе точки, а
+   * главное — отменить системный зум можно только здесь. `touch-action: none`
+   * его на iPhone не держит: Safari уводил жест себе, увеличивал страницу
+   * целиком, а доска пальцев уже не видела. Слушатели не пассивные, иначе
+   * preventDefault в них ничего не значит. */
+  useEffect(() => {
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+    /* Начало жеста: расстояние, масштаб и точка поля под серединой пальцев.
+     * Точка снимается один раз — считанная заново на каждом событии, она
+     * уползала бы на округлении прокрутки, как было у колёсика. */
+    let pinch: { distance: number; percent: number; point: Point } | null = null;
+
+    /** Расстояние между пальцами и их середина в пикселях от угла окна доски. */
+    const measure = (touches: TouchList) => {
+      const rect = scroller.getBoundingClientRect();
+      const { distance, middle } = pinchOf(
+        { x: touches[0].clientX, y: touches[0].clientY },
+        { x: touches[1].clientX, y: touches[1].clientY },
+      );
+      return {
+        distance,
+        at: {
+          x: middle.x - rect.left - scroller.clientLeft,
+          y: middle.y - rect.top - scroller.clientTop,
+        },
+      };
+    };
+
+    /** Жесты первого пальца: на время щипка их отменяем — иначе узел уехал бы
+     *  вместе с масштабом, а на отпускании ещё и сохранился. */
+    const dropGestures = () => {
+      setPan(null);
+      const dragged = dragRef.current;
+      if (dragged) {
+        setPositions((current) => {
+          const next = { ...current };
+          delete next[dragged.id];
+          return next;
+        });
+        setDrag(null);
+        setDropTarget(null);
+      }
+      const resizing = resizeRef.current;
+      if (resizing) {
+        setSizes((current) => ({ ...current, [resizing.id]: resizing.before.size }));
+        setPositions((current) => ({ ...current, [resizing.id]: resizing.before.position }));
+        setResize(null);
+      }
+    };
+
+    const onTouchStart = (event: TouchEvent) => {
+      if (event.touches.length !== 2) return;
+      event.preventDefault();
+      dropGestures();
+      pinchedRef.current = true;
+      const { distance, at } = measure(event.touches);
+      pinch = {
+        distance,
+        percent: targetRef.current,
+        point: pointAt(
+          { left: scroller.scrollLeft, top: scroller.scrollTop },
+          zoomRef.current,
+          viewportOf(scroller),
+          FIELD,
+          at,
+        ),
+      };
+    };
+
+    const onTouchMove = (event: TouchEvent) => {
+      if (!pinch || event.touches.length < 2) return;
+      event.preventDefault();
+      const { distance, at } = measure(event.touches);
+      const percent = zoomByPinch(pinch.percent, distance / pinch.distance);
+      if (percent === targetRef.current) {
+        /* Масштаб тот же — упёрся в предел или не набрал целого процента. Доска
+         * всё равно едет за пальцами: точка жеста держится их середины. */
+        const { left, top } = scrollToPlace(
+          pinch.point,
+          zoomRef.current,
+          viewportOf(scroller),
+          FIELD,
+          at,
+        );
+        scroller.scrollLeft = left;
+        scroller.scrollTop = top;
+        placedRef.current = {
+          point: pinch.point,
+          at,
+          zoom: zoomRef.current,
+          left: scroller.scrollLeft,
+          top: scroller.scrollTop,
+        };
+        return;
+      }
+      anchorRef.current = { point: pinch.point, at };
+      targetRef.current = percent;
+      setZoomPercent(percent);
+    };
+
+    const onTouchEnd = (event: TouchEvent) => {
+      if (event.touches.length < 2) pinch = null;
+      /* Пока на экране остаётся хоть один палец, это всё тот же жест. */
+      if (event.touches.length === 0) pinchedRef.current = false;
+    };
+
+    scroller.addEventListener('touchstart', onTouchStart, { passive: false });
+    scroller.addEventListener('touchmove', onTouchMove, { passive: false });
+    scroller.addEventListener('touchend', onTouchEnd);
+    scroller.addEventListener('touchcancel', onTouchEnd);
+    return () => {
+      scroller.removeEventListener('touchstart', onTouchStart);
+      scroller.removeEventListener('touchmove', onTouchMove);
+      scroller.removeEventListener('touchend', onTouchEnd);
+      scroller.removeEventListener('touchcancel', onTouchEnd);
+    };
+  }, []);
 
   /* Полотно больше окна, поэтому выбранный узел может оказаться за краем —
    * например при переходе по связи из панели. Подкручиваем к нему. */
@@ -632,6 +770,8 @@ export function BoardCanvas({
                     }}
                     onPointerUp={(event) => {
                       event.stopPropagation();
+                      /* Палец разводил масштаб — это конец щипка, а не тап. */
+                      if (pinchedRef.current) return;
                       if (drag?.id !== node.id) {
                         router.push(`/board?node=${node.slug}`, { scroll: false });
                         return;

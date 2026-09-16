@@ -7,7 +7,9 @@ import {
   previewFrame,
   scrollToCenter,
   scrollToPlace,
+  pinchOf,
   zoomByButton,
+  zoomByPinch,
   zoomByWheel,
 } from './board-view';
 
@@ -141,6 +143,38 @@ describe('zoomByButton', () => {
     expect(zoomByButton(200, 1)).toBe(200);
     expect(zoomByButton(30, -1)).toBe(20);
     expect(zoomByButton(20, -1)).toBe(20);
+  });
+});
+
+describe('zoomByPinch', () => {
+  it('масштаб растёт и падает вместе с разведением пальцев', () => {
+    expect(zoomByPinch(100, 1.5)).toBe(150);
+    expect(zoomByPinch(80, 0.5)).toBe(40);
+  });
+
+  it('считает от масштаба начала жеста, а не шагами', () => {
+    expect(zoomByPinch(100, 1.04)).toBe(104);
+  });
+
+  it('не выходит за 20–200%', () => {
+    expect(zoomByPinch(150, 4)).toBe(200);
+    expect(zoomByPinch(50, 0.1)).toBe(20);
+  });
+
+  it('пальцы стоят или сошлись в точку — масштаб тот же', () => {
+    expect(zoomByPinch(130, 1)).toBe(130);
+    expect(zoomByPinch(130, 0)).toBe(130);
+    expect(zoomByPinch(130, Number.POSITIVE_INFINITY)).toBe(130);
+    expect(zoomByPinch(130, Number.NaN)).toBe(130);
+  });
+});
+
+describe('pinchOf', () => {
+  it('расстояние между пальцами и точка посередине', () => {
+    expect(pinchOf({ x: 100, y: 200 }, { x: 130, y: 240 })).toEqual({
+      distance: 50,
+      middle: { x: 115, y: 220 },
+    });
   });
 });
 
