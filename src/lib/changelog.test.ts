@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import pkg from '../../package.json';
-import { CURRENT_RELEASE, RELEASES } from './changelog';
+import { CURRENT_RELEASE, RELEASES, UNRELEASED } from './changelog';
 
 const SEMVER = /^(\d+)\.(\d+)\.(\d+)$/;
 
@@ -38,7 +38,8 @@ describe('changelog', () => {
     }
   });
 
-  const items = RELEASES.flatMap((release) => release.groups.flatMap((group) => group.items));
+  const groups = [...RELEASES.flatMap((release) => release.groups), ...UNRELEASED];
+  const items = groups.flatMap((group) => group.items);
 
   it('в конце пункта нет точки', () => {
     for (const item of items) {
@@ -46,12 +47,18 @@ describe('changelog', () => {
     }
   });
 
-  it('у каждой версии есть что показать', () => {
+  it('у каждой версии есть что показать, пустых групп нет', () => {
     for (const release of RELEASES) {
       expect(release.groups.length).toBeGreaterThan(0);
-      for (const group of release.groups) {
-        expect(group.items.length).toBeGreaterThan(0);
-      }
     }
+    for (const group of groups) {
+      expect(group.items.length).toBeGreaterThan(0);
+    }
+  });
+
+  /* Пункт переезжает из UNRELEASED в версию при выпуске, а не копируется:
+   * повтор значит, что его написали дважды или забыли убрать. */
+  it('пункт не повторяется', () => {
+    expect(new Set(items).size).toBe(items.length);
   });
 });

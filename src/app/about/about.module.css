@@ -36,8 +36,9 @@
   gap: 16px;
 }
 
-/* Название версии слева, номер и дата справа; на узком экране номер
- * переносится под название. */
+/* Название версии слева, номер и дата справа, галочка сворачивания в самом
+ * краю; на узком экране номер переносится под название. Заголовок — это
+ * <summary>: свой маркер вместо браузерного, курсор как у кнопки. */
 .releaseHead {
   display: flex;
   align-items: baseline;
@@ -46,14 +47,58 @@
   gap: 4px 16px;
   padding-bottom: 12px;
   border-bottom: 1px solid var(--rule-soft);
+  cursor: pointer;
+  list-style: none;
 }
 
+.releaseHead::-webkit-details-marker {
+  display: none;
+}
+
+/* У свёрнутой карточки линейка под заголовком висела бы в пустоте. */
+details:not([open]) > .releaseHead {
+  padding-bottom: 0;
+  border-bottom-color: transparent;
+}
+
+/* Галочка смотрит вниз у свёрнутой карточки и вверх у развёрнутой. Уголок из
+ * двух линий, как у кнопок листания: своих иконок в проекте нет. */
+.releaseHead::after {
+  content: '';
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-right: 1px solid var(--ink-label);
+  border-bottom: 1px solid var(--ink-label);
+  transform: translateY(-3px) rotate(45deg);
+  transition:
+    transform var(--hover-fast),
+    border-color var(--hover-fast);
+}
+
+details[open] > .releaseHead::after {
+  transform: translateY(1px) rotate(-135deg);
+}
+
+.releaseHead:hover::after {
+  border-color: var(--accent);
+}
+
+/* Название занимает свободное место, чтобы мета и галочка держались правого
+ * края, а не расползались по строке. */
 .releaseTitle {
+  flex: 1;
   font-family: var(--font-display);
   font-size: 23px;
   line-height: 1.15;
   font-weight: 600;
   color: var(--ink);
+}
+
+/* Группы открытой карточки отбиты от заголовка так же, как раньше их отбивал
+ * gap карточки. */
+details[open] > .groups {
+  margin-top: 16px;
 }
 
 /* Группы колонками, а не сеткой: высота у них разная, и в сетке короткая
@@ -103,4 +148,12 @@
   width: 4px;
   height: 4px;
   background: var(--accent);
+}
+
+/* На телефоне по заголовку карточки нажимают пальцем: строка добирает до 44px. */
+@media (max-width: 767px) {
+  .releaseHead {
+    align-items: center;
+    min-height: 44px;
+  }
 }
